@@ -19,7 +19,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.setDepth(10);
     
     // Enable gravity for jumping
-    this.setGravityY(2000);
+    this.setGravityY(2500);
     
     this.setBodySize(30, 50);
     this.setOffset(5, 5);
@@ -34,10 +34,14 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   jump() {
-    // Can only jump if on ground (not already jumping)
-    if (this.isJumping || this.isSliding) return;
+    // Can only jump if on ground
+    if (this.isJumping || this.isSliding) {
+      console.log('Cannot jump - isJumping:', this.isJumping, 'isSliding:', this.isSliding);
+      return;
+    }
+    console.log('JUMPING!');
     this.isJumping = true;
-    this.setVelocityY(-800); // Jump up with velocity
+    this.setVelocityY(-900);
   }
 
   slide() {
@@ -45,7 +49,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.isSliding = true;
     this.setTexture('player-slide');
     this.setBodySize(50, 24);
-    this.setOffset(-4, 30); // Move hitbox down when sliding
+    this.setOffset(-4, 30);
     this.scene.time.delayedCall(600, () => {
       this.isSliding = false;
       this.setTexture('player-run-0');
@@ -70,11 +74,15 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     const targetX = this.getLaneX();
     this.x = Phaser.Math.Linear(this.x, targetX, 0.2);
     
-    // Keep player from falling below ground
-    if (this.y >= this.groundY) {
+    // Check if landed - only if falling down (positive velocity) and at/below ground
+    const vel = this.body?.velocity.y ?? 0;
+    if (this.y >= this.groundY && vel >= 0) {
       this.y = this.groundY;
       this.setVelocityY(0);
-      this.isJumping = false;
+      if (this.isJumping) {
+        console.log('Landed!');
+        this.isJumping = false;
+      }
     }
   }
 }
