@@ -31,7 +31,7 @@ export default class MainScene extends Phaser.Scene {
   spawner!: Spawner;
   speed = 300;
   distance = 0;
-  lastSpawnY = 0;
+  nextSpawnDistance = 0;
   runActive = false;
   centerX = 0;
   groundY = 0;
@@ -67,32 +67,10 @@ export default class MainScene extends Phaser.Scene {
       .setScrollFactor(0).setDepth(5);
 
     // Player
-    this.player = new Player(this, this.centerX, this.groundY - 40, this.laneWidth);
+    this.player = new Player(this, this.centerX, this.groundY - 30, this.laneWidth);
     
     // Spawner
     this.spawner = new Spawner(this, this.centerX, this.laneWidth);
-    
-    // Collision with obstacles - check if player is actually hitting (not above)
-    this.physics.add.overlap(this.player, this.spawner.group, (playerObj, obstacleObj) => {
-      const player = playerObj as Player;
-      const obstacle = obstacleObj as Phaser.Physics.Arcade.Sprite;
-      
-      // Only die if it's an obstacle (not collectible)
-      const key = obstacle.texture.key;
-      if (key.startsWith('item-')) return; // It's a collectible, handle separately
-      
-      // Check if player's feet are above obstacle's top
-      const playerBottom = player.y + 25; // player height is ~50, so bottom is y + 25
-      const obstacleTop = obstacle.y - 30; // obstacle height is ~60, so top is y - 30
-      
-      if (playerBottom < obstacleTop) {
-        // Player is above the obstacle - safe!
-        return;
-      }
-      
-      // Player hit the obstacle
-      this.triggerGameOver();
-    });
 
     // Keyboard
     this.keyHandler = (e: KeyboardEvent) => {
@@ -132,7 +110,7 @@ export default class MainScene extends Phaser.Scene {
     // Start the run
     this.speed = 300;
     this.distance = 0;
-    this.lastSpawnY = this.player.y;
+    this.nextSpawnDistance = 0;
     this.runActive = true;
 
     useGameStore.setState({ phase: 'running', score: 0, distance: 0, multiplier: 1, tokens: 0 });
@@ -165,50 +143,75 @@ export default class MainScene extends Phaser.Scene {
       tokens: Math.floor(this.distance / 1000),
     });
 
-    this.spawnAhead();
-    this.spawner.group.setVelocityY(this.speed);
-    this.spawner.recycleOffscreen(this.groundY + 200);
+    // Spawn new obstacles based on distance traveled
+    this.spawnByDistance();
     
-    // Check for collectible pickups
-    this.checkCollectibles();
+    // Move all spawned objects down
+    this.spawner.group.setVelocityY(this.speed);
+    
+    // Remove off-screen objects
+    this.spawner.recycleOffscreen(this.groundY + 100);
+    
+    // Check collisions and pickups
+    this.checkCollisions();
   }
 
-  checkCollectibles() {
+  spawnByDistance() {
+    // Spawn a new chunk every 150-250 distance units
+    while (this.distance >= this.nextSpawnDistance) {
+      const chunk = pickChunk();
+      
+      // Spawn obstacles at top of screen
+      chunk.obstacles.forEach((o) => {
+        o.lanes.forEach((lane) => {
+          this.spawner.spawn(o.type, lane, -50);
+        });
+      });
+      
+      // Spawn collectibles slightly after obstacles
+      for (let i = 0; i < chunk.collectibles; i++) {
+        const lane = Phaser.Math.Between(0, 2);
+        this.spawner.spawn('collectible', lane, -100 - i * 40);
+      }
+      
+      this.nextSpawnDistance += Phaser.Math.Between(150, 250);
+    }
+  }
+
+  checkCollisions() {
+    const playerLeft = this.player.x - 15;
+    const playerRight = this.player.x + 15;
+    const playerTop = this.player.y - 25;
+    const playerBottom = this.player.y + 25;
+
     this.spawner.group.getChildren().forEach((child) => {
       const sprite = child as Phaser.Physics.Arcade.Sprite;
       const key = sprite.texture.key;
-      if (!key.startsWith('item-')) return;
       
-      // Check distance to player
-      const dx = Math.abs(sprite.x - this.player.x);
-      const dy = Math.abs(sprite.y - this.player.y);
+      const spriteLeft = sprite.x - 25;
+      const spriteRight = sprite.x + 25;
+      const spriteTop = sprite.y - 30;
+      const spriteBottom = sprite.y + 30;
       
-      if (dx < 40 && dy < 50) {
-        // Collect it!
+      // Check horizontal overlap
+      const horizontalOverlap = playerRight > spriteLeft && playerLeft < spriteRight;
+      if (!horizontalOverlap) return;
+      
+      // Check vertical overlap
+      const verticalOverlap = playerBottom > spriteTop && playerTop < spriteBottom;
+      if (!verticalOverlap) return;
+      
+      // We have overlap!
+      if (key.startsWith('item-')) {
+        // Collectible - pick it up
         this.collect(key.replace('item-', ''));
         spawnSpark(this, sprite.x, sprite.y, 0xffd700);
         sprite.destroy();
+      } else {
+        // Obstacle - die!
+        this.triggerGameOver();
       }
     });
-  }
-
-  spawnAhead() {
-    const buffer = 800;
-    while (this.lastSpawnY > -buffer) {
-      this.lastSpawnY -= Phaser.Math.Between(200, 350);
-      const chunk = pickChunk();
-      chunk.obstacles.forEach((o) => {
-        o.lanes.forEach((lane) => {
-          const entity = this.spawner.spawn(o.type, lane, this.lastSpawnY);
-          entity.sprite.setVelocityY(this.speed);
-        });
-      });
-      for (let i = 0; i < chunk.collectibles; i++) {
-        const lane = Phaser.Math.Between(0, 2);
-        const entity = this.spawner.spawn('collectible', lane, this.lastSpawnY + 60 + i * 30);
-        entity.sprite.setVelocityY(this.speed);
-      }
-    }
   }
 
   collect(type: string) {
