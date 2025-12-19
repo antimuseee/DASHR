@@ -17,24 +17,18 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
     this.setCollideWorldBounds(false);
     this.setDepth(10);
-    this.setScale(1.2); // Slightly bigger player
+    this.setScale(1.3); // Bigger player to show detail
     
     // Gravity for jumping
     this.setGravityY(3000);
     
-    this.setBodySize(25, 55);
+    this.setBodySize(25, 65);
     this.setOffset(7, 5);
-    
-    // Add glow effect behind player
-    const glow = scene.add.graphics();
-    glow.fillStyle(0x9b5cff, 0.3);
-    glow.fillCircle(0, 0, 30);
-    glow.setDepth(9);
     
     this.anims.create({
       key: 'run',
       frames: Array.from({ length: 5 }).map((_, i) => ({ key: `player-run-${i}` })),
-      frameRate: 12,
+      frameRate: 10,
       repeat: -1,
     });
     this.play('run');
@@ -50,12 +44,12 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.isSliding || this.isJumping) return;
     this.isSliding = true;
     this.setTexture('player-slide');
-    this.setBodySize(50, 20);
+    this.setBodySize(50, 25);
     this.setOffset(-4, 5);
     this.scene.time.delayedCall(600, () => {
       this.isSliding = false;
       this.setTexture('player-run-0');
-      this.setBodySize(25, 55);
+      this.setBodySize(25, 65);
       this.setOffset(7, 5);
     });
   }
