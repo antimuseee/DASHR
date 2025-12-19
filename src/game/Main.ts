@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+﻿import Phaser from 'phaser';
 import Player from './entities/Player';
 import Spawner from './entities/Obstacles';
 import { gameActions, useGameStore } from '../utils/store';
@@ -45,11 +45,18 @@ export default class MainScene extends Phaser.Scene {
 
     this.addGradientBG();
 
-    this.ground = this.add.rectangle(180, 560, 400, 120, 0x0e0b1d).setDepth(1);
+    const laneXs = [100, 180, 260];
+    laneXs.forEach((x) => {
+      this.add.rectangle(x, 320, 80, 640, 0x4ef0c5, 0.06).setDepth(-1).setStrokeStyle(2, 0x9b5cff, 0.2);
+    });
+
+    this.ground = this.add.rectangle(180, 560, 400, 140, 0x130a24).setDepth(1);
+    this.add.rectangle(180, 490, 400, 4, 0x4ef0c5, 0.5).setDepth(2);
     this.physics.add.existing(this.ground, true);
 
     this.player = new Player(this, 180, 480);
     this.physics.add.collider(this.player, this.ground);
+    this.add.rectangle(180, 480, 48, 70, 0xffffff, 0.08).setDepth(9);
 
     this.spawner = new Spawner(this);
     this.physics.add.collider(this.player, this.spawner.group, () => this.triggerGameOver());
