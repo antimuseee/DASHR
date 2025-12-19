@@ -36,8 +36,7 @@ export default class MainScene extends Phaser.Scene {
   centerX = 0;
   groundY = 0;
   laneWidth = 100;
-  cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
-  wasd!: { W: Phaser.Input.Keyboard.Key; A: Phaser.Input.Keyboard.Key; S: Phaser.Input.Keyboard.Key; D: Phaser.Input.Keyboard.Key; SPACE: Phaser.Input.Keyboard.Key };
+  private keyHandler!: (e: KeyboardEvent) => void;
 
   constructor() {
     super('Main');
@@ -75,27 +74,49 @@ export default class MainScene extends Phaser.Scene {
     this.physics.add.collider(this.player, this.spawner.group, () => this.triggerGameOver());
     this.spawner.handleCollect(this.player, (type) => this.collect(type));
 
-    // Setup keyboard - use createCursorKeys for arrows
-    if (this.input.keyboard) {
-      this.cursors = this.input.keyboard.createCursorKeys();
-      this.wasd = {
-        W: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
-        A: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
-        S: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
-        D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
-        SPACE: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE),
-      };
-    }
+    // Direct DOM keyboard handler
+    this.keyHandler = (e: KeyboardEvent) => {
+      if (!this.runActive) return;
+      console.log('Key pressed:', e.code);
+      switch (e.code) {
+        case 'ArrowUp':
+        case 'KeyW':
+        case 'Space':
+          e.preventDefault();
+          this.player.jump();
+          break;
+        case 'ArrowDown':
+        case 'KeyS':
+          e.preventDefault();
+          this.player.slide();
+          break;
+        case 'ArrowLeft':
+        case 'KeyA':
+          e.preventDefault();
+          this.player.moveLane(-1);
+          break;
+        case 'ArrowRight':
+        case 'KeyD':
+          e.preventDefault();
+          this.player.moveLane(1);
+          break;
+      }
+    };
+    document.addEventListener('keydown', this.keyHandler);
 
     // Swipe events from React
-    this.game.events.on('input:jump', () => this.player.jump());
-    this.game.events.on('input:slide', () => this.player.slide());
-    this.game.events.on('input:left', () => this.player.moveLane(-1));
-    this.game.events.on('input:right', () => this.player.moveLane(1));
+    this.game.events.on('input:jump', () => { console.log('Jump event'); this.player.jump(); });
+    this.game.events.on('input:slide', () => { console.log('Slide event'); this.player.slide(); });
+    this.game.events.on('input:left', () => { console.log('Left event'); this.player.moveLane(-1); });
+    this.game.events.on('input:right', () => { console.log('Right event'); this.player.moveLane(1); });
 
     this.startRun();
 
     this.scale.on('resize', this.handleResize, this);
+
+    this.events.once('shutdown', () => {
+      document.removeEventListener('keydown', this.keyHandler);
+    });
   }
 
   handleResize(gameSize: Phaser.Structs.Size) {
@@ -108,6 +129,7 @@ export default class MainScene extends Phaser.Scene {
     this.distance = 0;
     this.lastSpawnY = this.player?.y ?? this.groundY - 40;
     this.runActive = true;
+    console.log('Run started, runActive:', this.runActive);
     gameActions.startRun();
   }
 
@@ -117,9 +139,6 @@ export default class MainScene extends Phaser.Scene {
 
   update(_: number, delta: number) {
     if (!this.runActive) return;
-
-    // Handle keyboard input in update loop
-    this.handleInput();
 
     this.distance += (this.speed * delta) / 1000;
     this.speed += 5 * (delta / 1000);
@@ -134,30 +153,6 @@ export default class MainScene extends Phaser.Scene {
     this.spawnAhead();
     this.spawner.group.setVelocityY(this.speed);
     this.spawner.recycleOffscreen(this.groundY + 200);
-  }
-
-  handleInput() {
-    // Jump
-    if (Phaser.Input.Keyboard.JustDown(this.cursors?.up) || 
-        Phaser.Input.Keyboard.JustDown(this.wasd?.W) ||
-        Phaser.Input.Keyboard.JustDown(this.wasd?.SPACE)) {
-      this.player.jump();
-    }
-    // Slide
-    if (Phaser.Input.Keyboard.JustDown(this.cursors?.down) || 
-        Phaser.Input.Keyboard.JustDown(this.wasd?.S)) {
-      this.player.slide();
-    }
-    // Left
-    if (Phaser.Input.Keyboard.JustDown(this.cursors?.left) || 
-        Phaser.Input.Keyboard.JustDown(this.wasd?.A)) {
-      this.player.moveLane(-1);
-    }
-    // Right
-    if (Phaser.Input.Keyboard.JustDown(this.cursors?.right) || 
-        Phaser.Input.Keyboard.JustDown(this.wasd?.D)) {
-      this.player.moveLane(1);
-    }
   }
 
   spawnAhead() {

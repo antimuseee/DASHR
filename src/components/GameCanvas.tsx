@@ -28,48 +28,13 @@ export default function GameCanvas() {
         mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH,
       },
-      input: {
-        keyboard: true,
-      },
       render: { pixelArt: true },
       scene: [Boot, Preload, MainScene],
     });
 
     phaserRef.current = game;
 
-    // Focus canvas on click
-    const focusCanvas = () => {
-      game.canvas.focus();
-    };
-    containerRef.current.addEventListener('click', focusCanvas);
-    
-    // Auto-focus on load
-    setTimeout(() => game.canvas.focus(), 100);
-
-    // Global keyboard fallback
-    const handleKeyDown = (e: KeyboardEvent) => {
-      switch (e.code) {
-        case 'ArrowUp':
-        case 'KeyW':
-        case 'Space':
-          game.events.emit('input:jump');
-          break;
-        case 'ArrowDown':
-        case 'KeyS':
-          game.events.emit('input:slide');
-          break;
-        case 'ArrowLeft':
-        case 'KeyA':
-          game.events.emit('input:left');
-          break;
-        case 'ArrowRight':
-        case 'KeyD':
-          game.events.emit('input:right');
-          break;
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-
+    // Swipe controls for mobile
     const destroySwipe = attachSwipe(containerRef.current, {
       onUp: () => game.events.emit('input:jump'),
       onDown: () => game.events.emit('input:slide'),
@@ -79,8 +44,6 @@ export default function GameCanvas() {
 
     return () => {
       destroySwipe();
-      window.removeEventListener('keydown', handleKeyDown);
-      containerRef.current?.removeEventListener('click', focusCanvas);
       game.destroy(true);
       phaserRef.current = null;
     };
@@ -94,5 +57,5 @@ export default function GameCanvas() {
     }
   }, [runId]);
 
-  return <div ref={containerRef} className="game-host" tabIndex={0} />;
+  return <div ref={containerRef} className="game-host" />;
 }
