@@ -40,19 +40,33 @@ export default class Spawner {
     sprite.body?.setAllowGravity(false);
     sprite.setDepth(8);
     
+    if (type === 'block') {
+      // Tall obstacle - must jump over
+      sprite.setSize(40, 50);
+      sprite.setOffset(5, 5);
+    }
     if (type === 'pit') {
-      sprite.setSize(70, 15).setOffset(0, 5);
+      // Low obstacle - must jump over (or slide won't help)
+      sprite.setSize(60, 15);
+      sprite.setOffset(5, 2);
     }
     if (type === 'collectible') {
-      sprite.setCircle(10, 0, 0);
-      // Make collectibles spin
+      // Small hitbox for collectibles
+      sprite.setCircle(10, 2, 2);
+      // Make collectibles bob up and down
       this.scene.tweens.add({
         targets: sprite,
-        angle: 360,
-        duration: 1500,
+        y: y - 10,
+        duration: 500,
+        yoyo: true,
         repeat: -1,
+        ease: 'Sine.easeInOut',
       });
     }
+    
+    // Mark type on sprite for collision handling
+    sprite.setData('type', type);
+    
     return { sprite, type, lane } as SpawnedEntity;
   }
 
@@ -68,7 +82,7 @@ export default class Spawner {
       const sprite = obj as Phaser.Physics.Arcade.Sprite;
       const key = sprite.texture.key;
       if (!key.startsWith('item-')) return;
-      spawnSpark(this.scene, sprite.x, sprite.y, 0xffd166);
+      spawnSpark(this.scene, sprite.x, sprite.y, 0xffd700);
       sprite.destroy();
       cb(key.replace('item-', ''));
     });
