@@ -36,6 +36,8 @@ export default class MainScene extends Phaser.Scene {
   centerX = 0;
   groundY = 0;
   laneWidth = 100;
+  cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+  wasd!: { W: Phaser.Input.Keyboard.Key; A: Phaser.Input.Keyboard.Key; S: Phaser.Input.Keyboard.Key; D: Phaser.Input.Keyboard.Key; SPACE: Phaser.Input.Keyboard.Key };
 
   constructor() {
     super('Main');
@@ -73,7 +75,24 @@ export default class MainScene extends Phaser.Scene {
     this.physics.add.collider(this.player, this.spawner.group, () => this.triggerGameOver());
     this.spawner.handleCollect(this.player, (type) => this.collect(type));
 
-    this.registerInputs();
+    // Setup keyboard - use createCursorKeys for arrows
+    if (this.input.keyboard) {
+      this.cursors = this.input.keyboard.createCursorKeys();
+      this.wasd = {
+        W: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
+        A: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
+        S: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
+        D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
+        SPACE: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE),
+      };
+    }
+
+    // Swipe events from React
+    this.game.events.on('input:jump', () => this.player.jump());
+    this.game.events.on('input:slide', () => this.player.slide());
+    this.game.events.on('input:left', () => this.player.moveLane(-1));
+    this.game.events.on('input:right', () => this.player.moveLane(1));
+
     this.startRun();
 
     this.scale.on('resize', this.handleResize, this);
@@ -99,6 +118,9 @@ export default class MainScene extends Phaser.Scene {
   update(_: number, delta: number) {
     if (!this.runActive) return;
 
+    // Handle keyboard input in update loop
+    this.handleInput();
+
     this.distance += (this.speed * delta) / 1000;
     this.speed += 5 * (delta / 1000);
 
@@ -112,6 +134,30 @@ export default class MainScene extends Phaser.Scene {
     this.spawnAhead();
     this.spawner.group.setVelocityY(this.speed);
     this.spawner.recycleOffscreen(this.groundY + 200);
+  }
+
+  handleInput() {
+    // Jump
+    if (Phaser.Input.Keyboard.JustDown(this.cursors?.up) || 
+        Phaser.Input.Keyboard.JustDown(this.wasd?.W) ||
+        Phaser.Input.Keyboard.JustDown(this.wasd?.SPACE)) {
+      this.player.jump();
+    }
+    // Slide
+    if (Phaser.Input.Keyboard.JustDown(this.cursors?.down) || 
+        Phaser.Input.Keyboard.JustDown(this.wasd?.S)) {
+      this.player.slide();
+    }
+    // Left
+    if (Phaser.Input.Keyboard.JustDown(this.cursors?.left) || 
+        Phaser.Input.Keyboard.JustDown(this.wasd?.A)) {
+      this.player.moveLane(-1);
+    }
+    // Right
+    if (Phaser.Input.Keyboard.JustDown(this.cursors?.right) || 
+        Phaser.Input.Keyboard.JustDown(this.wasd?.D)) {
+      this.player.moveLane(1);
+    }
   }
 
   spawnAhead() {
@@ -138,25 +184,6 @@ export default class MainScene extends Phaser.Scene {
     const bonus = valueMap[type] ?? 40;
     useGameStore.setState((s) => ({ score: s.score + bonus, tokens: s.tokens + 1 }));
     spawnSpark(this, this.player.x, this.player.y - 20, 0x4ef0c5);
-  }
-
-  registerInputs() {
-    // Keyboard
-    this.input.keyboard?.on('keydown-UP', () => this.player.jump());
-    this.input.keyboard?.on('keydown-W', () => this.player.jump());
-    this.input.keyboard?.on('keydown-SPACE', () => this.player.jump());
-    this.input.keyboard?.on('keydown-DOWN', () => this.player.slide());
-    this.input.keyboard?.on('keydown-S', () => this.player.slide());
-    this.input.keyboard?.on('keydown-LEFT', () => this.player.moveLane(-1));
-    this.input.keyboard?.on('keydown-A', () => this.player.moveLane(-1));
-    this.input.keyboard?.on('keydown-RIGHT', () => this.player.moveLane(1));
-    this.input.keyboard?.on('keydown-D', () => this.player.moveLane(1));
-
-    // Swipe events from React
-    this.game.events.on('input:jump', () => this.player.jump());
-    this.game.events.on('input:slide', () => this.player.slide());
-    this.game.events.on('input:left', () => this.player.moveLane(-1));
-    this.game.events.on('input:right', () => this.player.moveLane(1));
   }
 
   triggerGameOver() {
