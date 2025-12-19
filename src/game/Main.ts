@@ -62,7 +62,7 @@ export default class MainScene extends Phaser.Scene {
       lane.setScrollFactor(0).setDepth(-5);
     });
 
-    // Ground line
+    // Ground
     this.add.rectangle(this.centerX, this.groundY + 30, this.scale.width, 60, 0x0a0612, 1)
       .setScrollFactor(0).setDepth(1);
     this.add.rectangle(this.centerX, this.groundY, this.scale.width, 4, 0x4ef0c5, 0.8)
@@ -109,7 +109,7 @@ export default class MainScene extends Phaser.Scene {
     this.game.events.on('input:left', () => this.player.moveLane(-1));
     this.game.events.on('input:right', () => this.player.moveLane(1));
 
-    // Start the run
+    // Start
     this.speed = 250;
     this.distance = 0;
     this.nextSpawnDistance = 100;
@@ -145,16 +145,9 @@ export default class MainScene extends Phaser.Scene {
       tokens: Math.floor(this.distance / 1000),
     });
 
-    // Spawn new stuff
     this.spawnByDistance();
-    
-    // Move all spawned objects down
     this.spawner.group.setVelocityY(this.speed);
-    
-    // Remove off-screen objects
     this.spawner.recycleOffscreen(this.groundY + 100);
-    
-    // Check collisions
     this.checkCollisions();
   }
 
@@ -162,17 +155,14 @@ export default class MainScene extends Phaser.Scene {
     while (this.distance >= this.nextSpawnDistance) {
       const chunk = pickChunk();
       
-      // Spawn obstacles at top of screen
       chunk.obstacles.forEach((o) => {
         o.lanes.forEach((lane) => {
           this.spawner.spawn('block', lane, -60);
         });
       });
       
-      // Spawn collectibles in gaps between obstacles
       for (let i = 0; i < chunk.collectibles; i++) {
         const lane = Phaser.Math.Between(0, 2);
-        // Spawn collectibles at different heights
         this.spawner.spawn('collectible', lane, -150 - i * 50);
       }
       
@@ -181,11 +171,8 @@ export default class MainScene extends Phaser.Scene {
   }
 
   checkCollisions() {
-    // Player hitbox (smaller than visual)
     const px = this.player.x;
     const py = this.player.y;
-    const playerHalfWidth = 12;
-    const playerHalfHeight = 20;
 
     this.spawner.group.getChildren().forEach((child) => {
       const sprite = child as Phaser.Physics.Arcade.Sprite;
@@ -195,35 +182,27 @@ export default class MainScene extends Phaser.Scene {
       const sx = sprite.x;
       const sy = sprite.y;
       
+      // Check if in same lane (within 40 pixels horizontally)
+      const sameLane = Math.abs(px - sx) < 40;
+      if (!sameLane) return;
+      
+      // Check if vertically close (within 50 pixels)
+      const close = Math.abs(py - sy) < 50;
+      if (!close) return;
+      
       if (key.startsWith('item-')) {
-        // Collectible - bigger pickup radius
-        const dist = Math.sqrt((px - sx) ** 2 + (py - sy) ** 2);
-        if (dist < 50) {
-          this.collect(key.replace('item-', ''));
-          spawnSpark(this, sx, sy, 0xffd700);
-          sprite.destroy();
-        }
+        // Collectible - pick it up
+        this.collect(key.replace('item-', ''));
+        spawnSpark(this, sx, sy, 0xffd700);
+        sprite.destroy();
       } else {
-        // Obstacle - precise collision
-        const obstacleHalfWidth = 20;
-        const obstacleHalfHeight = 25;
-        
-        // Check if horizontally aligned (same lane basically)
-        const horizOverlap = Math.abs(px - sx) < (playerHalfWidth + obstacleHalfWidth);
-        
-        // Check if vertically overlapping
-        // Player bottom vs obstacle top
-        const playerBottom = py + playerHalfHeight;
-        const obstacleTop = sy - obstacleHalfHeight;
-        const playerTop = py - playerHalfHeight;
-        const obstacleBottom = sy + obstacleHalfHeight;
-        
-        const vertOverlap = playerBottom > obstacleTop && playerTop < obstacleBottom;
-        
-        if (horizOverlap && vertOverlap) {
-          // Hit obstacle - game over
-          this.triggerGameOver();
+        // Obstacle - BUT if player is jumping, they're SAFE!
+        if (this.player.isJumping) {
+          // Player is in the air - obstacle passes harmlessly
+          return;
         }
+        // Player is on ground and hit obstacle - game over
+        this.triggerGameOver();
       }
     });
   }
