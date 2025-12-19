@@ -1,0 +1,12 @@
+﻿[package]
+name = "trench_runner"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "trench_runner"
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+anchor-lang = "0.30.1"
+anchor-spl = "0.30.1"

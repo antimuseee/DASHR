@@ -1,0 +1,9 @@
+﻿{
+  "name": "Trench Runner: Degen Dash",
+  "short_name": "TrenchRunner",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#05040a",
+  "theme_color": "#9b5cff",
+  "icons": []
+}
