@@ -30,7 +30,7 @@ export default function WalletUI() {
   const shortAddr = useMemo(() => {
     const addr = publicKey?.toBase58();
     if (!addr) return 'Not connected';
-    return ${addr.slice(0, 4)}...;
+    return `${addr.slice(0, 4)}...${addr.slice(-4)}`;
   }, [publicKey]);
 
   return (
