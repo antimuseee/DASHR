@@ -1,7 +1,7 @@
 ﻿import Phaser from 'phaser';
 import Player from './entities/Player';
 import Spawner from './entities/Obstacles';
-import { gameActions, useGameStore } from '../utils/store';
+import { useGameStore } from '../utils/store';
 import { spawnSpark } from '../utils/particles';
 
 interface ChunkConfig {
@@ -48,13 +48,13 @@ export default class MainScene extends Phaser.Scene {
 
     this.cameras.main.setBackgroundColor('#0a0418');
 
-    // Draw background gradient
+    // Background
     const bg = this.add.graphics();
     bg.fillGradientStyle(0x1a0f2f, 0x1a0f2f, 0x05040a, 0x05040a, 1);
     bg.fillRect(0, 0, this.scale.width, this.scale.height);
     bg.setScrollFactor(0).setDepth(-10);
 
-    // Draw 3 lanes
+    // 3 lanes
     const laneXs = [this.centerX - this.laneWidth, this.centerX, this.centerX + this.laneWidth];
     laneXs.forEach((x) => {
       const lane = this.add.rectangle(x, this.scale.height / 2, 90, this.scale.height, 0x9b5cff, 0.1);
@@ -74,10 +74,9 @@ export default class MainScene extends Phaser.Scene {
     this.physics.add.collider(this.player, this.spawner.group, () => this.triggerGameOver());
     this.spawner.handleCollect(this.player, (type) => this.collect(type));
 
-    // Direct DOM keyboard handler
+    // Keyboard
     this.keyHandler = (e: KeyboardEvent) => {
       if (!this.runActive) return;
-      console.log('Key pressed:', e.code);
       switch (e.code) {
         case 'ArrowUp':
         case 'KeyW':
@@ -104,33 +103,32 @@ export default class MainScene extends Phaser.Scene {
     };
     document.addEventListener('keydown', this.keyHandler);
 
-    // Swipe events from React
-    this.game.events.on('input:jump', () => { console.log('Jump event'); this.player.jump(); });
-    this.game.events.on('input:slide', () => { console.log('Slide event'); this.player.slide(); });
-    this.game.events.on('input:left', () => { console.log('Left event'); this.player.moveLane(-1); });
-    this.game.events.on('input:right', () => { console.log('Right event'); this.player.moveLane(1); });
+    // Swipe events
+    this.game.events.on('input:jump', () => this.player.jump());
+    this.game.events.on('input:slide', () => this.player.slide());
+    this.game.events.on('input:left', () => this.player.moveLane(-1));
+    this.game.events.on('input:right', () => this.player.moveLane(1));
 
-    this.startRun();
+    // Start the run
+    this.speed = 300;
+    this.distance = 0;
+    this.lastSpawnY = this.player.y;
+    this.runActive = true;
+
+    // Update store directly without triggering React re-render loop
+    useGameStore.setState({ phase: 'running', score: 0, distance: 0, multiplier: 1, tokens: 0 });
 
     this.scale.on('resize', this.handleResize, this);
-
     this.events.once('shutdown', () => {
       document.removeEventListener('keydown', this.keyHandler);
     });
+
+    console.log('Game started!');
   }
 
   handleResize(gameSize: Phaser.Structs.Size) {
     this.centerX = gameSize.width / 2;
     this.groundY = gameSize.height - 100;
-  }
-
-  startRun() {
-    this.speed = 300;
-    this.distance = 0;
-    this.lastSpawnY = this.player?.y ?? this.groundY - 40;
-    this.runActive = true;
-    console.log('Run started, runActive:', this.runActive);
-    gameActions.startRun();
   }
 
   restartRun() {
@@ -143,12 +141,12 @@ export default class MainScene extends Phaser.Scene {
     this.distance += (this.speed * delta) / 1000;
     this.speed += 5 * (delta / 1000);
 
-    useGameStore.setState((s) => ({
+    useGameStore.setState({
       distance: this.distance,
-      score: s.score + ((this.speed * delta) / 40) * s.multiplier,
+      score: useGameStore.getState().score + ((this.speed * delta) / 40) * useGameStore.getState().multiplier,
       multiplier: Math.min(5, 1 + this.distance / 2000),
       tokens: Math.floor(this.distance / 1000),
-    }));
+    });
 
     this.spawnAhead();
     this.spawner.group.setVelocityY(this.speed);
@@ -177,15 +175,17 @@ export default class MainScene extends Phaser.Scene {
   collect(type: string) {
     const valueMap: Record<string, number> = { coin: 50, wif: 80, bonk: 60, rome: 70, gem: 120 };
     const bonus = valueMap[type] ?? 40;
-    useGameStore.setState((s) => ({ score: s.score + bonus, tokens: s.tokens + 1 }));
+    useGameStore.setState({ score: useGameStore.getState().score + bonus, tokens: useGameStore.getState().tokens + 1 });
     spawnSpark(this, this.player.x, this.player.y - 20, 0x4ef0c5);
   }
 
   triggerGameOver() {
     if (!this.runActive) return;
     this.runActive = false;
-    const final = useGameStore.getState().score;
-    gameActions.gameOver(final, this.distance, Math.floor(this.distance / 1000));
+    const state = useGameStore.getState();
+    const best = Math.max(state.best, state.score);
+    localStorage.setItem('trench-best', String(best));
+    useGameStore.setState({ phase: 'gameover', best });
     this.spawner.group.setVelocityY(0);
   }
 }

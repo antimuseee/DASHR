@@ -4,12 +4,10 @@ import Boot from '../game/Boot';
 import Preload from '../game/Preload';
 import MainScene from '../game/Main';
 import { attachSwipe } from '../utils/swipes';
-import { useGameStore } from '../utils/store';
 
 export default function GameCanvas() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const phaserRef = useRef<Phaser.Game | null>(null);
-  const runId = useGameStore((s) => s.runId);
 
   useEffect(() => {
     if (!containerRef.current || phaserRef.current) return;
@@ -48,14 +46,6 @@ export default function GameCanvas() {
       phaserRef.current = null;
     };
   }, []);
-
-  useEffect(() => {
-    if (!phaserRef.current) return;
-    if (runId > 0) {
-      const mainScene = phaserRef.current.scene.getScene('Main') as MainScene | null;
-      mainScene?.restartRun?.();
-    }
-  }, [runId]);
 
   return <div ref={containerRef} className="game-host" />;
 }
