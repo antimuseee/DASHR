@@ -1,5 +1,4 @@
 ﻿import Phaser from 'phaser';
-import { spawnSpark } from '../../utils/particles';
 
 export type SpawnType = 'pit' | 'block' | 'collectible';
 
@@ -35,37 +34,17 @@ export default class Spawner {
     if (type === 'pit') key = 'obstacle-pit';
     if (type === 'collectible') key = Phaser.Utils.Array.GetRandom(collectibleKeys);
     
+    console.log('Spawning', type, 'at', x, y, 'key:', key);
+    
     const sprite = this.group.create(x, y, key) as Phaser.Physics.Arcade.Sprite;
     sprite.setImmovable(true);
     sprite.body?.setAllowGravity(false);
     sprite.setDepth(8);
     
-    if (type === 'block') {
-      // Tall obstacle - must jump over
-      sprite.setSize(40, 50);
-      sprite.setOffset(5, 5);
-    }
-    if (type === 'pit') {
-      // Low obstacle - must jump over (or slide won't help)
-      sprite.setSize(60, 15);
-      sprite.setOffset(5, 2);
-    }
     if (type === 'collectible') {
-      // Small hitbox for collectibles
-      sprite.setCircle(10, 2, 2);
-      // Make collectibles bob up and down
-      this.scene.tweens.add({
-        targets: sprite,
-        y: y - 10,
-        duration: 500,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut',
-      });
+      // Make collectibles slightly bigger and more visible
+      sprite.setScale(1.5);
     }
-    
-    // Mark type on sprite for collision handling
-    sprite.setData('type', type);
     
     return { sprite, type, lane } as SpawnedEntity;
   }
@@ -74,17 +53,6 @@ export default class Spawner {
     this.group.getChildren().forEach((child) => {
       const sprite = child as Phaser.Physics.Arcade.Sprite;
       if (sprite.y > maxY) sprite.destroy();
-    });
-  }
-
-  handleCollect(player: Phaser.Physics.Arcade.Sprite, cb: (type: string) => void) {
-    this.scene.physics.overlap(player, this.group, (_, obj) => {
-      const sprite = obj as Phaser.Physics.Arcade.Sprite;
-      const key = sprite.texture.key;
-      if (!key.startsWith('item-')) return;
-      spawnSpark(this.scene, sprite.x, sprite.y, 0xffd700);
-      sprite.destroy();
-      cb(key.replace('item-', ''));
     });
   }
 }
