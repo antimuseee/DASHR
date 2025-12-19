@@ -13,7 +13,7 @@ interface ChunkConfig {
 const chunks: ChunkConfig[] = [
   { weight: 4, obstacles: [{ type: 'block', lanes: [1] }], collectibles: 3 },
   { weight: 3, obstacles: [{ type: 'block', lanes: [0] }, { type: 'block', lanes: [2] }], collectibles: 2 },
-  { weight: 2, obstacles: [{ type: 'pit', lanes: [0, 2] }], collectibles: 4 },
+  { weight: 2, obstacles: [{ type: 'block', lanes: [0] }], collectibles: 4 },
 ];
 
 function pickChunk() {
@@ -29,7 +29,7 @@ function pickChunk() {
 export default class MainScene extends Phaser.Scene {
   player!: Player;
   spawner!: Spawner;
-  speed = 300;
+  speed = 250;
   distance = 0;
   nextSpawnDistance = 0;
   runActive = false;
@@ -63,7 +63,9 @@ export default class MainScene extends Phaser.Scene {
     });
 
     // Ground line
-    this.add.rectangle(this.centerX, this.groundY, this.scale.width, 8, 0x4ef0c5, 0.8)
+    this.add.rectangle(this.centerX, this.groundY + 30, this.scale.width, 60, 0x0a0612, 1)
+      .setScrollFactor(0).setDepth(1);
+    this.add.rectangle(this.centerX, this.groundY, this.scale.width, 4, 0x4ef0c5, 0.8)
       .setScrollFactor(0).setDepth(5);
 
     // Player
@@ -108,9 +110,9 @@ export default class MainScene extends Phaser.Scene {
     this.game.events.on('input:right', () => this.player.moveLane(1));
 
     // Start the run
-    this.speed = 300;
+    this.speed = 250;
     this.distance = 0;
-    this.nextSpawnDistance = 0;
+    this.nextSpawnDistance = 100;
     this.runActive = true;
 
     useGameStore.setState({ phase: 'running', score: 0, distance: 0, multiplier: 1, tokens: 0 });
@@ -134,16 +136,16 @@ export default class MainScene extends Phaser.Scene {
     if (!this.runActive) return;
 
     this.distance += (this.speed * delta) / 1000;
-    this.speed += 5 * (delta / 1000);
+    this.speed += 3 * (delta / 1000);
 
     useGameStore.setState({
       distance: this.distance,
-      score: useGameStore.getState().score + ((this.speed * delta) / 40) * useGameStore.getState().multiplier,
+      score: useGameStore.getState().score + ((this.speed * delta) / 50) * useGameStore.getState().multiplier,
       multiplier: Math.min(5, 1 + this.distance / 2000),
       tokens: Math.floor(this.distance / 1000),
     });
 
-    // Spawn new obstacles based on distance traveled
+    // Spawn new stuff
     this.spawnByDistance();
     
     // Move all spawned objects down
@@ -152,64 +154,76 @@ export default class MainScene extends Phaser.Scene {
     // Remove off-screen objects
     this.spawner.recycleOffscreen(this.groundY + 100);
     
-    // Check collisions and pickups
+    // Check collisions
     this.checkCollisions();
   }
 
   spawnByDistance() {
-    // Spawn a new chunk every 150-250 distance units
     while (this.distance >= this.nextSpawnDistance) {
       const chunk = pickChunk();
       
       // Spawn obstacles at top of screen
       chunk.obstacles.forEach((o) => {
         o.lanes.forEach((lane) => {
-          this.spawner.spawn(o.type, lane, -50);
+          this.spawner.spawn('block', lane, -60);
         });
       });
       
-      // Spawn collectibles slightly after obstacles
+      // Spawn collectibles in gaps between obstacles
       for (let i = 0; i < chunk.collectibles; i++) {
         const lane = Phaser.Math.Between(0, 2);
-        this.spawner.spawn('collectible', lane, -100 - i * 40);
+        // Spawn collectibles at different heights
+        this.spawner.spawn('collectible', lane, -150 - i * 50);
       }
       
-      this.nextSpawnDistance += Phaser.Math.Between(150, 250);
+      this.nextSpawnDistance += Phaser.Math.Between(200, 300);
     }
   }
 
   checkCollisions() {
-    const playerLeft = this.player.x - 15;
-    const playerRight = this.player.x + 15;
-    const playerTop = this.player.y - 25;
-    const playerBottom = this.player.y + 25;
+    // Player hitbox (smaller than visual)
+    const px = this.player.x;
+    const py = this.player.y;
+    const playerHalfWidth = 12;
+    const playerHalfHeight = 20;
 
     this.spawner.group.getChildren().forEach((child) => {
       const sprite = child as Phaser.Physics.Arcade.Sprite;
+      if (!sprite.active) return;
+      
       const key = sprite.texture.key;
+      const sx = sprite.x;
+      const sy = sprite.y;
       
-      const spriteLeft = sprite.x - 25;
-      const spriteRight = sprite.x + 25;
-      const spriteTop = sprite.y - 30;
-      const spriteBottom = sprite.y + 30;
-      
-      // Check horizontal overlap
-      const horizontalOverlap = playerRight > spriteLeft && playerLeft < spriteRight;
-      if (!horizontalOverlap) return;
-      
-      // Check vertical overlap
-      const verticalOverlap = playerBottom > spriteTop && playerTop < spriteBottom;
-      if (!verticalOverlap) return;
-      
-      // We have overlap!
       if (key.startsWith('item-')) {
-        // Collectible - pick it up
-        this.collect(key.replace('item-', ''));
-        spawnSpark(this, sprite.x, sprite.y, 0xffd700);
-        sprite.destroy();
+        // Collectible - bigger pickup radius
+        const dist = Math.sqrt((px - sx) ** 2 + (py - sy) ** 2);
+        if (dist < 50) {
+          this.collect(key.replace('item-', ''));
+          spawnSpark(this, sx, sy, 0xffd700);
+          sprite.destroy();
+        }
       } else {
-        // Obstacle - die!
-        this.triggerGameOver();
+        // Obstacle - precise collision
+        const obstacleHalfWidth = 20;
+        const obstacleHalfHeight = 25;
+        
+        // Check if horizontally aligned (same lane basically)
+        const horizOverlap = Math.abs(px - sx) < (playerHalfWidth + obstacleHalfWidth);
+        
+        // Check if vertically overlapping
+        // Player bottom vs obstacle top
+        const playerBottom = py + playerHalfHeight;
+        const obstacleTop = sy - obstacleHalfHeight;
+        const playerTop = py - playerHalfHeight;
+        const obstacleBottom = sy + obstacleHalfHeight;
+        
+        const vertOverlap = playerBottom > obstacleTop && playerTop < obstacleBottom;
+        
+        if (horizOverlap && vertOverlap) {
+          // Hit obstacle - game over
+          this.triggerGameOver();
+        }
       }
     });
   }
@@ -217,7 +231,8 @@ export default class MainScene extends Phaser.Scene {
   collect(type: string) {
     const valueMap: Record<string, number> = { coin: 50, wif: 80, bonk: 60, rome: 70, gem: 120 };
     const bonus = valueMap[type] ?? 40;
-    useGameStore.setState({ score: useGameStore.getState().score + bonus, tokens: useGameStore.getState().tokens + 1 });
+    const state = useGameStore.getState();
+    useGameStore.setState({ score: state.score + bonus, tokens: state.tokens + 1 });
   }
 
   triggerGameOver() {

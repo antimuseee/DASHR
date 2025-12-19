@@ -18,8 +18,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.setCollideWorldBounds(false);
     this.setDepth(10);
     
-    // Enable gravity for jumping
-    this.setGravityY(2500);
+    // Strong gravity for snappy jump
+    this.setGravityY(3000);
     
     this.setBodySize(30, 50);
     this.setOffset(5, 5);
@@ -34,14 +34,10 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   jump() {
-    // Can only jump if on ground
-    if (this.isJumping || this.isSliding) {
-      console.log('Cannot jump - isJumping:', this.isJumping, 'isSliding:', this.isSliding);
-      return;
-    }
-    console.log('JUMPING!');
+    if (this.isJumping || this.isSliding) return;
     this.isJumping = true;
-    this.setVelocityY(-900);
+    // Very strong jump - go way up!
+    this.setVelocityY(-1200);
   }
 
   slide() {
@@ -72,17 +68,19 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     
     // Move to target lane
     const targetX = this.getLaneX();
-    this.x = Phaser.Math.Linear(this.x, targetX, 0.2);
+    this.x = Phaser.Math.Linear(this.x, targetX, 0.25);
     
-    // Check if landed - only if falling down (positive velocity) and at/below ground
+    // Check if landed
     const vel = this.body?.velocity.y ?? 0;
     if (this.y >= this.groundY && vel >= 0) {
       this.y = this.groundY;
       this.setVelocityY(0);
-      if (this.isJumping) {
-        console.log('Landed!');
-        this.isJumping = false;
-      }
+      this.isJumping = false;
+    }
+    
+    // Don't go above screen
+    if (this.y < 50) {
+      this.y = 50;
     }
   }
 }
