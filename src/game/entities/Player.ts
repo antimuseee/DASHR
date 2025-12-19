@@ -26,22 +26,26 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       repeat: -1,
     });
     this.play('run');
+    console.log('Player created at', x, y, 'laneWidth:', laneWidth);
   }
 
   jump() {
     if (this.isSliding) return;
+    console.log('Player jumping from y:', this.y);
     this.scene.tweens.add({
       targets: this,
-      y: this.y - 120,
-      duration: 250,
+      y: this.y - 150,
+      duration: 300,
       ease: 'Quad.easeOut',
       yoyo: true,
+      onComplete: () => console.log('Jump complete, y:', this.y),
     });
   }
 
   slide() {
     if (this.isSliding) return;
     this.isSliding = true;
+    console.log('Player sliding');
     this.setTexture('player-slide');
     this.setBodySize(50, 24);
     this.setOffset(-4, 6);
@@ -54,14 +58,24 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   moveLane(dir: -1 | 1) {
+    const oldLane = this.laneIndex;
     const target = Phaser.Math.Clamp(this.laneIndex + dir, 0, 2);
     this.laneIndex = target;
+    console.log('Lane change:', oldLane, '->', this.laneIndex, 'x will go to:', this.getLaneX());
+  }
+
+  getLaneX() {
+    const lanes = [this.centerX - this.laneWidth, this.centerX, this.centerX + this.laneWidth];
+    return lanes[this.laneIndex];
   }
 
   preUpdate(time: number, delta: number) {
     super.preUpdate(time, delta);
-    const lanes = [this.centerX - this.laneWidth, this.centerX, this.centerX + this.laneWidth];
-    const targetX = lanes[this.laneIndex];
+    const targetX = this.getLaneX();
+    const oldX = this.x;
     this.x = Phaser.Math.Linear(this.x, targetX, 0.2);
+    if (Math.abs(oldX - this.x) > 1) {
+      console.log('Moving x:', oldX.toFixed(0), '->', this.x.toFixed(0), 'target:', targetX);
+    }
   }
 }
