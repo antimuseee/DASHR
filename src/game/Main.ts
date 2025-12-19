@@ -37,6 +37,8 @@ export default class MainScene extends Phaser.Scene {
   groundY = 0;
   laneWidth = 100;
   private keyHandler!: (e: KeyboardEvent) => void;
+  private gridLines: Phaser.GameObjects.Graphics[] = [];
+  private bgElements: Phaser.GameObjects.Container[] = [];
 
   constructor() {
     super('Main');
@@ -44,32 +46,16 @@ export default class MainScene extends Phaser.Scene {
 
   create() {
     this.centerX = this.scale.width / 2;
-    this.groundY = this.scale.height - 100;
+    this.groundY = this.scale.height - 120;
 
-    this.cameras.main.setBackgroundColor('#0a0418');
-
-    // Background
-    const bg = this.add.graphics();
-    bg.fillGradientStyle(0x1a0f2f, 0x1a0f2f, 0x05040a, 0x05040a, 1);
-    bg.fillRect(0, 0, this.scale.width, this.scale.height);
-    bg.setScrollFactor(0).setDepth(-10);
-
-    // 3 lanes
-    const laneXs = [this.centerX - this.laneWidth, this.centerX, this.centerX + this.laneWidth];
-    laneXs.forEach((x) => {
-      const lane = this.add.rectangle(x, this.scale.height / 2, 90, this.scale.height, 0x9b5cff, 0.1);
-      lane.setStrokeStyle(2, 0x9b5cff, 0.3);
-      lane.setScrollFactor(0).setDepth(-5);
-    });
-
-    // Ground
-    this.add.rectangle(this.centerX, this.groundY + 30, this.scale.width, 60, 0x0a0612, 1)
-      .setScrollFactor(0).setDepth(1);
-    this.add.rectangle(this.centerX, this.groundY, this.scale.width, 4, 0x4ef0c5, 0.8)
-      .setScrollFactor(0).setDepth(5);
+    // CYBERPUNK BACKGROUND
+    this.createBackground();
+    
+    // NEON GROUND with grid
+    this.createGround();
 
     // Player
-    this.player = new Player(this, this.centerX, this.groundY - 30, this.laneWidth);
+    this.player = new Player(this, this.centerX, this.groundY - 35, this.laneWidth);
     
     // Spawner
     this.spawner = new Spawner(this, this.centerX, this.laneWidth);
@@ -123,9 +109,124 @@ export default class MainScene extends Phaser.Scene {
     });
   }
 
+  createBackground() {
+    const w = this.scale.width;
+    const h = this.scale.height;
+    
+    // Dark gradient sky
+    const bg = this.add.graphics();
+    bg.fillGradientStyle(0x0a0015, 0x0a0015, 0x1a0a2e, 0x1a0a2e, 1);
+    bg.fillRect(0, 0, w, h);
+    bg.setScrollFactor(0).setDepth(-100);
+
+    // Distant city silhouette
+    const city = this.add.graphics();
+    city.fillStyle(0x0d0d1a, 1);
+    for (let i = 0; i < 15; i++) {
+      const bx = i * (w / 12) - 20;
+      const bh = 100 + Math.random() * 200;
+      const bw = 30 + Math.random() * 50;
+      city.fillRect(bx, h * 0.3 - bh, bw, bh);
+      
+      // Random lit windows
+      city.fillStyle(0x9b5cff, 0.3 + Math.random() * 0.4);
+      for (let j = 0; j < 5; j++) {
+        if (Math.random() > 0.5) {
+          city.fillRect(bx + 5 + Math.random() * (bw - 15), h * 0.3 - bh + 10 + j * 30, 8, 12);
+        }
+      }
+      city.fillStyle(0x0d0d1a, 1);
+    }
+    city.setScrollFactor(0).setDepth(-90);
+
+    // Floating neon signs
+    const signs = ['PUMP', 'MOON', 'HODL', 'APE'];
+    signs.forEach((text, i) => {
+      const sign = this.add.text(
+        50 + (i * w / 4),
+        80 + Math.random() * 100,
+        text,
+        { 
+          fontSize: '24px',
+          fontFamily: 'Arial Black',
+          color: i % 2 === 0 ? '#ff00ff' : '#00ffff',
+          stroke: '#000000',
+          strokeThickness: 4,
+        }
+      );
+      sign.setScrollFactor(0).setDepth(-80).setAlpha(0.7);
+      
+      // Glow effect via tween
+      this.tweens.add({
+        targets: sign,
+        alpha: 0.4,
+        duration: 1000 + Math.random() * 1000,
+        yoyo: true,
+        repeat: -1,
+      });
+    });
+
+    // Purple/pink fog at horizon
+    const fog = this.add.graphics();
+    fog.fillStyle(0x9b5cff, 0.15);
+    fog.fillRect(0, h * 0.25, w, h * 0.2);
+    fog.fillStyle(0xff00ff, 0.1);
+    fog.fillRect(0, h * 0.3, w, h * 0.15);
+    fog.setScrollFactor(0).setDepth(-85);
+  }
+
+  createGround() {
+    const w = this.scale.width;
+    const h = this.scale.height;
+
+    // Main ground platform
+    const ground = this.add.graphics();
+    ground.fillGradientStyle(0x1a0a2e, 0x1a0a2e, 0x0a0015, 0x0a0015, 1);
+    ground.fillRect(0, this.groundY - 20, w, h - this.groundY + 50);
+    ground.setScrollFactor(0).setDepth(-10);
+
+    // Neon grid lines on ground (perspective effect)
+    const grid = this.add.graphics();
+    grid.lineStyle(2, 0xff00ff, 0.4);
+    
+    // Horizontal lines
+    for (let i = 0; i < 8; i++) {
+      const y = this.groundY + i * 15;
+      const alpha = 0.4 - i * 0.04;
+      grid.lineStyle(2, 0xff00ff, alpha);
+      grid.lineBetween(0, y, w, y);
+    }
+    
+    // Vertical lane dividers with glow
+    const laneXs = [this.centerX - this.laneWidth, this.centerX, this.centerX + this.laneWidth];
+    laneXs.forEach((x) => {
+      grid.lineStyle(3, 0x00ffff, 0.3);
+      grid.lineBetween(x, 0, x, this.groundY);
+      grid.lineStyle(1, 0x00ffff, 0.6);
+      grid.lineBetween(x, 0, x, this.groundY);
+    });
+    
+    grid.setScrollFactor(0).setDepth(-5);
+
+    // Glowing edge line
+    const edgeLine = this.add.graphics();
+    edgeLine.lineStyle(4, 0x00ffff, 0.8);
+    edgeLine.lineBetween(0, this.groundY - 2, w, this.groundY - 2);
+    edgeLine.lineStyle(8, 0x00ffff, 0.2);
+    edgeLine.lineBetween(0, this.groundY - 2, w, this.groundY - 2);
+    edgeLine.setScrollFactor(0).setDepth(5);
+
+    // Side rails glow
+    const rails = this.add.graphics();
+    rails.lineStyle(3, 0x9b5cff, 0.5);
+    rails.lineBetween(this.centerX - this.laneWidth * 1.8, 0, this.centerX - this.laneWidth * 1.8, h);
+    rails.lineBetween(this.centerX + this.laneWidth * 1.8, 0, this.centerX + this.laneWidth * 1.8, h);
+    rails.setScrollFactor(0).setDepth(-8);
+  }
+
   handleResize(gameSize: Phaser.Structs.Size) {
     this.centerX = gameSize.width / 2;
-    this.groundY = gameSize.height - 100;
+    this.groundY = gameSize.height - 120;
   }
 
   restartRun() {
@@ -182,26 +283,20 @@ export default class MainScene extends Phaser.Scene {
       const sx = sprite.x;
       const sy = sprite.y;
       
-      // Check if in same lane (within 40 pixels horizontally)
       const sameLane = Math.abs(px - sx) < 40;
       if (!sameLane) return;
       
-      // Check if vertically close (within 50 pixels)
       const close = Math.abs(py - sy) < 50;
       if (!close) return;
       
       if (key.startsWith('item-')) {
-        // Collectible - pick it up
         this.collect(key.replace('item-', ''));
         spawnSpark(this, sx, sy, 0xffd700);
         sprite.destroy();
       } else {
-        // Obstacle - BUT if player is jumping, they're SAFE!
         if (this.player.isJumping) {
-          // Player is in the air - obstacle passes harmlessly
           return;
         }
-        // Player is on ground and hit obstacle - game over
         this.triggerGameOver();
       }
     });

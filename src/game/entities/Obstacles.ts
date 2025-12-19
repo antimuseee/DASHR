@@ -34,16 +34,33 @@ export default class Spawner {
     if (type === 'pit') key = 'obstacle-pit';
     if (type === 'collectible') key = Phaser.Utils.Array.GetRandom(collectibleKeys);
     
-    console.log('Spawning', type, 'at', x, y, 'key:', key);
-    
     const sprite = this.group.create(x, y, key) as Phaser.Physics.Arcade.Sprite;
     sprite.setImmovable(true);
     sprite.body?.setAllowGravity(false);
     sprite.setDepth(8);
     
     if (type === 'collectible') {
-      // Make collectibles slightly bigger and more visible
-      sprite.setScale(1.5);
+      sprite.setScale(1.3);
+      // Add floating animation
+      this.scene.tweens.add({
+        targets: sprite,
+        scaleX: 1.5,
+        scaleY: 1.5,
+        duration: 400,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
+      // Add rotation
+      this.scene.tweens.add({
+        targets: sprite,
+        angle: 360,
+        duration: 2000,
+        repeat: -1,
+      });
+    } else {
+      // Obstacles have warning glow
+      sprite.setScale(1.2);
     }
     
     return { sprite, type, lane } as SpawnedEntity;

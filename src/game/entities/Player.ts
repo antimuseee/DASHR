@@ -17,12 +17,19 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
     this.setCollideWorldBounds(false);
     this.setDepth(10);
+    this.setScale(1.2); // Slightly bigger player
     
-    // Strong gravity for snappy jump
+    // Gravity for jumping
     this.setGravityY(3000);
     
-    this.setBodySize(30, 50);
-    this.setOffset(5, 5);
+    this.setBodySize(25, 55);
+    this.setOffset(7, 5);
+    
+    // Add glow effect behind player
+    const glow = scene.add.graphics();
+    glow.fillStyle(0x9b5cff, 0.3);
+    glow.fillCircle(0, 0, 30);
+    glow.setDepth(9);
     
     this.anims.create({
       key: 'run',
@@ -36,7 +43,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   jump() {
     if (this.isJumping || this.isSliding) return;
     this.isJumping = true;
-    // Very strong jump - go way up!
     this.setVelocityY(-1200);
   }
 
@@ -44,13 +50,13 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.isSliding || this.isJumping) return;
     this.isSliding = true;
     this.setTexture('player-slide');
-    this.setBodySize(50, 24);
-    this.setOffset(-4, 30);
+    this.setBodySize(50, 20);
+    this.setOffset(-4, 5);
     this.scene.time.delayedCall(600, () => {
       this.isSliding = false;
       this.setTexture('player-run-0');
-      this.setBodySize(30, 50);
-      this.setOffset(5, 5);
+      this.setBodySize(25, 55);
+      this.setOffset(7, 5);
     });
   }
 
@@ -66,11 +72,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   preUpdate(time: number, delta: number) {
     super.preUpdate(time, delta);
     
-    // Move to target lane
     const targetX = this.getLaneX();
     this.x = Phaser.Math.Linear(this.x, targetX, 0.25);
     
-    // Check if landed
     const vel = this.body?.velocity.y ?? 0;
     if (this.y >= this.groundY && vel >= 0) {
       this.y = this.groundY;
@@ -78,7 +82,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       this.isJumping = false;
     }
     
-    // Don't go above screen
     if (this.y < 50) {
       this.y = 50;
     }
