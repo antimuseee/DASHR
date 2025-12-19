@@ -2,18 +2,23 @@
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
   laneIndex = 1;
-  lanes = [-80, 0, 80];
+  laneWidth: number;
+  centerX: number;
   isSliding = false;
-  baseY = 500;
 
-  constructor(scene: Phaser.Scene, x: number, y: number) {
+  constructor(scene: Phaser.Scene, x: number, y: number, laneWidth: number) {
     super(scene, x, y, 'player-run-0');
+    this.centerX = x;
+    this.laneWidth = laneWidth;
     scene.add.existing(this);
     scene.physics.add.existing(this);
-    this.setCollideWorldBounds(true);
+    this.setCollideWorldBounds(false);
     this.setDepth(10);
-    this.setBodySize(24, 50);
-    this.setOffset(8, 6);
+    this.setGravityY(0);
+    this.body?.setAllowGravity(false);
+    this.setBodySize(30, 50);
+    this.setOffset(5, 5);
+    
     this.anims.create({
       key: 'run',
       frames: Array.from({ length: 5 }).map((_, i) => ({ key: `player-run-${i}` })),
@@ -24,8 +29,14 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   jump() {
-    if (!this.body?.blocking.down) return;
-    this.setVelocityY(-720);
+    if (this.isSliding) return;
+    this.scene.tweens.add({
+      targets: this,
+      y: this.y - 120,
+      duration: 250,
+      ease: 'Quad.easeOut',
+      yoyo: true,
+    });
   }
 
   slide() {
@@ -34,22 +45,23 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.setTexture('player-slide');
     this.setBodySize(50, 24);
     this.setOffset(-4, 6);
-    this.scene.time.delayedCall(800, () => {
+    this.scene.time.delayedCall(600, () => {
       this.isSliding = false;
       this.setTexture('player-run-0');
-      this.setBodySize(24, 50);
-      this.setOffset(8, 6);
+      this.setBodySize(30, 50);
+      this.setOffset(5, 5);
     });
   }
 
   moveLane(dir: -1 | 1) {
-    const target = Phaser.Math.Clamp(this.laneIndex + dir, 0, this.lanes.length - 1);
+    const target = Phaser.Math.Clamp(this.laneIndex + dir, 0, 2);
     this.laneIndex = target;
   }
 
   preUpdate(time: number, delta: number) {
     super.preUpdate(time, delta);
-    const targetX = 180 + this.lanes[this.laneIndex];
-    this.x = Phaser.Math.Linear(this.x, targetX, 0.25);
+    const lanes = [this.centerX - this.laneWidth, this.centerX, this.centerX + this.laneWidth];
+    const targetX = lanes[this.laneIndex];
+    this.x = Phaser.Math.Linear(this.x, targetX, 0.2);
   }
 }

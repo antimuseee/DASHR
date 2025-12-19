@@ -14,28 +14,52 @@ const collectibleKeys = ['item-coin', 'item-wif', 'item-bonk', 'item-rome', 'ite
 export default class Spawner {
   scene: Phaser.Scene;
   group: Phaser.Physics.Arcade.Group;
+  centerX: number;
+  laneWidth: number;
 
-  constructor(scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene, centerX: number, laneWidth: number) {
     this.scene = scene;
+    this.centerX = centerX;
+    this.laneWidth = laneWidth;
     this.group = scene.physics.add.group();
   }
 
+  getLaneX(lane: number) {
+    const lanes = [this.centerX - this.laneWidth, this.centerX, this.centerX + this.laneWidth];
+    return lanes[lane];
+  }
+
   spawn(type: SpawnType, lane: number, y: number) {
-    const x = 180 + [-80, 0, 80][lane];
+    const x = this.getLaneX(lane);
     let key = 'obstacle-block';
     if (type === 'pit') key = 'obstacle-pit';
     if (type === 'collectible') key = Phaser.Utils.Array.GetRandom(collectibleKeys);
+    
     const sprite = this.group.create(x, y, key) as Phaser.Physics.Arcade.Sprite;
     sprite.setImmovable(true);
-    if (type === 'pit') sprite.setSize(60, 10).setOffset(0, 10);
-    if (type === 'collectible') sprite.setCircle(10, 0, 0).setVelocityY(0);
+    sprite.body?.setAllowGravity(false);
+    sprite.setDepth(8);
+    
+    if (type === 'pit') {
+      sprite.setSize(70, 15).setOffset(0, 5);
+    }
+    if (type === 'collectible') {
+      sprite.setCircle(10, 0, 0);
+      // Make collectibles spin
+      this.scene.tweens.add({
+        targets: sprite,
+        angle: 360,
+        duration: 1500,
+        repeat: -1,
+      });
+    }
     return { sprite, type, lane } as SpawnedEntity;
   }
 
-  recycleOffscreen() {
+  recycleOffscreen(maxY: number) {
     this.group.getChildren().forEach((child) => {
       const sprite = child as Phaser.Physics.Arcade.Sprite;
-      if (sprite.y > 900) sprite.destroy();
+      if (sprite.y > maxY) sprite.destroy();
     });
   }
 

@@ -4,7 +4,7 @@ import Boot from '../game/Boot';
 import Preload from '../game/Preload';
 import MainScene from '../game/Main';
 import { attachSwipe } from '../utils/swipes';
-import { gameActions, useGameStore } from '../utils/store';
+import { useGameStore } from '../utils/store';
 
 export default function GameCanvas() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -17,15 +17,15 @@ export default function GameCanvas() {
     const game = new Phaser.Game({
       type: Phaser.CANVAS,
       parent: containerRef.current,
-      width: 360,
-      height: 640,
+      width: window.innerWidth,
+      height: window.innerHeight,
       backgroundColor: '#070513',
       physics: {
         default: 'arcade',
-        arcade: { gravity: { y: 1400 }, debug: false },
+        arcade: { gravity: { x: 0, y: 1400 }, debug: false },
       },
       scale: {
-        mode: Phaser.Scale.ENVELOP,
+        mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH,
       },
       render: { pixelArt: true },
@@ -41,13 +41,8 @@ export default function GameCanvas() {
       onRight: () => game.events.emit('input:right'),
     });
 
-    const onResize = () => game.scale.resize(window.innerWidth, window.innerHeight);
-    window.addEventListener('resize', onResize);
-    onResize();
-
     return () => {
       destroySwipe();
-      window.removeEventListener('resize', onResize);
       game.destroy(true);
       phaserRef.current = null;
     };
@@ -56,13 +51,10 @@ export default function GameCanvas() {
   useEffect(() => {
     if (!phaserRef.current) return;
     if (runId > 0) {
-      phaserRef.current.scene.getScenes(true).forEach((s) => {
-        if (s.scene.key === 'Main') {
-          (s as unknown as { restartRun: () => void }).restartRun?.();
-        }
-      });
+      const mainScene = phaserRef.current.scene.getScene('Main') as MainScene | null;
+      mainScene?.restartRun?.();
     }
   }, [runId]);
 
-  return <div ref={containerRef} className="game-host" aria-label="Trench Runner game canvas" />;
+  return <div ref={containerRef} className="game-host" />;
 }
