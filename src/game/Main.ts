@@ -71,8 +71,28 @@ export default class MainScene extends Phaser.Scene {
     
     // Spawner
     this.spawner = new Spawner(this, this.centerX, this.laneWidth);
-    this.physics.add.collider(this.player, this.spawner.group, () => this.triggerGameOver());
-    this.spawner.handleCollect(this.player, (type) => this.collect(type));
+    
+    // Collision with obstacles - check if player is actually hitting (not above)
+    this.physics.add.overlap(this.player, this.spawner.group, (playerObj, obstacleObj) => {
+      const player = playerObj as Player;
+      const obstacle = obstacleObj as Phaser.Physics.Arcade.Sprite;
+      
+      // Only die if it's an obstacle (not collectible)
+      const key = obstacle.texture.key;
+      if (key.startsWith('item-')) return; // It's a collectible, handle separately
+      
+      // Check if player's feet are above obstacle's top
+      const playerBottom = player.y + 25; // player height is ~50, so bottom is y + 25
+      const obstacleTop = obstacle.y - 30; // obstacle height is ~60, so top is y - 30
+      
+      if (playerBottom < obstacleTop) {
+        // Player is above the obstacle - safe!
+        return;
+      }
+      
+      // Player hit the obstacle
+      this.triggerGameOver();
+    });
 
     // Keyboard
     this.keyHandler = (e: KeyboardEvent) => {
@@ -115,15 +135,12 @@ export default class MainScene extends Phaser.Scene {
     this.lastSpawnY = this.player.y;
     this.runActive = true;
 
-    // Update store directly without triggering React re-render loop
     useGameStore.setState({ phase: 'running', score: 0, distance: 0, multiplier: 1, tokens: 0 });
 
     this.scale.on('resize', this.handleResize, this);
     this.events.once('shutdown', () => {
       document.removeEventListener('keydown', this.keyHandler);
     });
-
-    console.log('Game started!');
   }
 
   handleResize(gameSize: Phaser.Structs.Size) {
@@ -151,6 +168,28 @@ export default class MainScene extends Phaser.Scene {
     this.spawnAhead();
     this.spawner.group.setVelocityY(this.speed);
     this.spawner.recycleOffscreen(this.groundY + 200);
+    
+    // Check for collectible pickups
+    this.checkCollectibles();
+  }
+
+  checkCollectibles() {
+    this.spawner.group.getChildren().forEach((child) => {
+      const sprite = child as Phaser.Physics.Arcade.Sprite;
+      const key = sprite.texture.key;
+      if (!key.startsWith('item-')) return;
+      
+      // Check distance to player
+      const dx = Math.abs(sprite.x - this.player.x);
+      const dy = Math.abs(sprite.y - this.player.y);
+      
+      if (dx < 40 && dy < 50) {
+        // Collect it!
+        this.collect(key.replace('item-', ''));
+        spawnSpark(this, sprite.x, sprite.y, 0xffd700);
+        sprite.destroy();
+      }
+    });
   }
 
   spawnAhead() {
@@ -176,7 +215,6 @@ export default class MainScene extends Phaser.Scene {
     const valueMap: Record<string, number> = { coin: 50, wif: 80, bonk: 60, rome: 70, gem: 120 };
     const bonus = valueMap[type] ?? 40;
     useGameStore.setState({ score: useGameStore.getState().score + bonus, tokens: useGameStore.getState().tokens + 1 });
-    spawnSpark(this, this.player.x, this.player.y - 20, 0x4ef0c5);
   }
 
   triggerGameOver() {
