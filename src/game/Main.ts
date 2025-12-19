@@ -76,7 +76,7 @@ export default class MainScene extends Phaser.Scene {
   startRun() {
     this.speed = 200;
     this.distance = 0;
-    this.lastSpawnY = 0;
+    this.lastSpawnY = this.player?.y ?? 480;
     this.runActive = true;
     gameActions.startRun();
   }
@@ -110,7 +110,7 @@ export default class MainScene extends Phaser.Scene {
     }));
 
     this.spawnAhead();
-    this.spawner.group.setVelocityY(this.speed);
+    this.spawner.group.setVelocityY(-this.speed);
     this.spawner.recycleOffscreen();
 
     this.cameras.main.scrollY = this.player.y - 320;
@@ -121,20 +121,20 @@ export default class MainScene extends Phaser.Scene {
   }
 
   spawnAhead() {
-    const buffer = 600;
-    while (this.lastSpawnY > this.player.y - buffer) {
-      this.lastSpawnY -= Phaser.Math.Between(160, 240);
+    const buffer = 900;
+    while (this.lastSpawnY < this.player.y + buffer) {
+      this.lastSpawnY += Phaser.Math.Between(160, 240);
       const chunk = pickChunk();
       chunk.obstacles.forEach((o) => {
         o.lanes.forEach((lane) => {
           const entity = this.spawner.spawn(o.type, lane, this.lastSpawnY);
-          entity.sprite.setVelocityY(this.speed);
+          entity.sprite.setVelocityY(-this.speed);
         });
       });
       for (let i = 0; i < chunk.collectibles; i++) {
         const lane = Phaser.Math.Between(0, 2);
         const entity = this.spawner.spawn('collectible', lane, this.lastSpawnY - 60 - i * 10);
-        entity.sprite.setVelocityY(this.speed * 0.8);
+        entity.sprite.setVelocityY(-this.speed * 0.8);
       }
     }
   }

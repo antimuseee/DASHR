@@ -5,9 +5,11 @@ function TitleMenu() {
     <div className="center-bottom menus">
       <div className="menu-card">
         <h2>Trench Runner: Degen Dash</h2>
-        <p>Swipe to survive neon Solana trenches. Collect tokens, avoid rugs.</p>
+        <p>Swipe up to jump, down to slide, left/right to switch lanes.</p>
         <button className="btn" onClick={gameActions.startRun}>Play</button>
-        <button className="btn secondary" onClick={() => alert('Shop coming soon: cosmetics & trails with TT')}>Shop</button>
+        <button className="btn secondary" onClick={() => alert('Shop coming soon: cosmetics & trails with TT')}>
+          Shop
+        </button>
       </div>
     </div>
   );
@@ -18,7 +20,7 @@ function PauseMenu() {
     <div className="center-bottom menus">
       <div className="menu-card">
         <h3>Paused</h3>
-        <p>Swipe up to jump, down to slide, left/right to lane switch.</p>
+        <p>Swipe up to jump, down to slide, left/right to change lanes.</p>
         <button className="btn" onClick={gameActions.resume}>Resume</button>
         <button className="btn secondary" onClick={gameActions.startRun}>Restart</button>
       </div>
@@ -57,7 +59,7 @@ export default function Menus({ phase }: { phase: string }) {
       {phase === 'running' && (
         <div className="center-bottom">
           <div className="menu-card" style={{ padding: '8px 12px' }}>
-            Swipe: â†‘ jump â€¢ â†“ slide â€¢ â†/â†’ lanes
+            Swipe: up = jump â€¢ down = slide â€¢ left/right = lanes
           </div>
         </div>
       )}
