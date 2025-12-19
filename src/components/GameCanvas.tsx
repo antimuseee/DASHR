@@ -5,6 +5,13 @@ import Preload from '../game/Preload';
 import MainScene from '../game/Main';
 import { attachSwipe } from '../utils/swipes';
 
+// Store game reference globally so menus can restart
+declare global {
+  interface Window {
+    phaserGame: Phaser.Game | null;
+  }
+}
+
 export default function GameCanvas() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const phaserRef = useRef<Phaser.Game | null>(null);
@@ -31,6 +38,7 @@ export default function GameCanvas() {
     });
 
     phaserRef.current = game;
+    window.phaserGame = game;
 
     // Swipe controls for mobile
     const destroySwipe = attachSwipe(containerRef.current, {
@@ -42,6 +50,7 @@ export default function GameCanvas() {
 
     return () => {
       destroySwipe();
+      window.phaserGame = null;
       game.destroy(true);
       phaserRef.current = null;
     };

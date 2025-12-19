@@ -1,4 +1,18 @@
-﻿import { gameActions, useGameStore } from '../utils/store';
+﻿import { useGameStore } from '../utils/store';
+
+function restartGame() {
+  const game = window.phaserGame;
+  if (game) {
+    const mainScene = game.scene.getScene('Main');
+    if (mainScene) {
+      mainScene.scene.restart();
+    }
+  }
+}
+
+function backToTitle() {
+  useGameStore.setState({ phase: 'title' });
+}
 
 function TitleMenu() {
   return (
@@ -6,7 +20,7 @@ function TitleMenu() {
       <div className="menu-card">
         <h2>Trench Runner: Degen Dash</h2>
         <p>Arrow keys or WASD to move. Space/Up to jump, Down to slide.</p>
-        <button className="btn" onClick={gameActions.startRun}>Play</button>
+        <button className="btn" onClick={restartGame}>Play</button>
         <button className="btn secondary" onClick={() => alert('Shop coming soon!')}>Shop</button>
       </div>
     </div>
@@ -19,8 +33,8 @@ function PauseMenu() {
       <div className="menu-card">
         <h3>Paused</h3>
         <p>Arrow keys or WASD. Space/Up = jump, Down = slide.</p>
-        <button className="btn" onClick={gameActions.resume}>Resume</button>
-        <button className="btn secondary" onClick={gameActions.startRun}>Restart</button>
+        <button className="btn" onClick={restartGame}>Resume</button>
+        <button className="btn secondary" onClick={restartGame}>Restart</button>
       </div>
     </div>
   );
@@ -34,8 +48,8 @@ function GameOver() {
         <h3>Run Over</h3>
         <p>Score: {score.toFixed(0)} | Distance: {distance.toFixed(0)}m | TT: {tokens.toFixed(0)}</p>
         <p>Best: {best.toFixed(0)}</p>
-        <button className="btn" onClick={gameActions.startRun}>Replay</button>
-        <button className="btn secondary" onClick={gameActions.backToTitle}>Back to Title</button>
+        <button className="btn" onClick={restartGame}>Replay</button>
+        <button className="btn secondary" onClick={backToTitle}>Back to Title</button>
       </div>
     </div>
   );
