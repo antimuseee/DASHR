@@ -16,8 +16,12 @@ export default class Preload extends Phaser.Scene {
     const barHeight = 2.8 * scale;
     const slant = 3 * scale;
     const gap = 4.2 * scale;
-    const offset = 2.5 * scale;
+    const sOffset = 2.8 * scale; // The shift that creates the S
     
+    // To center the WHOLE logo (Top, Mid, Bot) on 'cx', 
+    // we must adjust the base center so the average horizontal position is 0.
+    const baseCenter = cx - sOffset / 3;
+
     // Total vertical span of the logo for gradient calculation
     const logoTop = cy - gap - barHeight / 2;
     const logoBot = cy + gap + barHeight / 2;
@@ -26,7 +30,7 @@ export default class Preload extends Phaser.Scene {
     // Helper to get exact color at any Y coordinate (Teal to Purple interpolation)
     const getColorAtY = (y: number) => {
       const t = Phaser.Math.Clamp((y - logoTop) / logoHeight, 0, 1);
-      // Interpolate R, G, B manually for maximum precision
+      // Official Solana Teal (0x14F195) to Purple (0x9945FF)
       const r = Math.floor(0x14 + (0x99 - 0x14) * t);
       const g_val = Math.floor(0xf1 + (0x45 - 0xf1) * t);
       const b = Math.floor(0x95 + (0xff - 0x95) * t);
@@ -42,10 +46,10 @@ export default class Preload extends Phaser.Scene {
         const currentY = y + h_off;
         const color = getColorAtY(currentY);
         
-        // Calculate slant offset for this specific scan-line
-        // Top edge (h_off = -halfH) is shifted right by 'slant'
+        // Correct Slant (/ direction): 
+        // Top of bar (h_off = -halfH) is shifted LEFT (-slant)
         const t_slant = (h_off + halfH) / barHeight; 
-        const currentSlant = slant * (1 - t_slant);
+        const currentSlant = -slant * (1 - t_slant);
         
         g.lineStyle(0.3, color, 1);
         g.lineBetween(
@@ -58,9 +62,9 @@ export default class Preload extends Phaser.Scene {
     };
 
     // Draw the three bars that form the S pattern
-    drawBar(cx + offset, cy - gap); // TOP
-    drawBar(cx - offset, cy);       // MIDDLE
-    drawBar(cx + offset, cy + gap); // BOTTOM
+    drawBar(baseCenter + sOffset, cy - gap); // TOP (shifted right)
+    drawBar(baseCenter - sOffset, cy);       // MIDDLE (shifted left)
+    drawBar(baseCenter + sOffset, cy + gap); // BOTTOM (shifted right)
   }
 
   createTextures() {
