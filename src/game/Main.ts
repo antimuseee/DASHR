@@ -325,8 +325,8 @@ export default class MainScene extends Phaser.Scene {
       const key = sprite.texture.key;
 
       if (key.startsWith('item-')) {
-        // Collectibles: allow pickup slightly earlier for responsiveness.
-        if (z > 150) return;
+        // Collectibles: trigger burst when closer to the player (lower z = closer)
+        if (z > 60) return;
         this.collect(key.replace('item-', ''));
         spawnSpark(this, sprite.x, sprite.y, 0xffd700);
         sprite.destroy();
