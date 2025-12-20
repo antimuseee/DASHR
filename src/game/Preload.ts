@@ -199,20 +199,93 @@ export default class Preload extends Phaser.Scene {
     g.fillTriangle(16, 6, 8, 14, 16, 20);
     g.generateTexture('item-gem', 32, 32);
 
-    // OBSTACLE
+    // BOOST: 2X MULTIPLIER - Electric yellow bolt
     g.clear();
+    g.fillStyle(0xffff00, 0.4);
+    g.fillCircle(16, 16, 16);
+    g.fillStyle(0xffd700, 1);
+    g.fillCircle(16, 16, 13);
+    g.fillStyle(0xff8c00, 1);
+    // Lightning bolt shape
+    g.fillTriangle(18, 4, 10, 16, 16, 16);
+    g.fillTriangle(14, 16, 22, 16, 14, 28);
+    g.fillStyle(0xffff00, 1);
+    g.fillTriangle(17, 6, 12, 15, 16, 15);
+    g.fillStyle(0xffffff, 0.8);
+    g.fillCircle(14, 10, 2);
+    g.generateTexture('boost-double', 32, 32);
+
+    // BOOST: SHIELD - Cyan protective bubble
+    g.clear();
+    g.fillStyle(0x00ffff, 0.3);
+    g.fillCircle(16, 16, 16);
+    g.fillStyle(0x00d4ff, 0.8);
+    g.fillCircle(16, 16, 13);
+    g.fillStyle(0x00ffff, 0.4);
+    g.fillCircle(16, 16, 10);
+    // Shield icon
+    g.fillStyle(0xffffff, 1);
+    g.fillTriangle(16, 6, 8, 12, 16, 26);
+    g.fillTriangle(16, 6, 24, 12, 16, 26);
+    g.fillStyle(0x00d4ff, 1);
+    g.fillTriangle(16, 9, 11, 13, 16, 23);
+    g.fillTriangle(16, 9, 21, 13, 16, 23);
+    g.fillStyle(0xffffff, 0.9);
+    g.fillCircle(12, 10, 2);
+    g.generateTexture('boost-shield', 32, 32);
+
+    // BOOST: MAGNET - Purple/pink magnet
+    g.clear();
+    g.fillStyle(0xff00ff, 0.4);
+    g.fillCircle(16, 16, 16);
+    g.fillStyle(0xff00ff, 1);
+    g.fillCircle(16, 16, 13);
+    // Magnet U-shape
+    g.fillStyle(0xff0066, 1);
+    g.fillRect(8, 8, 6, 16);
+    g.fillRect(18, 8, 6, 16);
+    g.fillRect(8, 20, 16, 6);
+    g.fillStyle(0xcccccc, 1);
+    g.fillRect(8, 8, 6, 5);
+    g.fillRect(18, 8, 6, 5);
+    g.fillStyle(0xffffff, 0.8);
+    g.fillCircle(11, 10, 2);
+    g.generateTexture('boost-magnet', 32, 32);
+
+    // OBSTACLE - Rug Pull Pit with pump & dump chart
+    g.clear();
+    // Outer glow
     g.fillStyle(0xff0000, 0.3);
     g.fillRoundedRect(-5, -5, 90, 50, 8);
+    // Dark pit background
     g.fillStyle(0x0a0000, 1);
     g.fillRoundedRect(0, 0, 80, 40, 6);
+    
+    // Pump & Dump chart pattern (contained within pit)
+    // Green pump line - parabolic rise from bottom-left to peak
+    g.lineStyle(2, 0x00ff00, 0.7);
+    // Start low left, curve up to peak around x=45
+    g.lineBetween(8, 32, 15, 28);   // Start rising
+    g.lineBetween(15, 28, 22, 22);  // Accelerate
+    g.lineBetween(22, 22, 30, 15);  // Steeper
+    g.lineBetween(30, 15, 38, 9);   // Near peak
+    g.lineBetween(38, 9, 45, 7);    // Peak!
+    
+    // Red dump line - sharp crash from peak to bottom-right
+    g.lineStyle(2, 0xff0000, 0.8);
+    g.lineBetween(45, 7, 50, 18);   // Initial crash
+    g.lineBetween(50, 18, 54, 28);  // Falling fast
+    g.lineBetween(54, 28, 58, 33);  // Bottom
+    g.lineBetween(58, 33, 72, 34);  // Flatline at bottom (rug pulled)
+    
+    // Red border outline
     g.lineStyle(3, 0xff0000, 1);
     g.strokeRoundedRect(2, 2, 76, 36, 5);
-    g.fillStyle(0x000000, 1);
-    g.fillEllipse(40, 28, 60, 16);
-    g.lineStyle(2, 0xff3333, 0.8);
-    g.lineBetween(15, 15, 30, 25);
-    g.lineBetween(65, 15, 50, 25);
-    g.lineBetween(40, 10, 40, 20);
+    
+    // Dark hole/void at bottom
+    g.fillStyle(0x000000, 0.7);
+    g.fillEllipse(40, 30, 55, 14);
+    
     g.generateTexture('obstacle-block', 80, 40);
 
     g.clear();

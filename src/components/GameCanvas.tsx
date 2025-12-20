@@ -35,6 +35,12 @@ export default function GameCanvas() {
       },
       render: { pixelArt: true },
       scene: [Boot, Preload, MainScene],
+      input: {
+        keyboard: {
+          target: window, // Default, but we handle keys ourselves
+        },
+      },
+      disableContextMenu: true,
     });
 
     phaserRef.current = game;

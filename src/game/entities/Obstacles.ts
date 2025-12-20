@@ -1,11 +1,12 @@
 import Phaser from 'phaser';
 
-export type SpawnType = 'pit' | 'block' | 'collectible';
+export type SpawnType = 'pit' | 'block' | 'collectible' | 'boost';
 
 export interface SpawnedEntity {
   sprite: Phaser.Physics.Arcade.Sprite;
   type: SpawnType;
   lane: number;
+  subType?: string;
 }
 
 type PerspectiveConfig = {
@@ -23,7 +24,30 @@ type PerspectiveConfig = {
   groundY: number; // Player feet level
 };
 
-const collectibleKeys = ['item-coin', 'item-wif', 'item-bonk', 'item-rome', 'item-gem'];
+// Weighted collectible spawning - common items appear more often
+const collectibleWeights = [
+  { key: 'item-coin', weight: 40 },   // Common - 40%
+  { key: 'item-wif', weight: 20 },    // Uncommon - 20%
+  { key: 'item-bonk', weight: 20 },   // Uncommon - 20%
+  { key: 'item-rome', weight: 12 },   // Rare - 12%
+  { key: 'item-gem', weight: 8 },     // Legendary - 8%
+];
+
+const boostWeights = [
+  { key: 'boost-double', weight: 45 },  // 2x multiplier
+  { key: 'boost-shield', weight: 40 },  // Shield protection
+  { key: 'boost-magnet', weight: 15 },  // Magnet (visual only for now)
+];
+
+function weightedRandom<T extends { weight: number }>(items: T[]): T {
+  const total = items.reduce((sum, item) => sum + item.weight, 0);
+  let r = Math.random() * total;
+  for (const item of items) {
+    r -= item.weight;
+    if (r <= 0) return item;
+  }
+  return items[0];
+}
 
 function project(lane: number, z: number, cfg: PerspectiveConfig) {
   // z >= 0: horizon -> player plane (original working code)
@@ -79,8 +103,17 @@ export default class Spawner {
 
   spawn(type: SpawnType, lane: number, z: number) {
     let key = 'obstacle-block';
+    let subType = '';
 
-    if (type === 'collectible') key = Phaser.Utils.Array.GetRandom(collectibleKeys);
+    if (type === 'collectible') {
+      const selected = weightedRandom(collectibleWeights);
+      key = selected.key;
+      subType = key.replace('item-', '');
+    } else if (type === 'boost') {
+      const selected = weightedRandom(boostWeights);
+      key = selected.key;
+      subType = key.replace('boost-', '');
+    }
 
     // Create offscreen; updatePerspective() will place it correctly.
     const sprite = this.group.create(this.centerX, -9999, key) as Phaser.Physics.Arcade.Sprite;
@@ -91,11 +124,12 @@ export default class Spawner {
     sprite.setData('lane', lane);
     sprite.setData('z', z);
     sprite.setData('pulseAlpha', 1);
+    sprite.setData('subType', subType);
 
     if (type === 'collectible') {
       const baseScale = 1.3;
       sprite.setData('baseScale', baseScale);
-      sprite.setDepth(4);  // Lower than player (depth 10) so they render behind
+      sprite.setDepth(4);
 
       // Rotation reads well at distance.
       this.scene.tweens.add({
@@ -104,18 +138,42 @@ export default class Spawner {
         duration: 2200,
         repeat: -1,
       });
+    } else if (type === 'boost') {
+      // Boosts are larger and have a pulsing glow effect
+      const baseScale = 1.6;
+      sprite.setData('baseScale', baseScale);
+      sprite.setDepth(5);
+
+      // Pulsing scale effect
+      this.scene.tweens.add({
+        targets: sprite,
+        scaleX: '*=1.15',
+        scaleY: '*=1.15',
+        duration: 400,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
+
+      // Rotation
+      this.scene.tweens.add({
+        targets: sprite,
+        angle: 360,
+        duration: 1800,
+        repeat: -1,
+      });
     } else {
       const baseScale = 1.1;
       sprite.setData('baseScale', baseScale);
-      sprite.setDepth(4);  // Lower than player (depth 10) so they render behind
+      sprite.setDepth(4);
 
       // Add "RUG PULL" label and keep it synced in updatePerspective.
       const text = this.scene.add.text(this.centerX, -9999, 'RUG PULL', {
-        fontSize: '10px',
+        fontSize: '14px',
         fontFamily: 'Arial Black',
         color: '#ff0000',
         stroke: '#000000',
-        strokeThickness: 2,
+        strokeThickness: 3,
       });
       text.setOrigin(0.5, 0.5);
       text.setDepth(9);
@@ -124,7 +182,7 @@ export default class Spawner {
       this.textGroup.add(text);
     }
 
-    return { sprite, type, lane } as SpawnedEntity;
+    return { sprite, type, lane, subType } as SpawnedEntity;
   }
 
   updatePerspective(speed: number, deltaMs: number, cfg: PerspectiveConfig) {
@@ -157,9 +215,9 @@ export default class Spawner {
 
       const s = baseScale * p.scaleMul;
 
-      // Make pits look like tall narrow holes in the ground
+      // Make pits look like narrow vertical holes in the ground
       if (sprite.texture.key === 'obstacle-block') {
-        sprite.setScale(s * 1.5, s * 0.35);
+        sprite.setScale(s * 0.9, s * 0.7);
         
         sprite.setAlpha(Math.min(0.95, p.alpha * pulseAlpha));
 } else {
@@ -186,8 +244,8 @@ export default class Spawner {
       const label = sprite.getData('label') as Phaser.GameObjects.Text;
       if (label) {
         label.x = p.x;
-        label.y = p.y - 10 * p.scaleMul;
-        label.setScale(p.scaleMul);
+        label.y = p.y - 5 * p.scaleMul; // Centered on taller pit
+        label.setScale(p.scaleMul * 1.2); // Slightly larger text
         label.setAlpha(p.alpha);
         label.setDepth(sprite.depth + 1);
       }

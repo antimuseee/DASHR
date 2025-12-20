@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import Player from './entities/Player';
 import Spawner from './entities/Obstacles';
-import { useGameStore } from '../utils/store';
+import { useGameStore, gameActions } from '../utils/store';
 import { spawnSpark } from '../utils/particles';
 
 interface ChunkConfig {
@@ -32,6 +32,7 @@ export default class MainScene extends Phaser.Scene {
   speed = 250;
   distance = 0;
   nextSpawnDistance = 0;
+  nextBoostDistance = 0;
   runActive = false;
   centerX = 0;
   groundY = 0;
@@ -44,6 +45,12 @@ export default class MainScene extends Phaser.Scene {
   farLaneFactor = 0.14; // how much lanes converge at the horizon (smaller = more 3D)
   nearScaleMul = 1.0;
   farScaleMul = 0.18;
+
+  // Score popup tracking
+  private scorePopups: Phaser.GameObjects.Text[] = [];
+  
+  // Invincibility after shield save
+  private invincibleUntil = 0;
 
   private keyHandler!: (e: KeyboardEvent) => void;
 
@@ -71,6 +78,19 @@ export default class MainScene extends Phaser.Scene {
 
     // Keyboard
     this.keyHandler = (e: KeyboardEvent) => {
+      // Don't intercept keys when typing in an input field (check both target and activeElement)
+      const target = e.target as HTMLElement;
+      const activeEl = document.activeElement as HTMLElement;
+      const isTyping = 
+        target?.tagName === 'INPUT' || 
+        target?.tagName === 'TEXTAREA' ||
+        activeEl?.tagName === 'INPUT' || 
+        activeEl?.tagName === 'TEXTAREA';
+      
+      if (isTyping) {
+        return; // Let the input handle the key
+      }
+      
       if (!this.runActive) return;
       switch (e.code) {
         case 'ArrowUp':
@@ -94,6 +114,22 @@ export default class MainScene extends Phaser.Scene {
           e.preventDefault();
           this.player.moveLane(1);
           break;
+        // Boost activation keys
+        case 'Digit1':
+        case 'KeyQ':
+          e.preventDefault();
+          this.activateBoostFromInventory('double');
+          break;
+        case 'Digit2':
+        case 'KeyE':
+          e.preventDefault();
+          this.activateBoostFromInventory('shield');
+          break;
+        case 'Digit3':
+        case 'KeyR':
+          e.preventDefault();
+          this.activateBoostFromInventory('magnet');
+          break;
       }
     };
     document.addEventListener('keydown', this.keyHandler);
@@ -108,9 +144,12 @@ export default class MainScene extends Phaser.Scene {
     this.speed = 250;
     this.distance = 0;
     this.nextSpawnDistance = 100;
+    this.nextBoostDistance = 600 + Math.random() * 400; // First boost after 600-1000m
     this.runActive = true;
+    this.scorePopups = [];
+    this.invincibleUntil = 0;
 
-    useGameStore.setState({ phase: 'running', score: 0, distance: 0, multiplier: 1, tokens: 0 });
+    gameActions.startRun();
 
     this.scale.on('resize', this.handleResize, this);
     this.events.once('shutdown', () => {
@@ -252,17 +291,28 @@ export default class MainScene extends Phaser.Scene {
   update(_: number, delta: number) {
     if (!this.runActive) return;
 
-    this.distance += (this.speed * delta) / 1000;
-    this.speed += 3 * (delta / 1000);
+    const dt = delta / 1000;
+    const distanceDelta = (this.speed * dt);
+    this.distance += distanceDelta;
+    this.speed += 3 * dt;
 
+    // Update boost timers
+    gameActions.updateBoostTimer(dt);
+
+    // Distance-based scoring
+    gameActions.addDistanceScore(distanceDelta);
+
+    // Update multiplier based on distance (caps at 5x)
+    const newMultiplier = Math.min(5, 1 + this.distance / 2000);
     useGameStore.setState({
       distance: this.distance,
-      score: useGameStore.getState().score + ((this.speed * delta) / 50) * useGameStore.getState().multiplier,
-      multiplier: Math.min(5, 1 + this.distance / 2000),
-      tokens: Math.floor(this.distance / 1000),
+      multiplier: newMultiplier,
     });
 
     this.spawnByDistance();
+    
+    // Magnet effect - attract collectibles
+    this.updateMagnetEffect(dt);
 
     this.spawner.updatePerspective(this.speed, delta, {
       centerX: this.centerX,
@@ -280,6 +330,48 @@ export default class MainScene extends Phaser.Scene {
     });
 
     this.checkCollisions();
+  }
+  
+  updateMagnetEffect(dt: number) {
+    const state = useGameStore.getState();
+    if (!state.hasMagnet) return;
+    
+    const playerLane = this.player.laneIndex;
+    const magnetRange = 400; // Z distance to attract from
+    const attractSpeed = 3; // How fast items move toward player lane
+    
+    this.spawner.group.getChildren().forEach((child) => {
+      const sprite = child as Phaser.Physics.Arcade.Sprite;
+      if (!sprite.active) return;
+      
+      const key = sprite.texture.key;
+      // Only attract collectibles (items), not obstacles or boosts
+      if (!key.startsWith('item-')) return;
+      
+      const z = (sprite.getData('z') as number) ?? 99999;
+      const lane = (sprite.getData('lane') as number) ?? 1;
+      
+      // Only attract items within range and in front of player
+      if (z > magnetRange || z < -50) return;
+      
+      // If not in player's lane, move toward it
+      if (lane !== playerLane) {
+        const direction = playerLane > lane ? 1 : -1;
+        const newLane = lane + direction * attractSpeed * dt;
+        
+        // Clamp to valid lane range and snap when close
+        const clampedLane = Math.max(0, Math.min(2, newLane));
+        const snappedLane = Math.abs(clampedLane - playerLane) < 0.1 ? playerLane : clampedLane;
+        
+        sprite.setData('lane', snappedLane);
+        
+        // Visual feedback - make attracted items glow/pulse
+        if (!sprite.getData('magnetized')) {
+          sprite.setData('magnetized', true);
+          sprite.setTint(0xff00ff); // Pink tint when being attracted
+        }
+      }
+    });
   }
 
   spawnByDistance() {
@@ -301,6 +393,16 @@ export default class MainScene extends Phaser.Scene {
       }
 
       this.nextSpawnDistance += Phaser.Math.Between(200, 300);
+    }
+
+    // Spawn boosts occasionally
+    if (this.distance >= this.nextBoostDistance) {
+      const lane = Phaser.Math.Between(0, 2);
+      const zBase = this.zFar * Phaser.Math.FloatBetween(0.94, 0.99);
+      this.spawner.spawn('boost', lane, zBase);
+      
+      // Next boost in 800-1400m (boosts are rare!)
+      this.nextBoostDistance = this.distance + Phaser.Math.Between(800, 1400);
     }
   }
 
@@ -327,15 +429,29 @@ export default class MainScene extends Phaser.Scene {
       if (key.startsWith('item-')) {
         // Collectibles: trigger burst when closer to the player (lower z = closer)
         if (z > 60) return;
-        this.collect(key.replace('item-', ''));
-        spawnSpark(this, sprite.x, sprite.y, 0xffd700);
+        this.collectItem(key.replace('item-', ''), sprite.x, sprite.y);
+        sprite.destroy();
+        return;
+      }
+
+      if (key.startsWith('boost-')) {
+        // Boosts: trigger when close
+        if (z > 60) return;
+        this.collectBoost(key.replace('boost-', ''), sprite.x, sprite.y);
         sprite.destroy();
         return;
       }
 
       // Pit (with RUG PULL label): ONLY kill when the pit is actually under the player's FEET (not head/shoulder overlap) and the player isn't jumping.
       if (key === 'obstacle-block') {
-                if (this.player.isJumping) return;
+        // Skip if player is jumping
+        if (this.player.isJumping) return;
+        
+        // Skip if player is invincible (recently saved by shield)
+        if (this.time.now < this.invincibleUntil) {
+          console.log('[INVINCIBLE] Skipping pit collision');
+          return;
+        }
 
         // Check when pit reaches the player's feet
         // Widen the z window so we can detect collision as pits pass through
@@ -356,24 +472,11 @@ export default class MainScene extends Phaser.Scene {
         // Check Y overlap (pit bottom in feet area)
         const yOverlap = pitBottom >= playerFeetTop && pitBottom <= playerFeetBottom + 5;
         
-        console.log('COLLISION CHECK:', { 
-          z,
-          xOverlap,
-          yOverlap,
-          pitBottom,
-          playerFeetTop,
-          playerFeetBottom,
-          pitBoundsCenterX: pitBounds.centerX,
-          playerBoundsCenterX: playerBounds.centerX,
-          xDiff: Math.abs(pitBounds.centerX - playerBounds.centerX)
-        });
-        
         if (!xOverlap || !yOverlap) {
-          console.log('FAILED: no overlap');
           return;
         }
         
-        console.log('COLLISION TRIGGERED!');
+        console.log('[PIT COLLISION] Triggering game over check...');
 
         this.triggerGameOver();
         return;
@@ -383,15 +486,143 @@ export default class MainScene extends Phaser.Scene {
     });
   }
 
-  collect(type: string) {
-    const valueMap: Record<string, number> = { coin: 50, wif: 80, bonk: 60, rome: 70, gem: 120 };
-    const bonus = valueMap[type] ?? 40;
-    const state = useGameStore.getState();
-    useGameStore.setState({ score: state.score + bonus, tokens: state.tokens + 1 });
+  collectItem(type: string, x: number, y: number) {
+    const result = gameActions.addCollectibleScore(type);
+    
+    // Particle color by tier
+    const tierColors: Record<string, number> = {
+      common: 0xffd700,
+      uncommon: 0xff9500,
+      rare: 0x00d4ff,
+      legendary: 0xb84dff,
+    };
+    const color = tierColors[result.tier] || 0xffd700;
+    spawnSpark(this, x, y, color);
+    
+    // Show score popup
+    this.showScorePopup(x, y, result.points, result.combo > 1 ? result.combo : undefined);
+  }
+
+  collectBoost(type: string, x: number, y: number) {
+    // Add boost to inventory instead of auto-activating
+    const boostType = type as 'double' | 'shield' | 'magnet';
+    gameActions.addBoostToInventory(boostType);
+    
+    // Show pickup feedback
+    const boostNames: Record<string, string> = {
+      double: '⚡ 2X [1/Q]',
+      shield: '🛡️ SHIELD [2/E]',
+      magnet: '🧲 MAGNET [3/R]',
+    };
+    const boostColors: Record<string, number> = {
+      double: 0xffd700,
+      shield: 0x00ffff,
+      magnet: 0xff00ff,
+    };
+    
+    this.showBoostPopup(x, y, boostNames[type] || '+BOOST', boostColors[type] || 0xffffff);
+    spawnSpark(this, x, y, boostColors[type] || 0xffffff);
+  }
+
+  activateBoostFromInventory(type: 'double' | 'shield' | 'magnet') {
+    const success = gameActions.activateBoostFromInventory(type);
+    
+    if (success) {
+      // Show activation feedback
+      const boostNames: Record<string, string> = {
+        double: '⚡ 2X ACTIVATED!',
+        shield: '🛡️ SHIELD ON!',
+        magnet: '🧲 MAGNET ON!',
+      };
+      const boostColors: Record<string, number> = {
+        double: 0xffd700,
+        shield: 0x00ffff,
+        magnet: 0xff00ff,
+      };
+      
+      this.showBoostPopup(this.player.x, this.player.y - 40, boostNames[type], boostColors[type]);
+      spawnSpark(this, this.player.x, this.player.y, boostColors[type]);
+    }
+  }
+
+  showScorePopup(x: number, y: number, points: number, combo?: number) {
+    const text = combo && combo > 1 
+      ? `+${points} x${combo}` 
+      : `+${points}`;
+    
+    const color = combo && combo > 3 ? '#ff00ff' : combo && combo > 1 ? '#00ffff' : '#ffd700';
+    
+    const popup = this.add.text(x, y - 20, text, {
+      fontSize: combo && combo > 3 ? '18px' : '14px',
+      fontFamily: 'Arial Black',
+      color: color,
+      stroke: '#000000',
+      strokeThickness: 3,
+    });
+    popup.setOrigin(0.5);
+    popup.setDepth(100);
+
+    this.tweens.add({
+      targets: popup,
+      y: y - 60,
+      alpha: 0,
+      scale: 1.3,
+      duration: 800,
+      ease: 'Power2',
+      onComplete: () => popup.destroy(),
+    });
+  }
+
+  showBoostPopup(x: number, y: number, text: string, color: number) {
+    const colorStr = '#' + color.toString(16).padStart(6, '0');
+    const popup = this.add.text(x, y - 30, text, {
+      fontSize: '20px',
+      fontFamily: 'Arial Black',
+      color: colorStr,
+      stroke: '#000000',
+      strokeThickness: 4,
+    });
+    popup.setOrigin(0.5);
+    popup.setDepth(100);
+
+    this.tweens.add({
+      targets: popup,
+      y: y - 80,
+      alpha: 0,
+      scale: 1.5,
+      duration: 1000,
+      ease: 'Power2',
+      onComplete: () => popup.destroy(),
+    });
   }
 
   triggerGameOver() {
     if (!this.runActive) return;
+    
+    // Check for shield
+    if (gameActions.useShield()) {
+      console.log('[SHIELD] Shield saved the player!');
+      
+      // Shield absorbed the hit! Show effect and continue
+      this.showBoostPopup(this.player.x, this.player.y - 50, '🛡️ SHIELD SAVED!', 0x00ffff);
+      spawnSpark(this, this.player.x, this.player.y, 0x00ffff);
+      
+      // Grant 1 second of invincibility so the same pit doesn't kill us
+      this.invincibleUntil = this.time.now + 1000;
+      console.log('[SHIELD] Invincible until:', this.invincibleUntil);
+      
+      // Brief invincibility flash effect
+      this.tweens.add({
+        targets: this.player.sprite,
+        alpha: 0.3,
+        duration: 100,
+        yoyo: true,
+        repeat: 5,
+      });
+      return;
+    }
+    
+    console.log('[GAME OVER] No shield - player died');
     this.runActive = false;
     const state = useGameStore.getState();
     const best = Math.max(state.best, state.score);
