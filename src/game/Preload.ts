@@ -19,42 +19,53 @@ export default class Preload extends Phaser.Scene {
     const gap = 4.2 * scale;
     const xCenter = Math.round(cx);
 
-    // Total vertical span of the logo for gradient calculation
+    // Total span of the logo for diagonal gradient calculation
     const logoTop = cy - gap - barHeight / 2;
     const logoBot = cy + gap + barHeight / 2;
+    const logoLeft = xCenter - barWidth / 2 - Math.abs(slant);
+    const logoRight = xCenter + barWidth / 2 + Math.abs(slant);
     const logoHeight = logoBot - logoTop;
+    const logoWidth = logoRight - logoLeft;
 
-    // Helper to get exact color at any Y coordinate (Teal to Purple interpolation)
-    const getColorAtY = (y: number) => {
-      const t = Phaser.Math.Clamp((y - logoTop) / logoHeight, 0, 1);
-      // Official Solana Teal (0x14F195) to Purple (0x9945FF)
-      const r = Math.floor(0x14 + (0x99 - 0x14) * t);
-      const g_val = Math.floor(0xf1 + (0x45 - 0xf1) * t);
-      const b = Math.floor(0x95 + (0xff - 0x95) * t);
-      return (r << 16) | (g_val << 8) | b;
+    // Diagonal gradient like the official mark:
+    // teal is strongest in the UPPER-RIGHT, fading toward the BOTTOM-LEFT.
+    const teal = { r: 0x14, g: 0xf1, b: 0x95 };   // #14F195
+    const purple = { r: 0x99, g: 0x45, b: 0xff }; // #9945FF
+    const ur = { x: logoRight, y: logoTop };      // upper-right anchor
+    const maxU = logoWidth + logoHeight;          // along (-1,+1) direction
+
+    const getColorAtXY = (x: number, y: number) => {
+      // project point onto direction from upper-right -> bottom-left (v = (-1, +1))
+      const u = (ur.x - x) + (y - ur.y); // 0 at upper-right, increases toward bottom-left
+      const t = Phaser.Math.Clamp(u / maxU, 0, 1);
+      const r = Math.round(teal.r + (purple.r - teal.r) * t);
+      const gVal = Math.round(teal.g + (purple.g - teal.g) * t);
+      const b = Math.round(teal.b + (purple.b - teal.b) * t);
+      return (r << 16) | (gVal << 8) | b;
     };
 
     const drawBar = (x: number, y: number) => {
       const halfW = barWidth / 2;
       const halfH = barHeight / 2;
 
-      // Draw the bar line-by-line to create a perfect smooth gradient
-      for (let h_off = -halfH; h_off <= halfH; h_off += 0.2) {
-        const currentY = y + h_off;
-        const color = getColorAtY(currentY);
-        
-        // Correct Slant (/ direction): 
-        // Top of bar (h_off = -halfH) is shifted LEFT (-slant)
-        const t_slant = (h_off + halfH) / barHeight; 
-        const currentSlant = -slant * (1 - t_slant);
-        
-        g.lineStyle(0.3, color, 1);
-        g.lineBetween(
-          x - halfW + currentSlant, 
-          currentY, 
-          x + halfW + currentSlant, 
-          currentY
-        );
+      // Draw the bar using tiny rectangles so color can vary across BOTH X and Y (true diagonal gradient)
+      const step = 0.5 * scale; // small enough for smooth gradient, still fast at this sprite size
+
+      for (let hOff = -halfH; hOff <= halfH; hOff += step) {
+        const currentY = y + hOff;
+
+        // Slanted bar ends ( / direction ): top shifted LEFT, bottom no shift
+        const tSlant = (hOff + halfH) / barHeight;
+        const currentSlant = -slant * (1 - tSlant);
+
+        const leftX = x - halfW + currentSlant;
+        const rightX = x + halfW + currentSlant;
+
+        for (let xx = leftX; xx <= rightX; xx += step) {
+          const color = getColorAtXY(xx, currentY);
+          g.fillStyle(color, 1);
+          g.fillRect(xx, currentY, step, step);
+        }
       }
     };
 
