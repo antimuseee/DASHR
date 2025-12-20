@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
-import { useGameStore, checkHighscoreQualifies, addHighscore, getHighscores, HighScoreEntry } from '../utils/store';
+import { useGameStore, checkHighscoreQualifies, addHighscore, getHighscores, HighScoreEntry, gameActions } from '../utils/store';
 import { getDevice } from '../utils/device';
 
 function restartGame() {
@@ -277,8 +277,13 @@ export default function Menus({ phase }: { phase: string }) {
       
       {/* Boost inventory */}
       {phase === 'running' && (
-        <div className="boost-inventory">
-          <div className={`inventory-slot ${boostInventory.double > 0 ? 'has-boost' : doubleCharges > 0 ? 'charging' : 'empty'}`} title="Press 1 or Q (needs 3 pickups)">
+        <div className="boost-inventory" style={{ pointerEvents: 'auto' }}>
+          <div 
+            className={`inventory-slot ${boostInventory.double > 0 ? 'has-boost' : doubleCharges > 0 ? 'charging' : 'empty'}`} 
+            title="Press 1 or Q (needs 3 pickups)"
+            onClick={() => gameActions.activateBoostFromInventory('double')}
+            style={{ cursor: boostInventory.double > 0 ? 'pointer' : 'default' }}
+          >
             <div 
               className="slot-fill slot-fill-double" 
               style={{ 
@@ -291,7 +296,12 @@ export default function Menus({ phase }: { phase: string }) {
             <span className="boost-icon">⚡</span>
             <span className="boost-count">{boostInventory.double > 0 ? boostInventory.double : `${doubleCharges}/${CHARGES_NEEDED}`}</span>
           </div>
-          <div className={`inventory-slot ${boostInventory.shield > 0 ? 'has-boost' : shieldCharges > 0 ? 'charging' : 'empty'}`} title="Press 2 or E (needs 3 pickups)">
+          <div 
+            className={`inventory-slot ${boostInventory.shield > 0 ? 'has-boost' : shieldCharges > 0 ? 'charging' : 'empty'}`} 
+            title="Press 2 or E (needs 3 pickups)"
+            onClick={() => gameActions.activateBoostFromInventory('shield')}
+            style={{ cursor: boostInventory.shield > 0 ? 'pointer' : 'default' }}
+          >
             <div 
               className="slot-fill slot-fill-shield" 
               style={{ 
@@ -304,7 +314,12 @@ export default function Menus({ phase }: { phase: string }) {
             <span className="boost-icon">🛡️</span>
             <span className="boost-count">{boostInventory.shield > 0 ? boostInventory.shield : `${shieldCharges}/${CHARGES_NEEDED}`}</span>
           </div>
-          <div className={`inventory-slot ${boostInventory.magnet > 0 ? 'has-boost' : magnetCharges > 0 ? 'charging' : 'empty'}`} title="Press 3 or R (needs 3 pickups)">
+          <div 
+            className={`inventory-slot ${boostInventory.magnet > 0 ? 'has-boost' : magnetCharges > 0 ? 'charging' : 'empty'}`} 
+            title="Press 3 or R (needs 3 pickups)"
+            onClick={() => gameActions.activateBoostFromInventory('magnet')}
+            style={{ cursor: boostInventory.magnet > 0 ? 'pointer' : 'default' }}
+          >
             <div 
               className="slot-fill slot-fill-magnet" 
               style={{ 
