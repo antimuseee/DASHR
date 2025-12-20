@@ -10,6 +10,55 @@ export default class Preload extends Phaser.Scene {
     this.scene.start('Main');
   }
 
+  // Draw EXACT Solana logo - three identical parallelograms offset horizontally
+  // All bars slant the same direction (top-left higher than top-right)
+  // Top bar: shifted RIGHT, Middle bar: shifted LEFT, Bottom bar: shifted RIGHT
+  drawSolanaLogo(g: Phaser.GameObjects.Graphics, cx: number, cy: number, scale: number = 1) {
+    const barWidth = 14 * scale;      // Width of each bar
+    const barHeight = 2.5 * scale;    // Height/thickness of each bar
+    const slant = 2 * scale;          // How much the parallelogram slants
+    const gap = 4 * scale;            // Vertical gap between bars
+    const offset = 3 * scale;         // Horizontal offset for S pattern
+    
+    g.fillStyle(0xffffff, 1);
+    
+    // Each bar is a parallelogram with 4 points
+    // Shape: top-left is higher, slopes down to top-right
+    
+    // TOP BAR - shifted RIGHT
+    const topX = cx + offset;
+    const topY = cy - gap;
+    g.beginPath();
+    g.moveTo(topX - barWidth/2, topY - barHeight/2);           // top-left (highest)
+    g.lineTo(topX + barWidth/2, topY - barHeight/2 + slant);   // top-right (lower due to slant)
+    g.lineTo(topX + barWidth/2, topY + barHeight/2 + slant);   // bottom-right
+    g.lineTo(topX - barWidth/2, topY + barHeight/2);           // bottom-left
+    g.closePath();
+    g.fillPath();
+    
+    // MIDDLE BAR - shifted LEFT
+    const midX = cx - offset;
+    const midY = cy;
+    g.beginPath();
+    g.moveTo(midX - barWidth/2, midY - barHeight/2);           // top-left (highest)
+    g.lineTo(midX + barWidth/2, midY - barHeight/2 + slant);   // top-right (lower due to slant)
+    g.lineTo(midX + barWidth/2, midY + barHeight/2 + slant);   // bottom-right
+    g.lineTo(midX - barWidth/2, midY + barHeight/2);           // bottom-left
+    g.closePath();
+    g.fillPath();
+    
+    // BOTTOM BAR - shifted RIGHT
+    const botX = cx + offset;
+    const botY = cy + gap;
+    g.beginPath();
+    g.moveTo(botX - barWidth/2, botY - barHeight/2);           // top-left (highest)
+    g.lineTo(botX + barWidth/2, botY - barHeight/2 + slant);   // top-right (lower due to slant)
+    g.lineTo(botX + barWidth/2, botY + barHeight/2 + slant);   // bottom-right
+    g.lineTo(botX - barWidth/2, botY + barHeight/2);           // bottom-left
+    g.closePath();
+    g.fillPath();
+  }
+
   createTextures() {
     const g = this.add.graphics();
 
@@ -18,41 +67,32 @@ export default class Preload extends Phaser.Scene {
       g.clear();
       
       // HEAD - visible from back with cap
-      // Cap (purple/pink)
       g.fillStyle(0x9b5cff, 1);
       g.fillRoundedRect(8, 0, 24, 12, 4);
-      // Cap brim shadow
       g.fillStyle(0x7a4acc, 1);
       g.fillRect(6, 10, 28, 4);
       
-      // Hair showing under cap (brown)
       g.fillStyle(0x4a3728, 1);
       g.fillRect(10, 12, 20, 8);
       
-      // Neck
       g.fillStyle(0xd4a574, 1);
       g.fillRect(14, 18, 12, 6);
       
-      // Body/hoodie - dark
+      // Body/hoodie
       g.fillStyle(0x1a1a2e, 1);
       g.fillRoundedRect(5, 22, 30, 30, 4);
       
-      // Hood bunched up at neck
       g.fillStyle(0x2d2d44, 1);
       g.fillRoundedRect(8, 20, 24, 8, 3);
       
-      // Solana logo on back (3 lines)
-      g.fillStyle(0x9b5cff, 1);
-      g.fillRect(14, 30, 12, 2);
-      g.fillRect(14, 35, 12, 2);
-      g.fillRect(14, 40, 12, 2);
+      // Solana logo on back - exact dimensions
+      this.drawSolanaLogo(g, 20, 36, 1);
       
-      // Arms swinging
+      // Arms
       g.fillStyle(0x1a1a2e, 1);
       g.fillRect(0 + (i % 2) * 3, 26, 6, 20);
       g.fillRect(34 - (i % 2) * 3, 26, 6, 20);
       
-      // Hands
       g.fillStyle(0xd4a574, 1);
       g.fillRect(0 + (i % 2) * 3, 44, 6, 5);
       g.fillRect(34 - (i % 2) * 3, 44, 6, 5);
@@ -62,12 +102,11 @@ export default class Preload extends Phaser.Scene {
       g.fillRect(8, 50, 10, 18);
       g.fillRect(22, 50, 10, 18);
       
-      // Sneakers with animation
+      // Sneakers
       g.fillStyle(0x333333, 1);
       g.fillRect(6 + (i % 2) * 2, 66, 12, 6);
       g.fillRect(22 - (i % 2) * 2, 66, 12, 6);
       
-      // Sneaker neon glow (pink)
       g.fillStyle(0xff00ff, 0.9);
       g.fillRect(6 + (i % 2) * 2, 70, 12, 3);
       g.fillRect(22 - (i % 2) * 2, 70, 12, 3);
@@ -79,15 +118,12 @@ export default class Preload extends Phaser.Scene {
     g.clear();
     g.fillStyle(0x1a1a2e, 1);
     g.fillRoundedRect(0, 5, 50, 25, 6);
-    g.fillStyle(0x9b5cff, 1);
-    g.fillRect(20, 12, 10, 3);
-    g.fillRect(20, 18, 10, 3);
-    // Cap visible
+    this.drawSolanaLogo(g, 25, 17, 0.7);
     g.fillStyle(0x9b5cff, 1);
     g.fillRoundedRect(35, 2, 15, 10, 3);
     g.generateTexture('player-slide', 55, 32);
 
-    // COLLECTIBLES - Golden $SOL coins
+    // COLLECTIBLES
     g.clear();
     g.fillStyle(0xffd700, 0.3);
     g.fillCircle(16, 16, 16);
@@ -103,7 +139,6 @@ export default class Preload extends Phaser.Scene {
     g.fillRect(12, 18, 8, 2);
     g.generateTexture('item-coin', 32, 32);
 
-    // $WIF token
     g.clear();
     g.fillStyle(0xff9500, 0.3);
     g.fillCircle(16, 16, 16);
@@ -115,7 +150,6 @@ export default class Preload extends Phaser.Scene {
     g.fillRect(12, 18, 8, 3);
     g.generateTexture('item-wif', 32, 32);
 
-    // $BONK token
     g.clear();
     g.fillStyle(0xff6b9d, 0.3);
     g.fillCircle(16, 16, 16);
@@ -128,7 +162,6 @@ export default class Preload extends Phaser.Scene {
     g.fillRect(12, 18, 8, 4);
     g.generateTexture('item-bonk', 32, 32);
 
-    // $ROME token
     g.clear();
     g.fillStyle(0x00d4ff, 0.3);
     g.fillCircle(16, 16, 16);
@@ -140,7 +173,6 @@ export default class Preload extends Phaser.Scene {
     g.fillRect(8, 6, 16, 3);
     g.generateTexture('item-rome', 32, 32);
 
-    // Purple gem
     g.clear();
     g.fillStyle(0xb84dff, 0.4);
     g.fillCircle(16, 16, 16);
@@ -151,28 +183,22 @@ export default class Preload extends Phaser.Scene {
     g.fillTriangle(16, 6, 8, 14, 16, 20);
     g.generateTexture('item-gem', 32, 32);
 
-    // OBSTACLE - Rug Pull Pit (we'll add text in the scene)
+    // OBSTACLE
     g.clear();
-    // Red warning glow
     g.fillStyle(0xff0000, 0.3);
     g.fillRoundedRect(-5, -5, 90, 50, 8);
-    // Black pit background
     g.fillStyle(0x0a0000, 1);
     g.fillRoundedRect(0, 0, 80, 40, 6);
-    // Red border
     g.lineStyle(3, 0xff0000, 1);
     g.strokeRoundedRect(2, 2, 76, 36, 5);
-    // Inner darker area (the pit)
     g.fillStyle(0x000000, 1);
     g.fillEllipse(40, 28, 60, 16);
-    // Crack lines
     g.lineStyle(2, 0xff3333, 0.8);
     g.lineBetween(15, 15, 30, 25);
     g.lineBetween(65, 15, 50, 25);
     g.lineBetween(40, 10, 40, 20);
     g.generateTexture('obstacle-block', 80, 40);
 
-    // Secondary obstacle
     g.clear();
     g.fillStyle(0x1a0000, 1);
     g.fillRect(0, 0, 40, 60);
@@ -184,7 +210,6 @@ export default class Preload extends Phaser.Scene {
     g.fillTriangle(20, 50, 10, 35, 30, 35);
     g.generateTexture('obstacle-pit', 40, 60);
 
-    // Particle
     g.clear();
     g.fillStyle(0xffffff, 1);
     g.fillCircle(3, 3, 3);
