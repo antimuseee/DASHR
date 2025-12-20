@@ -348,6 +348,7 @@ body {
   display: flex;
   gap: 8px;
   z-index: 50;
+  pointer-events: auto;
 }
 
 .inventory-slot {

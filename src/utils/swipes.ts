@@ -9,12 +9,27 @@ type SwipeHandlers = {
 
 export function attachSwipe(element: HTMLElement, handlers: SwipeHandlers) {
   const hammer = new Hammer.Manager(element, { touchAction: 'auto' });
-  hammer.add(new Hammer.Swipe({ direction: Hammer.DIRECTION_ALL }));
+  hammer.add(new Hammer.Swipe({ 
+    direction: Hammer.DIRECTION_ALL,
+    threshold: 30, // Minimum distance for swipe
+    velocity: 0.3, // Minimum velocity
+  }));
 
-  hammer.on('swipeup', () => handlers.onUp?.());
-  hammer.on('swipedown', () => handlers.onDown?.());
-  hammer.on('swipeleft', () => handlers.onLeft?.());
-  hammer.on('swiperight', () => handlers.onRight?.());
+  // Debounce to prevent double-firing
+  let lastSwipeTime = 0;
+  const SWIPE_COOLDOWN = 150; // ms between swipes
+  
+  const debounced = (handler?: () => void) => {
+    const now = Date.now();
+    if (now - lastSwipeTime < SWIPE_COOLDOWN) return;
+    lastSwipeTime = now;
+    handler?.();
+  };
+
+  hammer.on('swipeup', () => debounced(handlers.onUp));
+  hammer.on('swipedown', () => debounced(handlers.onDown));
+  hammer.on('swipeleft', () => debounced(handlers.onLeft));
+  hammer.on('swiperight', () => debounced(handlers.onRight));
 
   return () => hammer.destroy();
 }
