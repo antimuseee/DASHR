@@ -18,13 +18,11 @@ export default class Preload extends Phaser.Scene {
     const gap = 4.2 * scale;          // Vertical distance between bars
     const offset = 2.5 * scale;       // How much the S pattern shifts left/right
     
-    // Solana Brand Colors
-    const teal = 0x14f195;
-    const purple = 0x9945ff;
+    // Solana Brand Colors for the gradient look
+    const colors = [0x14f195, 0x559cfa, 0x9945ff]; // Teal, Blue, Purple
 
-    const drawBar = (x: number, y: number) => {
-      // Set gradient: Teal on top, Purple on bottom
-      g.fillGradientStyle(teal, teal, purple, purple, 1);
+    const drawBar = (x: number, y: number, color: number) => {
+      g.fillStyle(color, 1);
       
       const halfW = barWidth / 2;
       const halfH = barHeight / 2;
@@ -42,12 +40,12 @@ export default class Preload extends Phaser.Scene {
       g.fillPath();
     };
 
-    // TOP BAR - shift right
-    drawBar(cx + offset, cy - gap);
-    // MIDDLE BAR - shift left
-    drawBar(cx - offset, cy);
-    // BOTTOM BAR - shift right
-    drawBar(cx + offset, cy + gap);
+    // TOP BAR - shift right (Teal)
+    drawBar(cx + offset, cy - gap, colors[0]);
+    // MIDDLE BAR - shift left (Blue)
+    drawBar(cx - offset, cy, colors[1]);
+    // BOTTOM BAR - shift right (Purple)
+    drawBar(cx + offset, cy + gap, colors[2]);
   }
 
   createTextures() {
