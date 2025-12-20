@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { getDevice } from '../../utils/device';
 
 export type SpawnType = 'pit' | 'block' | 'collectible' | 'boost';
 
@@ -168,13 +169,15 @@ export default class Spawner {
       sprite.setDepth(4);
 
       // Add "RUG PULL" label and keep it synced in updatePerspective.
+      const device = getDevice();
       const text = this.scene.add.text(this.centerX, -9999, 'RUG PULL', {
-        fontSize: '18px',
+        // Mobile: bigger text for readability. Desktop: original size
+        fontSize: device.isMobile ? '18px' : '14px',
         fontFamily: 'Arial Black',
         color: '#ff0000',
         stroke: '#000000',
-        strokeThickness: 4,
-        shadow: { offsetX: 2, offsetY: 2, color: '#000', blur: 4, fill: true },
+        strokeThickness: device.isMobile ? 4 : 3,
+        ...(device.isMobile && { shadow: { offsetX: 2, offsetY: 2, color: '#000', blur: 4, fill: true } }),
       });
       text.setOrigin(0.5, 0.5);
       text.setDepth(9);
