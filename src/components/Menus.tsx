@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect } from 'react';
 import { useGameStore, checkHighscoreQualifies, addHighscore, getHighscores, HighScoreEntry } from '../utils/store';
+import { getDevice } from '../utils/device';
 
 function restartGame() {
   const game = window.phaserGame;
@@ -48,6 +49,7 @@ function Leaderboard({ scores, currentScore }: { scores: HighScoreEntry[]; curre
 
 function TitleMenu() {
   const [scores, setScores] = useState<HighScoreEntry[]>([]);
+  const device = getDevice();
   
   useEffect(() => {
     setScores(getHighscores());
@@ -57,8 +59,14 @@ function TitleMenu() {
     <div className="center-bottom center-vertical menus">
       <div className="menu-card title-card">
         <h2>Trench Runner: Degen Dash</h2>
-        <p>Arrow keys or WASD to move. Space/Up to jump, Down to slide.</p>
-        <p className="boost-hint">Collect boosts and press 1/2/3 to activate!</p>
+        {device.isDesktop ? (
+          <>
+            <p>Arrow keys or WASD to move. Space/Up to jump, Down to slide.</p>
+            <p className="boost-hint">Collect boosts and press 1/2/3 to activate!</p>
+          </>
+        ) : (
+          <p>Swipe to move, tap to jump. Collect boosts!</p>
+        )}
         <button className="btn" onClick={restartGame}>Play</button>
         <button className="btn secondary" onClick={() => alert('Shop coming soon!')}>Shop</button>
         <Leaderboard scores={scores} />
@@ -68,11 +76,12 @@ function TitleMenu() {
 }
 
 function PauseMenu() {
+  const device = getDevice();
   return (
     <div className="center-bottom menus">
       <div className="menu-card">
         <h3>Paused</h3>
-        <p>Arrow keys or WASD. Space/Up = jump, Down = slide.</p>
+        {device.isDesktop && <p>Arrow keys or WASD. Space/Up = jump, Down = slide.</p>}
         <button className="btn" onClick={restartGame}>Resume</button>
         <button className="btn secondary" onClick={restartGame}>Restart</button>
       </div>
@@ -210,6 +219,7 @@ import { SHIELD_DURATION, MAGNET_DURATION, CHARGES_NEEDED, COMBO_CHARGES_NEEDED 
 
 export default function Menus({ phase }: { phase: string }) {
   const { score, distance, multiplier, tokens, activeBoost, boostTimer, hasShield, shieldTimer, hasMagnet, magnetTimer, comboCount, comboProgress, comboTimer, boostInventory, magnetCharges, doubleCharges, shieldCharges } = useGameStore();
+  const device = getDevice();
   return (
     <>
       <div className="topbar" style={{ pointerEvents: 'none' }}>
@@ -277,7 +287,7 @@ export default function Menus({ phase }: { phase: string }) {
                   : `${(doubleCharges / CHARGES_NEEDED) * 100}%` 
               }} 
             />
-            <span className="boost-key">1</span>
+            {device.isDesktop && <span className="boost-key">1</span>}
             <span className="boost-icon">⚡</span>
             <span className="boost-count">{boostInventory.double > 0 ? boostInventory.double : `${doubleCharges}/${CHARGES_NEEDED}`}</span>
           </div>
@@ -290,7 +300,7 @@ export default function Menus({ phase }: { phase: string }) {
                   : `${(shieldCharges / CHARGES_NEEDED) * 100}%` 
               }} 
             />
-            <span className="boost-key">2</span>
+            {device.isDesktop && <span className="boost-key">2</span>}
             <span className="boost-icon">🛡️</span>
             <span className="boost-count">{boostInventory.shield > 0 ? boostInventory.shield : `${shieldCharges}/${CHARGES_NEEDED}`}</span>
           </div>
@@ -303,7 +313,7 @@ export default function Menus({ phase }: { phase: string }) {
                   : `${(magnetCharges / CHARGES_NEEDED) * 100}%` 
               }} 
             />
-            <span className="boost-key">3</span>
+            {device.isDesktop && <span className="boost-key">3</span>}
             <span className="boost-icon">🧲</span>
             <span className="boost-count">{boostInventory.magnet > 0 ? boostInventory.magnet : `${magnetCharges}/${CHARGES_NEEDED}`}</span>
           </div>
@@ -313,7 +323,7 @@ export default function Menus({ phase }: { phase: string }) {
       {phase === 'title' && <TitleMenu />}
       {phase === 'paused' && <PauseMenu />}
       {phase === 'gameover' && <GameOver />}
-      {phase === 'running' && (
+      {phase === 'running' && device.isDesktop && (
         <div className="center-bottom">
           <div className="menu-card" style={{ padding: '8px 12px' }}>
             Move: WASD/Arrows | Jump: Space | Slide: S/Down | Boosts: 1/2/3
