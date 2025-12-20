@@ -171,12 +171,12 @@ export default class Spawner {
       // Add "RUG PULL" label and keep it synced in updatePerspective.
       const device = getDevice();
       const text = this.scene.add.text(this.centerX, -9999, 'RUG PULL', {
-        // Mobile: bigger text for readability. Desktop: original size
-        fontSize: device.isMobile ? '18px' : '14px',
+        // Mobile: bigger text for readability. Desktop: smaller size
+        fontSize: device.isMobile ? '18px' : '11px',
         fontFamily: 'Arial Black',
         color: '#ff0000',
         stroke: '#000000',
-        strokeThickness: device.isMobile ? 4 : 3,
+        strokeThickness: device.isMobile ? 4 : 2,
         ...(device.isMobile && { shadow: { offsetX: 2, offsetY: 2, color: '#000', blur: 4, fill: true } }),
       });
       text.setOrigin(0.5, 0.5);
