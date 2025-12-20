@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Trench Runner: Degen Dash</title>
     <link rel="manifest" href="/manifest.json" />
     <style>
@@ -17,6 +17,12 @@
         width: 100%;
         height: 100%;
         overflow: hidden;
+      }
+      /* Mobile viewport fix - only affects mobile */
+      @supports (-webkit-touch-callout: none) {
+        body, html, #root {
+          height: -webkit-fill-available;
+        }
       }
     </style>
   </head>

@@ -1,4 +1,5 @@
 ﻿import { create } from 'zustand';
+import { getDevice, getSettings, DeviceInfo, PlatformSettings } from './device';
 
 type GamePhase = 'title' | 'running' | 'paused' | 'gameover';
 type BoostType = 'double' | 'shield' | null;
@@ -98,6 +99,9 @@ interface GameState {
   comboTimer: number;
   maxCombo: number;
   boostsUsed: number;
+  // Platform detection
+  device: DeviceInfo;
+  platformSettings: PlatformSettings;
 }
 
 export const COMBO_CHARGES_NEEDED = 3; // Collectibles needed to increase combo by 1
@@ -131,6 +135,9 @@ const initialState: GameState = {
   comboTimer: 0,
   maxCombo: 0,
   boostsUsed: 0,
+  // Platform detection
+  device: getDevice(),
+  platformSettings: getSettings(),
 };
 
 export const useGameStore = create<GameState>(() => initialState);

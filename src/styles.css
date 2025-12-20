@@ -685,3 +685,130 @@ body {
 .gameover-card {
   max-width: 380px;
 }
+
+/* ============================================
+   MOBILE-ONLY STYLES
+   These ONLY apply to mobile devices (max-width: 768px)
+   Desktop remains completely unchanged
+   ============================================ */
+@media screen and (max-width: 768px) {
+  /* Fix mobile viewport height (accounts for browser address bar) */
+  .app-shell {
+    height: 100dvh; /* Dynamic viewport height */
+    height: -webkit-fill-available; /* Safari fallback */
+  }
+  
+  /* Safe area padding for phones with notches */
+  .topbar {
+    padding-top: max(8px, env(safe-area-inset-top));
+    padding-left: max(10px, env(safe-area-inset-left));
+    padding-right: max(10px, env(safe-area-inset-right));
+  }
+  
+  /* Move boost inventory up from bottom edge */
+  .boost-inventory {
+    bottom: max(15px, env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Make menu cards fit mobile screens */
+  .menus {
+    padding: 10px;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+  }
+  
+  .menu-card {
+    max-height: calc(100dvh - 40px);
+    max-height: calc(-webkit-fill-available - 40px);
+    overflow-y: auto;
+    margin: 10px;
+  }
+  
+  .gameover-card {
+    max-width: 95vw;
+    min-width: unset;
+    padding: 16px;
+  }
+  
+  .title-card {
+    max-width: 95vw;
+    padding: 20px;
+  }
+  
+  /* Smaller text on mobile */
+  .score-breakdown {
+    padding: 10px 12px;
+  }
+  
+  .score-row {
+    font-size: 12px;
+    padding: 4px 0;
+  }
+  
+  .score-row.total {
+    font-size: 16px;
+  }
+  
+  .score-row.total .score-value {
+    font-size: 18px;
+  }
+  
+  /* Smaller leaderboard on mobile */
+  .leaderboard-list {
+    max-height: 150px;
+  }
+  
+  .leaderboard-row {
+    padding: 5px 8px;
+    font-size: 12px;
+  }
+  
+  /* Larger touch targets for inventory */
+  .inventory-slot {
+    width: 55px;
+    height: 55px;
+  }
+  
+  /* Larger stat pills for readability */
+  .stat-pill {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  
+  /* Center vertical adjustment for mobile */
+  .center-vertical {
+    top: 45%;
+  }
+  
+  /* Buttons easier to tap */
+  .btn {
+    padding: 14px 24px;
+    font-size: 15px;
+    min-height: 48px;
+  }
+}
+
+/* Extra small phones */
+@media screen and (max-width: 380px) {
+  .menu-card {
+    padding: 12px;
+  }
+  
+  .gameover-card h3 {
+    font-size: 20px;
+  }
+  
+  .inventory-slot {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .stat-pill {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+  
+  .score-row {
+    font-size: 11px;
+  }
+}
