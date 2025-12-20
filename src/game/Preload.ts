@@ -11,28 +11,28 @@ export default class Preload extends Phaser.Scene {
   }
 
   // Draw EXACT Solana logo - three identical parallelograms offset horizontally
-  // All bars slant the same direction (top-left higher than top-right)
+  // All bars slant DOWN-LEFT (top-right is HIGHER than top-left)
   // Top bar: shifted RIGHT, Middle bar: shifted LEFT, Bottom bar: shifted RIGHT
   drawSolanaLogo(g: Phaser.GameObjects.Graphics, cx: number, cy: number, scale: number = 1) {
     const barWidth = 14 * scale;      // Width of each bar
     const barHeight = 2.5 * scale;    // Height/thickness of each bar
-    const slant = 2 * scale;          // How much the parallelogram slants
-    const gap = 4 * scale;            // Vertical gap between bars
-    const offset = 3 * scale;         // Horizontal offset for S pattern
+    const slant = 2.5 * scale;        // How much the right side is HIGHER (negative Y)
+    const gap = 4.5 * scale;          // Vertical gap between bars
+    const offset = 2.5 * scale;       // Horizontal offset for S pattern
     
     g.fillStyle(0xffffff, 1);
     
-    // Each bar is a parallelogram with 4 points
-    // Shape: top-left is higher, slopes down to top-right
+    // Each bar is a parallelogram slanting DOWN-LEFT
+    // Right side is HIGHER (smaller Y) than left side
     
     // TOP BAR - shifted RIGHT
     const topX = cx + offset;
     const topY = cy - gap;
     g.beginPath();
-    g.moveTo(topX - barWidth/2, topY - barHeight/2);           // top-left (highest)
-    g.lineTo(topX + barWidth/2, topY - barHeight/2 + slant);   // top-right (lower due to slant)
-    g.lineTo(topX + barWidth/2, topY + barHeight/2 + slant);   // bottom-right
-    g.lineTo(topX - barWidth/2, topY + barHeight/2);           // bottom-left
+    g.moveTo(topX - barWidth/2, topY + slant/2);               // top-left (LOWER)
+    g.lineTo(topX + barWidth/2, topY - slant/2);               // top-right (HIGHER)
+    g.lineTo(topX + barWidth/2, topY - slant/2 + barHeight);   // bottom-right
+    g.lineTo(topX - barWidth/2, topY + slant/2 + barHeight);   // bottom-left
     g.closePath();
     g.fillPath();
     
@@ -40,10 +40,10 @@ export default class Preload extends Phaser.Scene {
     const midX = cx - offset;
     const midY = cy;
     g.beginPath();
-    g.moveTo(midX - barWidth/2, midY - barHeight/2);           // top-left (highest)
-    g.lineTo(midX + barWidth/2, midY - barHeight/2 + slant);   // top-right (lower due to slant)
-    g.lineTo(midX + barWidth/2, midY + barHeight/2 + slant);   // bottom-right
-    g.lineTo(midX - barWidth/2, midY + barHeight/2);           // bottom-left
+    g.moveTo(midX - barWidth/2, midY + slant/2);               // top-left (LOWER)
+    g.lineTo(midX + barWidth/2, midY - slant/2);               // top-right (HIGHER)
+    g.lineTo(midX + barWidth/2, midY - slant/2 + barHeight);   // bottom-right
+    g.lineTo(midX - barWidth/2, midY + slant/2 + barHeight);   // bottom-left
     g.closePath();
     g.fillPath();
     
@@ -51,10 +51,10 @@ export default class Preload extends Phaser.Scene {
     const botX = cx + offset;
     const botY = cy + gap;
     g.beginPath();
-    g.moveTo(botX - barWidth/2, botY - barHeight/2);           // top-left (highest)
-    g.lineTo(botX + barWidth/2, botY - barHeight/2 + slant);   // top-right (lower due to slant)
-    g.lineTo(botX + barWidth/2, botY + barHeight/2 + slant);   // bottom-right
-    g.lineTo(botX - barWidth/2, botY + barHeight/2);           // bottom-left
+    g.moveTo(botX - barWidth/2, botY + slant/2);               // top-left (LOWER)
+    g.lineTo(botX + barWidth/2, botY - slant/2);               // top-right (HIGHER)
+    g.lineTo(botX + barWidth/2, botY - slant/2 + barHeight);   // bottom-right
+    g.lineTo(botX - barWidth/2, botY + slant/2 + barHeight);   // bottom-left
     g.closePath();
     g.fillPath();
   }
