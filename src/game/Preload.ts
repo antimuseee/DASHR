@@ -11,16 +11,13 @@ export default class Preload extends Phaser.Scene {
   }
 
   // Draw PERFECT Solana logo - horizontal bars with slanted ends and a TRUE smooth gradient
+  // Per your request: all three bars are centered (no side-to-side offsets)
   drawSolanaLogo(g: Phaser.GameObjects.Graphics, cx: number, cy: number, scale: number = 1) {
     const barWidth = 14 * scale;
     const barHeight = 2.8 * scale;
     const slant = 3 * scale;
     const gap = 4.2 * scale;
-    const sOffset = 2.8 * scale; // The shift that creates the S
-    
-    // To center the WHOLE logo (Top, Mid, Bot) on 'cx', 
-    // we must adjust the base center so the average horizontal position is 0.
-    const baseCenter = cx - sOffset / 3;
+    const xCenter = Math.round(cx);
 
     // Total vertical span of the logo for gradient calculation
     const logoTop = cy - gap - barHeight / 2;
@@ -61,10 +58,10 @@ export default class Preload extends Phaser.Scene {
       }
     };
 
-    // Draw the three bars that form the S pattern
-    drawBar(baseCenter + sOffset, cy - gap); // TOP (shifted right)
-    drawBar(baseCenter - sOffset, cy);       // MIDDLE (shifted left)
-    drawBar(baseCenter + sOffset, cy + gap); // BOTTOM (shifted right)
+    // Draw the three bars (all centered)
+    drawBar(xCenter, cy - gap); // TOP
+    drawBar(xCenter, cy);       // MIDDLE
+    drawBar(xCenter, cy + gap); // BOTTOM
   }
 
   createTextures() {
