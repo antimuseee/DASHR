@@ -710,10 +710,16 @@ body {
     padding-right: max(10px, env(safe-area-inset-right));
   }
   
-  /* Move boost inventory up from bottom edge */
+  /* Move inventory to right side for thumb access on mobile */
   .boost-inventory {
-    bottom: max(15px, env(safe-area-inset-bottom));
-    padding-bottom: env(safe-area-inset-bottom);
+    bottom: auto;
+    left: auto;
+    right: 10px;
+    right: max(10px, env(safe-area-inset-right));
+    top: 50%;
+    transform: translateY(-50%);
+    flex-direction: column;
+    gap: 10px;
   }
   
   /* Make menu cards fit mobile screens */
