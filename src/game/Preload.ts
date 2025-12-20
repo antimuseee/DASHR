@@ -10,44 +10,44 @@ export default class Preload extends Phaser.Scene {
     this.scene.start('Main');
   }
 
-  // Draw EXACT Solana logo - three LEVEL bars with angled chevron ENDS only
-  // Each bar is a hexagon: flat top/bottom, pointed left and right ends
-  // Gradient: teal (top) to purple (bottom)
+  // Draw PERFECT Solana logo - three horizontal bars with slanted ends and gradient
   drawSolanaLogo(g: Phaser.GameObjects.Graphics, cx: number, cy: number, scale: number = 1) {
-    const barWidth = 14 * scale;      // Total width including chevron points
-    const barHeight = 2.5 * scale;    // Height/thickness of each bar
-    const chevron = 2 * scale;        // How far the pointed ends extend
-    const gap = 4.5 * scale;          // Vertical gap between bars
-    const offset = 2.5 * scale;       // Horizontal offset for S pattern
+    const barWidth = 14 * scale;      // Width of each bar
+    const barHeight = 2.8 * scale;    // Height of each bar
+    const slant = 3 * scale;          // The horizontal shift of the slanted ends
+    const gap = 4.2 * scale;          // Vertical distance between bars
+    const offset = 2.5 * scale;       // How much the S pattern shifts left/right
     
-    // Colors for gradient effect (teal to purple)
-    const teal = 0x14f195;    // Solana teal/green
-    const purple = 0x9945ff;  // Solana purple
-    const mid = 0x5a9cfa;     // Blue middle
-    
-    // Helper to draw one bar (hexagon with chevron ends)
-    const drawBar = (x: number, y: number, color: number) => {
-      g.fillStyle(color, 1);
+    // Solana Brand Colors
+    const teal = 0x14f195;
+    const purple = 0x9945ff;
+
+    const drawBar = (x: number, y: number) => {
+      // Set gradient: Teal on top, Purple on bottom
+      g.fillGradientStyle(teal, teal, purple, purple, 1);
+      
+      const halfW = barWidth / 2;
+      const halfH = barHeight / 2;
+
       g.beginPath();
-      // Start at left point, go clockwise
-      g.moveTo(x - barWidth/2, y);                          // LEFT POINT (chevron tip)
-      g.lineTo(x - barWidth/2 + chevron, y - barHeight/2);  // top-left after chevron
-      g.lineTo(x + barWidth/2 - chevron, y - barHeight/2);  // top-right before chevron
-      g.lineTo(x + barWidth/2, y);                          // RIGHT POINT (chevron tip)
-      g.lineTo(x + barWidth/2 - chevron, y + barHeight/2);  // bottom-right before chevron
-      g.lineTo(x - barWidth/2 + chevron, y + barHeight/2);  // bottom-left after chevron
+      // Top-left point (slanted right)
+      g.moveTo(x - halfW + slant, y - halfH);
+      // Top-right point
+      g.lineTo(x + halfW + slant, y - halfH);
+      // Bottom-right point
+      g.lineTo(x + halfW, y + halfH);
+      // Bottom-left point
+      g.lineTo(x - halfW, y + halfH);
       g.closePath();
       g.fillPath();
     };
-    
-    // TOP BAR - shifted RIGHT - teal color
-    drawBar(cx + offset, cy - gap, teal);
-    
-    // MIDDLE BAR - shifted LEFT - blue/mid color
-    drawBar(cx - offset, cy, mid);
-    
-    // BOTTOM BAR - shifted RIGHT - purple color
-    drawBar(cx + offset, cy + gap, purple);
+
+    // TOP BAR - shift right
+    drawBar(cx + offset, cy - gap);
+    // MIDDLE BAR - shift left
+    drawBar(cx - offset, cy);
+    // BOTTOM BAR - shift right
+    drawBar(cx + offset, cy + gap);
   }
 
   createTextures() {
