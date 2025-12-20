@@ -10,42 +10,57 @@ export default class Preload extends Phaser.Scene {
     this.scene.start('Main');
   }
 
-  // Draw PERFECT Solana logo - three horizontal bars with slanted ends and gradient
+  // Draw PERFECT Solana logo - horizontal bars with slanted ends and a TRUE smooth gradient
   drawSolanaLogo(g: Phaser.GameObjects.Graphics, cx: number, cy: number, scale: number = 1) {
-    const barWidth = 14 * scale;      // Width of each bar
-    const barHeight = 2.8 * scale;    // Height of each bar
-    const slant = 3 * scale;          // The horizontal shift of the slanted ends
-    const gap = 4.2 * scale;          // Vertical distance between bars
-    const offset = 2.5 * scale;       // How much the S pattern shifts left/right
+    const barWidth = 14 * scale;
+    const barHeight = 2.8 * scale;
+    const slant = 3 * scale;
+    const gap = 4.2 * scale;
+    const offset = 2.5 * scale;
     
-    // Solana Brand Colors for the gradient look
-    const colors = [0x14f195, 0x559cfa, 0x9945ff]; // Teal, Blue, Purple
+    // Total vertical span of the logo for gradient calculation
+    const logoTop = cy - gap - barHeight / 2;
+    const logoBot = cy + gap + barHeight / 2;
+    const logoHeight = logoBot - logoTop;
 
-    const drawBar = (x: number, y: number, color: number) => {
-      g.fillStyle(color, 1);
-      
+    // Helper to get exact color at any Y coordinate (Teal to Purple interpolation)
+    const getColorAtY = (y: number) => {
+      const t = Phaser.Math.Clamp((y - logoTop) / logoHeight, 0, 1);
+      // Interpolate R, G, B manually for maximum precision
+      const r = Math.floor(0x14 + (0x99 - 0x14) * t);
+      const g_val = Math.floor(0xf1 + (0x45 - 0xf1) * t);
+      const b = Math.floor(0x95 + (0xff - 0x95) * t);
+      return (r << 16) | (g_val << 8) | b;
+    };
+
+    const drawBar = (x: number, y: number) => {
       const halfW = barWidth / 2;
       const halfH = barHeight / 2;
 
-      g.beginPath();
-      // Top-left point (slanted right)
-      g.moveTo(x - halfW + slant, y - halfH);
-      // Top-right point
-      g.lineTo(x + halfW + slant, y - halfH);
-      // Bottom-right point
-      g.lineTo(x + halfW, y + halfH);
-      // Bottom-left point
-      g.lineTo(x - halfW, y + halfH);
-      g.closePath();
-      g.fillPath();
+      // Draw the bar line-by-line to create a perfect smooth gradient
+      for (let h_off = -halfH; h_off <= halfH; h_off += 0.2) {
+        const currentY = y + h_off;
+        const color = getColorAtY(currentY);
+        
+        // Calculate slant offset for this specific scan-line
+        // Top edge (h_off = -halfH) is shifted right by 'slant'
+        const t_slant = (h_off + halfH) / barHeight; 
+        const currentSlant = slant * (1 - t_slant);
+        
+        g.lineStyle(0.3, color, 1);
+        g.lineBetween(
+          x - halfW + currentSlant, 
+          currentY, 
+          x + halfW + currentSlant, 
+          currentY
+        );
+      }
     };
 
-    // TOP BAR - shift right (Teal)
-    drawBar(cx + offset, cy - gap, colors[0]);
-    // MIDDLE BAR - shift left (Blue)
-    drawBar(cx - offset, cy, colors[1]);
-    // BOTTOM BAR - shift right (Purple)
-    drawBar(cx + offset, cy + gap, colors[2]);
+    // Draw the three bars that form the S pattern
+    drawBar(cx + offset, cy - gap); // TOP
+    drawBar(cx - offset, cy);       // MIDDLE
+    drawBar(cx + offset, cy + gap); // BOTTOM
   }
 
   createTextures() {
