@@ -61,7 +61,7 @@ export default class MainScene extends Phaser.Scene {
 
   // Whale events
   private controlsReversed = false;
-  private whaleAlertUntil = 0;
+  private whaleAlertTimer = 0; // Countdown timer in seconds
   private whaleAlertText: Phaser.GameObjects.Text | null = null;
   private whaleEventsUnlocked = false; // Whale events only after player has used boosts
   private nextWhaleEventDistance = 0; // Set when unlocked
@@ -187,6 +187,7 @@ export default class MainScene extends Phaser.Scene {
     this.invincibleUntil = 0;
     this.hasExtraLife = false; // Reset extra life on new game
     this.controlsReversed = false; // Reset controls on new game
+    this.whaleAlertTimer = 0; // Reset whale alert timer
     isControlsReversed = false; // Reset module-level variable too
 
     gameActions.startRun();
@@ -494,15 +495,20 @@ export default class MainScene extends Phaser.Scene {
 
   updateWhaleEvents(dt: number) {
     try {
-      // Check if whale alert should end
-      if (this.controlsReversed && this.time.now > this.whaleAlertUntil) {
-        this.controlsReversed = false;
-        isControlsReversed = false; // Update module-level variable for swipe handlers
+      // Count down whale alert timer
+      if (this.controlsReversed && this.whaleAlertTimer > 0) {
+        this.whaleAlertTimer -= dt;
         
-        if (this.whaleAlertText) {
-          this.whaleAlertText.destroy();
-          this.whaleAlertText = null;
-        }
+        // Check if whale alert should end
+        if (this.whaleAlertTimer <= 0) {
+          this.controlsReversed = false;
+          isControlsReversed = false; // Update module-level variable for swipe handlers
+          this.whaleAlertTimer = 0;
+          
+          if (this.whaleAlertText) {
+            this.whaleAlertText.destroy();
+            this.whaleAlertText = null;
+          }
         
         // Show "controls restored" message so player knows it's safe
         const restoredText = this.add.text(this.centerX, this.scale.height / 2 - 50, '✅ CONTROLS RESTORED!', {
@@ -547,6 +553,7 @@ export default class MainScene extends Phaser.Scene {
               onComplete: () => extraLifeText.destroy(),
             });
           });
+        }
         }
       }
       
@@ -626,7 +633,7 @@ export default class MainScene extends Phaser.Scene {
     try {
       this.controlsReversed = true;
       isControlsReversed = true; // Update module-level variable for swipe handlers
-      this.whaleAlertUntil = this.time.now + 4000; // 4 seconds of reversed controls
+      this.whaleAlertTimer = 4; // 4 seconds of reversed controls (countdown in seconds)
       
       // Show warning text with blinking red exclamation marks (slightly smaller on mobile)
       const device = getDevice();
