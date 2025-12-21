@@ -192,7 +192,10 @@ export default class MainScene extends Phaser.Scene {
     // Start
     this.speed = 250;
     this.distance = 0;
-    this.nextSpawnDistance = 100;
+    
+    // Mobile: first obstacles spawn further away for easier start
+    const device = getDevice();
+    this.nextSpawnDistance = device.isMobile ? 180 : 100;
     this.nextBoostDistance = 600 + Math.random() * 400; // First boost after 600-1000m
     this.runActive = true;
     this.scorePopups = [];
@@ -411,7 +414,11 @@ export default class MainScene extends Phaser.Scene {
     const dt = delta / 1000;
     const distanceDelta = (this.speed * dt);
     this.distance += distanceDelta;
-    this.speed += 3 * dt;
+    
+    // Speed ramp-up: slower on mobile for more forgiving early game
+    const device = getDevice();
+    const speedIncrease = device.isMobile ? 2 : 3; // Mobile ramps up 33% slower
+    this.speed += speedIncrease * dt;
 
     // Update boost timers
     gameActions.updateBoostTimer(dt);
@@ -508,18 +515,26 @@ export default class MainScene extends Phaser.Scene {
       return;
     }
     
+    const device = getDevice();
+    
     while (this.distance >= this.nextSpawnDistance) {
       const chunk = pickChunk();
 
       // Spawn very close to the horizon so they immediately start moving toward the player.
       const zBase = this.zFar * Phaser.Math.FloatBetween(0.94, 0.99);
 
+      // Mobile early-game adjustment: occasionally skip pit spawns in first 800m
+      // This gives mobile players more breathing room to learn controls
+      const shouldSkipPit = device.isMobile && this.distance < 800 && Math.random() < 0.35;
+
       // Spawn obstacles (pits)
-      chunk.obstacles.forEach((o) => {
-        o.lanes.forEach((lane) => {
-          this.spawner.spawn(o.type, lane, zBase);
+      if (!shouldSkipPit) {
+        chunk.obstacles.forEach((o) => {
+          o.lanes.forEach((lane) => {
+            this.spawner.spawn(o.type, lane, zBase);
+          });
         });
-      });
+      }
 
       // Spawn collectibles
       for (let i = 0; i < chunk.collectibles; i++) {
@@ -527,7 +542,15 @@ export default class MainScene extends Phaser.Scene {
         this.spawner.spawn('collectible', lane, zBase + 120 + i * 140);
       }
 
-      this.nextSpawnDistance += Phaser.Math.Between(200, 300);
+      // Mobile: larger gaps between spawns early game for more reaction time
+      let minGap = 200;
+      let maxGap = 300;
+      if (device.isMobile && this.distance < 1200) {
+        // Early game on mobile: 280-400m gaps instead of 200-300m
+        minGap = 280;
+        maxGap = 400;
+      }
+      this.nextSpawnDistance += Phaser.Math.Between(minGap, maxGap);
     }
 
     // Spawn boosts occasionally
