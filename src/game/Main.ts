@@ -831,24 +831,35 @@ export default class MainScene extends Phaser.Scene {
   }
 
   addChartSpike() {
-    // Add a dramatic spike when whale is caught - zig-zag then parabolic up
+    // Add a dramatic spike when whale is caught - zig-zag then parabolic up, then consolidate sideways
     const state = useGameStore.getState();
     const currentScore = state.score;
     const baseScore = this.chartData[this.chartData.length - 1] || currentScore * 0.8;
     
-    // Zig-zag pattern going up
-    this.chartData.push(baseScore * 1.1);   // Up
-    this.chartData.push(baseScore * 1.05);  // Slight dip
-    this.chartData.push(baseScore * 1.2);   // Up more
-    this.chartData.push(baseScore * 1.15);  // Slight dip
-    this.chartData.push(baseScore * 1.35);  // Up more
-    this.chartData.push(baseScore * 1.3);   // Tiny dip
+    // Zig-zag pattern going up (slower build)
+    this.chartData.push(baseScore * 1.05);  // Up a little
+    this.chartData.push(baseScore * 1.08);  // Keep climbing
+    this.chartData.push(baseScore * 1.06);  // Slight dip
+    this.chartData.push(baseScore * 1.12);  // Up more
+    this.chartData.push(baseScore * 1.10);  // Slight dip
+    this.chartData.push(baseScore * 1.18);  // Up more
+    this.chartData.push(baseScore * 1.15);  // Tiny dip
+    this.chartData.push(baseScore * 1.25);  // Building momentum
     
     // Parabolic spike up!
-    this.chartData.push(baseScore * 1.5);   // Accelerating
-    this.chartData.push(baseScore * 1.8);   // Faster
-    this.chartData.push(baseScore * 2.2);   // Even faster
+    this.chartData.push(baseScore * 1.4);   // Accelerating
+    this.chartData.push(baseScore * 1.6);   // Faster
+    this.chartData.push(baseScore * 1.85);  // Even faster
     this.chartData.push(currentScore);       // Peak at actual score
+    
+    // Sideways consolidation after the spike (stays high, slight wobble)
+    const peakScore = currentScore;
+    this.chartData.push(peakScore * 0.98);  // Tiny dip
+    this.chartData.push(peakScore * 0.99);  // Stabilize
+    this.chartData.push(peakScore);          // Back to peak
+    this.chartData.push(peakScore * 0.99);  // Slight wobble
+    this.chartData.push(peakScore * 1.01);  // Tiny up
+    this.chartData.push(peakScore);          // Stable - ready for normal operation
     
     // Keep only last 60 data points
     while (this.chartData.length > 60) {
@@ -858,7 +869,7 @@ export default class MainScene extends Phaser.Scene {
     // Redraw immediately to show the spike
     this.drawTradingChart();
     
-    // Flash green "RUNNER" text on chart
+    // Flash green "MOON" text on chart
     this.flashChartText();
   }
 
