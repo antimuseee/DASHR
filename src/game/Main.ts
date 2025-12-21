@@ -163,11 +163,18 @@ export default class MainScene extends Phaser.Scene {
     this.game.events.off('input:left');
     this.game.events.off('input:right');
     
-    // Swipe events
-    this.game.events.on('input:jump', () => this.player.jump());
-    this.game.events.on('input:slide', () => this.player.slide());
-    this.game.events.on('input:left', () => this.player.moveLane(this.controlsReversed ? 1 : -1));
-    this.game.events.on('input:right', () => this.player.moveLane(this.controlsReversed ? -1 : 1));
+    // Swipe events - bind to current scene instance
+    const scene = this;
+    this.game.events.on('input:jump', () => scene.player.jump());
+    this.game.events.on('input:slide', () => scene.player.slide());
+    this.game.events.on('input:left', () => {
+      console.log('[SWIPE LEFT] controlsReversed:', scene.controlsReversed);
+      scene.player.moveLane(scene.controlsReversed ? 1 : -1);
+    });
+    this.game.events.on('input:right', () => {
+      console.log('[SWIPE RIGHT] controlsReversed:', scene.controlsReversed);
+      scene.player.moveLane(scene.controlsReversed ? -1 : 1);
+    });
 
     // Start
     this.speed = 250;
@@ -486,7 +493,10 @@ export default class MainScene extends Phaser.Scene {
     try {
       // Check if whale alert should end
       if (this.controlsReversed && this.time.now > this.whaleAlertUntil) {
+        console.log('[WHALE] Controls reverting to normal! Was reversed:', this.controlsReversed);
         this.controlsReversed = false;
+        console.log('[WHALE] controlsReversed now:', this.controlsReversed);
+        
         if (this.whaleAlertText) {
           this.whaleAlertText.destroy();
           this.whaleAlertText = null;
