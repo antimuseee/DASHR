@@ -484,8 +484,8 @@ export default class MainScene extends Phaser.Scene {
       // Check if whale events should unlock (requires using boosts + distance)
       const state = useGameStore.getState();
       if (!this.whaleEventsUnlocked) {
-        // Unlock whale events after player has used 4+ boosts AND traveled 4000m+
-        if (state.boostsUsed >= 4 && this.distance >= 4000) {
+        // TEMP TESTING: 1000m | REAL: state.boostsUsed >= 4 && this.distance >= 4000
+        if (this.distance >= 1000) {
           this.whaleEventsUnlocked = true;
           this.nextWhaleEventDistance = this.distance + Phaser.Math.Between(300, 600); // First event soon after unlock
           
