@@ -874,10 +874,10 @@ export default class MainScene extends Phaser.Scene {
       this.pendingChartPoints.push(baseValue * wobble);
     }
     
-    // 2. Massive vertical takeoff (50 points - EXTREMELY LONG straight shot up)
+    // 2. Massive vertical takeoff (30 points - LONG straight shot up)
     // Shoots to 150% of the gain to make the zig-zags look tiny
-    for (let i = 1; i <= 50; i++) {
-      const progress = i / 50;
+    for (let i = 1; i <= 30; i++) {
+      const progress = i / 30;
       // Power of 6 for extreme "straight shot" curve
       const curveProgress = 0.1 + 1.4 * Math.pow(progress, 6);
       this.pendingChartPoints.push(lastPoint + (currentScore - lastPoint) * curveProgress);
@@ -885,17 +885,16 @@ export default class MainScene extends Phaser.Scene {
     
     const peakValue = lastPoint + (currentScore - lastPoint) * 1.5;
     
-    // 3. Sideways consolidation at the peak (250 points - over 12 seconds!)
-    // Stays at peak for a VERY long time before any drift
-    for (let i = 1; i <= 250; i++) {
+    // 3. Sideways consolidation at the peak (25 points)
+    for (let i = 1; i <= 25; i++) {
       const wobble = 0.995 + Math.random() * 0.01;
       this.pendingChartPoints.push(peakValue * wobble);
     }
     
-    // 4. Very slow drift back to actual currentScore (40 points)
+    // 4. Slow drift back to actual currentScore (30 points)
     // Stays green because the drop per point is very small
-    for (let i = 1; i <= 40; i++) {
-      const progress = i / 40;
+    for (let i = 1; i <= 30; i++) {
+      const progress = i / 30;
       const value = peakValue - (peakValue - currentScore) * progress;
       this.pendingChartPoints.push(value);
     }
