@@ -618,15 +618,15 @@ export default class MainScene extends Phaser.Scene {
         const bubbleKey = `whale-bubble-${i}`;
         this.whaleTrailBubbles.push(bubbleKey);
         
-        // Spawn bubble using spawner with custom texture
-        const sprite = this.spawner.spawn('collectible', lane, zOffset, 'item-bubble');
-        if (sprite) {
-          sprite.setData('bubbleIndex', i);
-          sprite.setData('isWhaleTrail', true);
-          sprite.setName(bubbleKey);
+        // Spawn bubble using spawner with custom texture - spawn returns { sprite, ... }
+        const spawned = this.spawner.spawn('collectible', lane, zOffset, 'item-bubble');
+        if (spawned && spawned.sprite) {
+          spawned.sprite.setData('bubbleIndex', i);
+          spawned.sprite.setData('isWhaleTrail', true);
+          spawned.sprite.setName(bubbleKey);
           
           // Make trail bubbles glow
-          sprite.setTint(0x88ffff);
+          spawned.sprite.setTint(0x88ffff);
         }
       }
     } catch (e) {
@@ -676,17 +676,19 @@ export default class MainScene extends Phaser.Scene {
     });
     
     // Spawn the rare whale token in player's lane
-    const whaleSprite = this.spawner.spawn('collectible', this.player.laneIndex, 300, 'item-whale');
-    whaleSprite.setData('isWhaleToken', true);
-    whaleSprite.setScale(1.5);
-    
-    // Make it sparkle
-    this.tweens.add({
-      targets: whaleSprite,
-      angle: 360,
-      duration: 2000,
-      repeat: -1,
-    });
+    const spawned = this.spawner.spawn('collectible', this.player.laneIndex, 300, 'item-whale');
+    if (spawned && spawned.sprite) {
+      spawned.sprite.setData('isWhaleToken', true);
+      spawned.sprite.setScale(1.5);
+      
+      // Make it sparkle
+      this.tweens.add({
+        targets: spawned.sprite,
+        angle: 360,
+        duration: 2000,
+        repeat: -1,
+      });
+    }
   }
 
   failWhaleTrail() {
