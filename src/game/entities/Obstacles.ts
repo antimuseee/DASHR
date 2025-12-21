@@ -102,11 +102,15 @@ export default class Spawner {
     this.textGroup = scene.add.group();
   }
 
-  spawn(type: SpawnType, lane: number, z: number) {
+  spawn(type: SpawnType, lane: number, z: number, overrideKey?: string) {
     let key = 'obstacle-block';
     let subType = '';
 
-    if (type === 'collectible') {
+    if (overrideKey) {
+      // Use the provided texture key directly
+      key = overrideKey;
+      subType = overrideKey.replace('item-', '').replace('boost-', '');
+    } else if (type === 'collectible') {
       const selected = weightedRandom(collectibleWeights);
       key = selected.key;
       subType = key.replace('item-', '');

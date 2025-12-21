@@ -446,19 +446,26 @@ export default class MainScene extends Phaser.Scene {
 
     // Check if any whale trail bubbles were missed (went past player)
     if (this.whaleTrailActive) {
-      this.spawner.group.getChildren().forEach((child) => {
+      let shouldFail = false;
+      const children = [...this.spawner.group.getChildren()]; // Copy array to avoid mutation issues
+      
+      for (const child of children) {
         const sprite = child as Phaser.Physics.Arcade.Sprite;
-        if (!sprite.active || !sprite.getData('isWhaleTrail')) return;
+        if (!sprite.active || !sprite.getData('isWhaleTrail')) continue;
         
         const z = sprite.getData('z') as number;
         const bubbleIndex = sprite.getData('bubbleIndex') as number;
         
         // If bubble is behind player and not yet collected
         if (z < -50 && bubbleIndex >= this.whaleTrailProgress) {
-          // Missed a bubble!
-          this.failWhaleTrail();
+          shouldFail = true;
+          break;
         }
-      });
+      }
+      
+      if (shouldFail) {
+        this.failWhaleTrail();
+      }
     }
 
     // Trigger new whale event at distance threshold
@@ -558,9 +565,8 @@ export default class MainScene extends Phaser.Scene {
       const bubbleKey = `whale-bubble-${i}`;
       this.whaleTrailBubbles.push(bubbleKey);
       
-      // Spawn bubble using spawner
-      const sprite = this.spawner.spawn('collectible', lane, 'item-bubble');
-      sprite.setData('z', zOffset);
+      // Spawn bubble using spawner with custom texture
+      const sprite = this.spawner.spawn('collectible', lane, zOffset, 'item-bubble');
       sprite.setData('bubbleIndex', i);
       sprite.setData('isWhaleTrail', true);
       sprite.setName(bubbleKey);
@@ -610,8 +616,7 @@ export default class MainScene extends Phaser.Scene {
     });
     
     // Spawn the rare whale token in player's lane
-    const whaleSprite = this.spawner.spawn('collectible', this.player.laneIndex, 'item-whale');
-    whaleSprite.setData('z', 300);
+    const whaleSprite = this.spawner.spawn('collectible', this.player.laneIndex, 300, 'item-whale');
     whaleSprite.setData('isWhaleToken', true);
     whaleSprite.setScale(1.5);
     
@@ -627,13 +632,15 @@ export default class MainScene extends Phaser.Scene {
   failWhaleTrail() {
     this.whaleTrailActive = false;
     
-    // Remove remaining bubbles
+    // Remove remaining bubbles - collect first, then destroy to avoid mutation during iteration
+    const toDestroy: Phaser.Physics.Arcade.Sprite[] = [];
     this.spawner.group.getChildren().forEach((child) => {
       const sprite = child as Phaser.Physics.Arcade.Sprite;
       if (sprite.getData('isWhaleTrail')) {
-        sprite.destroy();
+        toDestroy.push(sprite);
       }
     });
+    toDestroy.forEach(sprite => sprite.destroy());
     
     // Show fail message
     const failText = this.add.text(this.centerX, this.scale.height / 2, '❌ TRAIL LOST ❌', {
