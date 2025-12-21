@@ -19,7 +19,11 @@ export default function GameCanvas() {
   useEffect(() => {
     if (!containerRef.current || phaserRef.current) return;
 
-    const game = new Phaser.Game({
+    // Wait for next frame to ensure DOM is fully laid out
+    const initGame = () => {
+      if (!containerRef.current) return;
+      
+      const game = new Phaser.Game({
       type: Phaser.CANVAS,
       parent: containerRef.current,
       width: window.innerWidth,
@@ -46,19 +50,33 @@ export default function GameCanvas() {
     phaserRef.current = game;
     window.phaserGame = game;
 
-    // Swipe controls for mobile
-    const destroySwipe = attachSwipe(containerRef.current, {
-      onUp: () => game.events.emit('input:jump'),
-      onDown: () => game.events.emit('input:slide'),
-      onLeft: () => game.events.emit('input:left'),
-      onRight: () => game.events.emit('input:right'),
+      // Swipe controls for mobile
+      const destroySwipe = attachSwipe(containerRef.current!, {
+        onUp: () => game.events.emit('input:jump'),
+        onDown: () => game.events.emit('input:slide'),
+        onLeft: () => game.events.emit('input:left'),
+        onRight: () => game.events.emit('input:right'),
+      });
+
+      // Store cleanup function
+      (containerRef.current as any)._cleanup = () => {
+        destroySwipe();
+        window.phaserGame = null;
+        game.destroy(true);
+        phaserRef.current = null;
+      };
+    };
+
+    // Use requestAnimationFrame to ensure DOM is ready with proper dimensions
+    const frameId = requestAnimationFrame(() => {
+      requestAnimationFrame(initGame);
     });
 
     return () => {
-      destroySwipe();
-      window.phaserGame = null;
-      game.destroy(true);
-      phaserRef.current = null;
+      cancelAnimationFrame(frameId);
+      if ((containerRef.current as any)?._cleanup) {
+        (containerRef.current as any)._cleanup();
+      }
     };
   }, []);
 

@@ -282,6 +282,19 @@ export default class MainScene extends Phaser.Scene {
     this.groundY = gameSize.height - 120;
     this.horizonY = Math.floor(gameSize.height * 0.28);
     this.nearY = this.groundY - 30;
+    
+    // Update player position to match new dimensions
+    if (this.player) {
+      this.player.centerX = this.centerX;
+      this.player.groundY = this.groundY;
+      this.player.y = this.groundY - 35;
+      this.player.x = this.player.getLaneX();
+    }
+    
+    // Update spawner center
+    if (this.spawner) {
+      this.spawner.centerX = this.centerX;
+    }
   }
 
   restartRun() {
