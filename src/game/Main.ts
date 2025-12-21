@@ -52,6 +52,18 @@ export default class MainScene extends Phaser.Scene {
   // Invincibility after shield save
   private invincibleUntil = 0;
 
+  // Whale events
+  private controlsReversed = false;
+  private whaleAlertUntil = 0;
+  private whaleAlertText: Phaser.GameObjects.Text | null = null;
+  private nextWhaleEventDistance = 800; // First whale event after 800m
+  
+  // Whale trail
+  private whaleTrailActive = false;
+  private whaleTrailBubbles: string[] = []; // Keys of bubbles in order
+  private whaleTrailProgress = 0;
+  private whaleTrailLanes: number[] = []; // Lane pattern for trail
+
   private keyHandler!: (e: KeyboardEvent) => void;
 
   constructor() {
@@ -107,12 +119,12 @@ export default class MainScene extends Phaser.Scene {
         case 'ArrowLeft':
         case 'KeyA':
           e.preventDefault();
-          this.player.moveLane(-1);
+          this.player.moveLane(this.controlsReversed ? 1 : -1);
           break;
         case 'ArrowRight':
         case 'KeyD':
           e.preventDefault();
-          this.player.moveLane(1);
+          this.player.moveLane(this.controlsReversed ? -1 : 1);
           break;
         // Boost activation keys
         case 'Digit1':
@@ -137,8 +149,8 @@ export default class MainScene extends Phaser.Scene {
     // Swipe events
     this.game.events.on('input:jump', () => this.player.jump());
     this.game.events.on('input:slide', () => this.player.slide());
-    this.game.events.on('input:left', () => this.player.moveLane(-1));
-    this.game.events.on('input:right', () => this.player.moveLane(1));
+    this.game.events.on('input:left', () => this.player.moveLane(this.controlsReversed ? 1 : -1));
+    this.game.events.on('input:right', () => this.player.moveLane(this.controlsReversed ? -1 : 1));
 
     // Start
     this.speed = 250;
@@ -312,6 +324,9 @@ export default class MainScene extends Phaser.Scene {
     // Update boost timers
     gameActions.updateBoostTimer(dt);
 
+    // Update whale alert
+    this.updateWhaleEvents(dt);
+
     // Distance-based scoring
     gameActions.addDistanceScore(distanceDelta);
 
@@ -419,6 +434,226 @@ export default class MainScene extends Phaser.Scene {
     }
   }
 
+  updateWhaleEvents(dt: number) {
+    // Check if whale alert should end
+    if (this.controlsReversed && this.time.now > this.whaleAlertUntil) {
+      this.controlsReversed = false;
+      if (this.whaleAlertText) {
+        this.whaleAlertText.destroy();
+        this.whaleAlertText = null;
+      }
+    }
+
+    // Check if any whale trail bubbles were missed (went past player)
+    if (this.whaleTrailActive) {
+      this.spawner.group.getChildren().forEach((child) => {
+        const sprite = child as Phaser.Physics.Arcade.Sprite;
+        if (!sprite.active || !sprite.getData('isWhaleTrail')) return;
+        
+        const z = sprite.getData('z') as number;
+        const bubbleIndex = sprite.getData('bubbleIndex') as number;
+        
+        // If bubble is behind player and not yet collected
+        if (z < -50 && bubbleIndex >= this.whaleTrailProgress) {
+          // Missed a bubble!
+          this.failWhaleTrail();
+        }
+      });
+    }
+
+    // Trigger new whale event at distance threshold
+    if (this.distance >= this.nextWhaleEventDistance && !this.controlsReversed && !this.whaleTrailActive) {
+      // Randomly choose: whale alert (control reversal) or whale trail
+      const eventType = Math.random() < 0.5 ? 'alert' : 'trail';
+      
+      if (eventType === 'alert') {
+        this.triggerWhaleAlert();
+      } else {
+        this.triggerWhaleTrail();
+      }
+      
+      // Next whale event in 600-1200m
+      this.nextWhaleEventDistance = this.distance + Phaser.Math.Between(600, 1200);
+    }
+  }
+
+  triggerWhaleAlert() {
+    this.controlsReversed = true;
+    this.whaleAlertUntil = this.time.now + 4000; // 4 seconds of reversed controls
+    
+    // Show warning text
+    this.whaleAlertText = this.add.text(this.centerX, this.scale.height / 2 - 50, '🐋 WHALE ALERT! 🐋\nCONTROLS REVERSED!', {
+      fontSize: '28px',
+      fontFamily: 'Arial Black',
+      color: '#00aaff',
+      stroke: '#000033',
+      strokeThickness: 6,
+      align: 'center',
+    }).setOrigin(0.5).setDepth(1000);
+    
+    // Flash effect
+    this.tweens.add({
+      targets: this.whaleAlertText,
+      alpha: 0.3,
+      duration: 200,
+      yoyo: true,
+      repeat: 8,
+    });
+    
+    // Tint screen blue briefly
+    const overlay = this.add.rectangle(this.centerX, this.scale.height / 2, this.scale.width, this.scale.height, 0x0066ff, 0.3);
+    overlay.setDepth(999);
+    this.tweens.add({
+      targets: overlay,
+      alpha: 0,
+      duration: 500,
+      onComplete: () => overlay.destroy(),
+    });
+  }
+
+  triggerWhaleTrail() {
+    this.whaleTrailActive = true;
+    this.whaleTrailProgress = 0;
+    this.whaleTrailBubbles = [];
+    
+    // Generate a lane pattern for 6 bubbles
+    this.whaleTrailLanes = [];
+    let currentLane = this.player.laneIndex;
+    for (let i = 0; i < 6; i++) {
+      this.whaleTrailLanes.push(currentLane);
+      // Randomly move to adjacent lane for next bubble
+      const move = Phaser.Math.Between(-1, 1);
+      currentLane = Math.max(0, Math.min(2, currentLane + move));
+    }
+    
+    // Show trail starting message
+    const trailText = this.add.text(this.centerX, this.scale.height / 2 - 50, '🐋 WHALE TRAIL! 🐋\nFOLLOW THE BUBBLES!', {
+      fontSize: '24px',
+      fontFamily: 'Arial Black',
+      color: '#88ffff',
+      stroke: '#003333',
+      strokeThickness: 5,
+      align: 'center',
+    }).setOrigin(0.5).setDepth(1000);
+    
+    this.tweens.add({
+      targets: trailText,
+      alpha: 0,
+      y: trailText.y - 50,
+      duration: 1500,
+      onComplete: () => trailText.destroy(),
+    });
+    
+    // Spawn the bubble trail
+    this.spawnWhaleTrailBubbles();
+  }
+
+  spawnWhaleTrailBubbles() {
+    const spacing = 150; // Z distance between bubbles
+    
+    for (let i = 0; i < this.whaleTrailLanes.length; i++) {
+      const lane = this.whaleTrailLanes[i];
+      const zOffset = 200 + (i * spacing); // Start further away, space them out
+      
+      const bubbleKey = `whale-bubble-${i}`;
+      this.whaleTrailBubbles.push(bubbleKey);
+      
+      // Spawn bubble using spawner
+      const sprite = this.spawner.spawn('collectible', lane, 'item-bubble');
+      sprite.setData('z', zOffset);
+      sprite.setData('bubbleIndex', i);
+      sprite.setData('isWhaleTrail', true);
+      sprite.setName(bubbleKey);
+      
+      // Make trail bubbles glow
+      sprite.setTint(0x88ffff);
+    }
+  }
+
+  onWhaleTrailBubbleCollected(bubbleIndex: number) {
+    if (bubbleIndex === this.whaleTrailProgress) {
+      // Correct bubble! Progress the trail
+      this.whaleTrailProgress++;
+      
+      // Show progress popup
+      this.showBoostPopup(this.player.x, this.player.y - 40, `${this.whaleTrailProgress}/6`, 0x88ffff);
+      
+      if (this.whaleTrailProgress >= this.whaleTrailLanes.length) {
+        // Trail complete! Spawn whale token reward
+        this.completeWhaleTrail();
+      }
+    } else {
+      // Wrong bubble or missed one - trail failed
+      this.failWhaleTrail();
+    }
+  }
+
+  completeWhaleTrail() {
+    this.whaleTrailActive = false;
+    
+    // Show success message
+    const successText = this.add.text(this.centerX, this.scale.height / 2, '🐋 WHALE INCOMING! 🐋', {
+      fontSize: '32px',
+      fontFamily: 'Arial Black',
+      color: '#ffd700',
+      stroke: '#000000',
+      strokeThickness: 6,
+      align: 'center',
+    }).setOrigin(0.5).setDepth(1000);
+    
+    this.tweens.add({
+      targets: successText,
+      scale: 1.5,
+      alpha: 0,
+      duration: 1000,
+      onComplete: () => successText.destroy(),
+    });
+    
+    // Spawn the rare whale token in player's lane
+    const whaleSprite = this.spawner.spawn('collectible', this.player.laneIndex, 'item-whale');
+    whaleSprite.setData('z', 300);
+    whaleSprite.setData('isWhaleToken', true);
+    whaleSprite.setScale(1.5);
+    
+    // Make it sparkle
+    this.tweens.add({
+      targets: whaleSprite,
+      angle: 360,
+      duration: 2000,
+      repeat: -1,
+    });
+  }
+
+  failWhaleTrail() {
+    this.whaleTrailActive = false;
+    
+    // Remove remaining bubbles
+    this.spawner.group.getChildren().forEach((child) => {
+      const sprite = child as Phaser.Physics.Arcade.Sprite;
+      if (sprite.getData('isWhaleTrail')) {
+        sprite.destroy();
+      }
+    });
+    
+    // Show fail message
+    const failText = this.add.text(this.centerX, this.scale.height / 2, '❌ TRAIL LOST ❌', {
+      fontSize: '24px',
+      fontFamily: 'Arial Black',
+      color: '#ff4444',
+      stroke: '#000000',
+      strokeThickness: 4,
+      align: 'center',
+    }).setOrigin(0.5).setDepth(1000);
+    
+    this.tweens.add({
+      targets: failText,
+      alpha: 0,
+      y: failText.y - 30,
+      duration: 1000,
+      onComplete: () => failText.destroy(),
+    });
+  }
+
   checkCollisions() {
     const playerLane = this.player.laneIndex;
     const pBounds = this.player.getBounds();
@@ -442,6 +677,22 @@ export default class MainScene extends Phaser.Scene {
       if (key.startsWith('item-')) {
         // Collectibles: trigger burst when closer to the player (lower z = closer)
         if (z > 60) return;
+        
+        // Check if this is a whale trail bubble
+        if (sprite.getData('isWhaleTrail')) {
+          const bubbleIndex = sprite.getData('bubbleIndex') as number;
+          this.onWhaleTrailBubbleCollected(bubbleIndex);
+          sprite.destroy();
+          return;
+        }
+        
+        // Check if this is the whale token reward
+        if (sprite.getData('isWhaleToken')) {
+          this.collectWhaleToken(sprite.x, sprite.y);
+          sprite.destroy();
+          return;
+        }
+        
         this.collectItem(key.replace('item-', ''), sprite.x, sprite.y);
         sprite.destroy();
         return;
@@ -514,6 +765,30 @@ export default class MainScene extends Phaser.Scene {
     
     // Show score popup
     this.showScorePopup(x, y, result.points, result.combo > 1 ? result.combo : undefined);
+  }
+
+  collectWhaleToken(x: number, y: number) {
+    // Whale token is worth massive points!
+    const points = 500;
+    const state = useGameStore.getState();
+    const multiplier = state.activeBoost === 'double' ? 2 : 1;
+    const totalPoints = points * multiplier * state.multiplier;
+    
+    useGameStore.setState({
+      score: state.score + totalPoints,
+      collectibleScore: state.collectibleScore + totalPoints,
+      tokens: state.tokens + 1,
+    });
+    
+    // Big sparkle effect
+    for (let i = 0; i < 5; i++) {
+      setTimeout(() => {
+        spawnSpark(this, x + Phaser.Math.Between(-30, 30), y + Phaser.Math.Between(-30, 30), 0x00aaff);
+      }, i * 100);
+    }
+    
+    // Show big score popup
+    this.showBoostPopup(x, y - 30, `🐋 +${Math.round(totalPoints)}!`, 0x00aaff);
   }
 
   collectBoost(type: string, x: number, y: number) {

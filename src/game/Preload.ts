@@ -303,6 +303,45 @@ export default class Preload extends Phaser.Scene {
     g.fillStyle(0xffffff, 1);
     g.fillCircle(3, 3, 3);
     g.generateTexture('particle', 6, 6);
+
+    // WHALE TOKEN - Rare reward, blue whale shape
+    g.clear();
+    g.fillStyle(0x0066cc, 0.4);
+    g.fillCircle(20, 20, 20);
+    g.fillStyle(0x0088ff, 1);
+    g.fillCircle(20, 20, 17);
+    // Whale body
+    g.fillStyle(0x00aaff, 1);
+    g.fillEllipse(20, 22, 24, 14);
+    // Whale tail
+    g.fillTriangle(36, 20, 40, 12, 40, 28);
+    // Whale head
+    g.fillStyle(0x00ccff, 1);
+    g.fillCircle(8, 22, 8);
+    // Eye
+    g.fillStyle(0xffffff, 1);
+    g.fillCircle(6, 20, 3);
+    g.fillStyle(0x000000, 1);
+    g.fillCircle(5, 20, 1.5);
+    // Water spout
+    g.fillStyle(0x88ddff, 0.8);
+    g.fillCircle(10, 8, 3);
+    g.fillCircle(8, 5, 2);
+    g.fillCircle(12, 4, 2);
+    g.generateTexture('item-whale', 40, 40);
+
+    // BUBBLE - Trail marker
+    g.clear();
+    g.fillStyle(0x00ffff, 0.3);
+    g.fillCircle(12, 12, 12);
+    g.fillStyle(0x88ffff, 0.5);
+    g.fillCircle(12, 12, 9);
+    g.fillStyle(0xaaffff, 0.4);
+    g.fillCircle(12, 12, 6);
+    // Shine
+    g.fillStyle(0xffffff, 0.7);
+    g.fillCircle(8, 8, 3);
+    g.generateTexture('item-bubble', 24, 24);
     
     g.destroy();
   }

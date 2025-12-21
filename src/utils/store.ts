@@ -149,6 +149,8 @@ export const COLLECTIBLE_VALUES: Record<string, { points: number; tier: string }
   bonk: { points: 25, tier: 'uncommon' },
   rome: { points: 50, tier: 'rare' },
   gem: { points: 100, tier: 'legendary' },
+  bubble: { points: 15, tier: 'common' }, // Whale trail bubble
+  whale: { points: 500, tier: 'legendary' }, // Rare whale token
 };
 
 // Boost durations in seconds
