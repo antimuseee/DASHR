@@ -304,7 +304,7 @@ export default class Preload extends Phaser.Scene {
     g.fillCircle(3, 3, 3);
     g.generateTexture('particle', 6, 6);
 
-    // WHALE TOKEN - Rare reward, blue whale shape
+    // WHALE TOKEN - Rare reward, blue whale shape (collectible)
     g.clear();
     g.fillStyle(0x0066cc, 0.4);
     g.fillCircle(20, 20, 20);
@@ -330,24 +330,47 @@ export default class Preload extends Phaser.Scene {
     g.fillCircle(12, 4, 2);
     g.generateTexture('item-whale', 40, 40);
 
-    // BUBBLE - Trail marker (bright green/yellow to stand out)
+    // WHALE LEADER - Larger whale that leads the trail (back view, swimming away)
     g.clear();
-    // Outer glow - bright green
-    g.fillStyle(0x00ff88, 0.4);
-    g.fillCircle(14, 14, 14);
-    // Middle ring - yellow
-    g.fillStyle(0xffff00, 0.7);
-    g.fillCircle(14, 14, 10);
-    // Inner - bright green
-    g.fillStyle(0x00ff44, 0.9);
-    g.fillCircle(14, 14, 6);
-    // Whale icon hint - small blue center
+    // Whale body (larger, from behind)
+    g.fillStyle(0x0088ff, 1);
+    g.fillEllipse(30, 28, 40, 22);
+    // Tail flukes (prominent from behind)
     g.fillStyle(0x00aaff, 1);
-    g.fillCircle(14, 14, 3);
-    // Shine
+    g.fillTriangle(30, 8, 10, 0, 50, 0); // Wide tail at top
+    g.fillTriangle(30, 8, 20, 16, 40, 16); // Tail connects to body
+    // Back detail
+    g.fillStyle(0x0066cc, 1);
+    g.fillEllipse(30, 32, 30, 12);
+    // Dorsal fin
+    g.fillStyle(0x00aaff, 1);
+    g.fillTriangle(30, 18, 25, 30, 35, 30);
+    // Side fins visible
+    g.fillStyle(0x0099ee, 1);
+    g.fillEllipse(12, 35, 10, 6);
+    g.fillEllipse(48, 35, 10, 6);
+    // Bubble trail hint
+    g.fillStyle(0xffffff, 0.6);
+    g.fillCircle(30, 50, 4);
+    g.fillCircle(25, 55, 3);
+    g.fillCircle(35, 55, 3);
+    g.generateTexture('whale-leader', 60, 60);
+
+    // BUBBLE - Small white whale trail bubble
+    g.clear();
+    // Outer glow - soft white
+    g.fillStyle(0xffffff, 0.3);
+    g.fillCircle(10, 10, 10);
+    // Main bubble - white/cyan
     g.fillStyle(0xffffff, 0.9);
-    g.fillCircle(10, 10, 2);
-    g.generateTexture('item-bubble', 28, 28);
+    g.fillCircle(10, 10, 7);
+    // Inner highlight - light cyan
+    g.fillStyle(0x88ffff, 0.6);
+    g.fillCircle(10, 10, 4);
+    // Shine
+    g.fillStyle(0xffffff, 1);
+    g.fillCircle(7, 7, 2);
+    g.generateTexture('item-bubble', 20, 20);
     
     g.destroy();
   }
