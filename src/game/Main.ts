@@ -434,8 +434,8 @@ export default class MainScene extends Phaser.Scene {
       this.nextSpawnDistance += Phaser.Math.Between(200, 300);
     }
 
-    // Spawn boosts occasionally
-    if (this.distance >= this.nextBoostDistance) {
+    // Spawn boosts occasionally (but not during whale trail)
+    if (this.distance >= this.nextBoostDistance && !this.whaleTrailActive) {
       const lane = Phaser.Math.Between(0, 2);
       const zBase = this.zFar * Phaser.Math.FloatBetween(0.94, 0.99);
       this.spawner.spawn('boost', lane, zBase);
