@@ -730,8 +730,10 @@ export default class MainScene extends Phaser.Scene {
     this.chartGraphics.clear();
     
     // Chart dimensions and position (left side, below wallet and background text)
-    const chartWidth = 160;
-    const chartHeight = 70;
+    // Smaller on mobile to avoid overlapping game lanes
+    const device = getDevice();
+    const chartWidth = device.isMobile ? 120 : 160;
+    const chartHeight = device.isMobile ? 55 : 70;
     const chartX = 10;
     const chartY = 180; // Below wallet box and PUMP text
     const padding = 6;
@@ -875,10 +877,11 @@ export default class MainScene extends Phaser.Scene {
 
   flashChartText() {
     // Flash green text over the chart when whale is caught
+    const device = getDevice();
     const chartX = 10;
     const chartY = 180;
-    const chartWidth = 160;
-    const chartHeight = 70;
+    const chartWidth = device.isMobile ? 120 : 160;
+    const chartHeight = device.isMobile ? 55 : 70;
     
     const flashText = this.add.text(chartX + chartWidth / 2, chartY + chartHeight / 2, '🚀 MOON!', {
       fontSize: '20px',
