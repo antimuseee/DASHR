@@ -540,8 +540,8 @@ export default class MainScene extends Phaser.Scene {
       this.controlsReversed = true;
       this.whaleAlertUntil = this.time.now + 4000; // 4 seconds of reversed controls
       
-      // Show warning text
-      this.whaleAlertText = this.add.text(this.centerX, this.scale.height / 2 - 50, '🐋 WHALE MANIPULATION! 🐋\nCONTROLS REVERSED!', {
+      // Show warning text with blinking red exclamation marks
+      this.whaleAlertText = this.add.text(this.centerX, this.scale.height / 2 - 50, '🐋  WHALE MANIPULATION  🐋\nCONTROLS REVERSED!', {
         fontSize: '28px',
         fontFamily: 'Arial Black',
         color: '#00aaff',
@@ -550,7 +550,31 @@ export default class MainScene extends Phaser.Scene {
         align: 'center',
       }).setOrigin(0.5).setDepth(1000);
       
-      // Flash effect
+      // Add blinking red exclamation marks
+      const exclaim1 = this.add.text(this.centerX - 155, this.scale.height / 2 - 65, '❗', {
+        fontSize: '32px',
+        color: '#ff0000',
+      }).setOrigin(0.5).setDepth(1001);
+      
+      const exclaim2 = this.add.text(this.centerX + 155, this.scale.height / 2 - 65, '❗', {
+        fontSize: '32px',
+        color: '#ff0000',
+      }).setOrigin(0.5).setDepth(1001);
+      
+      // Blink the exclamation marks red
+      this.tweens.add({
+        targets: [exclaim1, exclaim2],
+        alpha: 0,
+        duration: 150,
+        yoyo: true,
+        repeat: 12,
+        onComplete: () => {
+          exclaim1.destroy();
+          exclaim2.destroy();
+        }
+      });
+      
+      // Flash effect on main text
       this.tweens.add({
         targets: this.whaleAlertText,
         alpha: 0.3,
