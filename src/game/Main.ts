@@ -487,6 +487,24 @@ export default class MainScene extends Phaser.Scene {
           this.whaleAlertText.destroy();
           this.whaleAlertText = null;
         }
+        
+        // Show "controls restored" message so player knows it's safe
+        const restoredText = this.add.text(this.centerX, this.scale.height / 2 - 50, '✅ CONTROLS RESTORED!', {
+          fontSize: '24px',
+          fontFamily: 'Arial Black',
+          color: '#00ff00',
+          stroke: '#003300',
+          strokeThickness: 4,
+          align: 'center',
+        }).setOrigin(0.5).setDepth(1000);
+        
+        this.tweens.add({
+          targets: restoredText,
+          alpha: 0,
+          y: restoredText.y - 30,
+          duration: 1200,
+          onComplete: () => restoredText.destroy(),
+        });
       }
       
       // Update whale leader position (whale gets closer as player collects bubbles)
