@@ -56,7 +56,7 @@ export default class MainScene extends Phaser.Scene {
   private controlsReversed = false;
   private whaleAlertUntil = 0;
   private whaleAlertText: Phaser.GameObjects.Text | null = null;
-  private nextWhaleEventDistance = 800; // First whale event after 800m
+  private nextWhaleEventDistance = 2000; // First whale event after 2000m (give time to build inventory)
   
   // Whale trail
   private whaleTrailActive = false;
@@ -479,8 +479,8 @@ export default class MainScene extends Phaser.Scene {
         this.triggerWhaleTrail();
       }
       
-      // Next whale event in 600-1200m
-      this.nextWhaleEventDistance = this.distance + Phaser.Math.Between(600, 1200);
+      // Next whale event in 800-1500m
+      this.nextWhaleEventDistance = this.distance + Phaser.Math.Between(800, 1500);
     }
   }
 
