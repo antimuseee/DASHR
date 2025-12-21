@@ -195,7 +195,7 @@ export default class MainScene extends Phaser.Scene {
     
     // Mobile: first obstacles spawn further away for easier start
     const device = getDevice();
-    this.nextSpawnDistance = device.isMobile ? 180 : 100;
+    this.nextSpawnDistance = device.isMobile ? 250 : 100;
     this.nextBoostDistance = 600 + Math.random() * 400; // First boost after 600-1000m
     this.runActive = true;
     this.scorePopups = [];
@@ -417,7 +417,7 @@ export default class MainScene extends Phaser.Scene {
     
     // Speed ramp-up: slower on mobile for more forgiving early game
     const device = getDevice();
-    const speedIncrease = device.isMobile ? 2 : 3; // Mobile ramps up 33% slower
+    const speedIncrease = device.isMobile ? 1.5 : 3; // Mobile ramps up 50% slower
     this.speed += speedIncrease * dt;
 
     // Update boost timers
@@ -523,9 +523,19 @@ export default class MainScene extends Phaser.Scene {
       // Spawn very close to the horizon so they immediately start moving toward the player.
       const zBase = this.zFar * Phaser.Math.FloatBetween(0.94, 0.99);
 
-      // Mobile early-game adjustment: occasionally skip pit spawns in first 800m
-      // This gives mobile players more breathing room to learn controls
-      const shouldSkipPit = device.isMobile && this.distance < 800 && Math.random() < 0.35;
+      // Mobile early-game adjustment: skip some pit spawns to reduce density
+      // Higher skip chance early, gradually decreases as player progresses
+      let skipChance = 0;
+      if (device.isMobile) {
+        if (this.distance < 500) {
+          skipChance = 0.5; // 50% skip in first 500m
+        } else if (this.distance < 1500) {
+          skipChance = 0.35; // 35% skip from 500-1500m
+        } else if (this.distance < 3000) {
+          skipChance = 0.2; // 20% skip from 1500-3000m
+        }
+      }
+      const shouldSkipPit = skipChance > 0 && Math.random() < skipChance;
 
       // Spawn obstacles (pits)
       if (!shouldSkipPit) {
@@ -545,10 +555,16 @@ export default class MainScene extends Phaser.Scene {
       // Mobile: larger gaps between spawns early game for more reaction time
       let minGap = 200;
       let maxGap = 300;
-      if (device.isMobile && this.distance < 1200) {
-        // Early game on mobile: 280-400m gaps instead of 200-300m
-        minGap = 280;
-        maxGap = 400;
+      if (device.isMobile) {
+        if (this.distance < 1000) {
+          // Very early game on mobile: 320-450m gaps
+          minGap = 320;
+          maxGap = 450;
+        } else if (this.distance < 2500) {
+          // Mid-early game: 260-380m gaps
+          minGap = 260;
+          maxGap = 380;
+        }
       }
       this.nextSpawnDistance += Phaser.Math.Between(minGap, maxGap);
     }
