@@ -833,34 +833,45 @@ export default class MainScene extends Phaser.Scene {
   }
 
   addChartSpike() {
-    // Add a dramatic spike when whale is caught - zig-zag then parabolic up, then consolidate sideways
+    // Add a dramatic spike when whale is caught - slow zig-zag build, then parabolic up, then consolidate sideways
     const state = useGameStore.getState();
     const currentScore = state.score;
     const baseScore = this.chartData[this.chartData.length - 1] || currentScore * 0.8;
     
-    // Zig-zag pattern going up (slower build)
-    this.chartData.push(baseScore * 1.05);  // Up a little
-    this.chartData.push(baseScore * 1.08);  // Keep climbing
-    this.chartData.push(baseScore * 1.06);  // Slight dip
+    // Slow zig-zag pattern going up (gradual build)
+    this.chartData.push(baseScore * 1.02);  // Tiny up
+    this.chartData.push(baseScore * 1.04);  // Keep climbing slowly
+    this.chartData.push(baseScore * 1.03);  // Slight dip
+    this.chartData.push(baseScore * 1.06);  // Up a bit
+    this.chartData.push(baseScore * 1.05);  // Tiny dip
+    this.chartData.push(baseScore * 1.09);  // Up
+    this.chartData.push(baseScore * 1.08);  // Tiny dip
     this.chartData.push(baseScore * 1.12);  // Up more
-    this.chartData.push(baseScore * 1.10);  // Slight dip
-    this.chartData.push(baseScore * 1.18);  // Up more
-    this.chartData.push(baseScore * 1.15);  // Tiny dip
-    this.chartData.push(baseScore * 1.25);  // Building momentum
+    this.chartData.push(baseScore * 1.11);  // Tiny dip
+    this.chartData.push(baseScore * 1.16);  // Up more
+    this.chartData.push(baseScore * 1.14);  // Slight dip
+    this.chartData.push(baseScore * 1.20);  // Building momentum
+    this.chartData.push(baseScore * 1.18);  // Tiny pullback
+    this.chartData.push(baseScore * 1.25);  // Stronger now
     
-    // Parabolic spike up!
-    this.chartData.push(baseScore * 1.4);   // Accelerating
-    this.chartData.push(baseScore * 1.6);   // Faster
-    this.chartData.push(baseScore * 1.85);  // Even faster
-    this.chartData.push(currentScore);       // Peak at actual score
+    // Parabolic spike up! (more gradual acceleration)
+    this.chartData.push(baseScore * 1.32);  // Starting to accelerate
+    this.chartData.push(baseScore * 1.42);  // Faster
+    this.chartData.push(baseScore * 1.55);  // Even faster
+    this.chartData.push(baseScore * 1.70);  // Accelerating more
+    this.chartData.push(baseScore * 1.88);  // Almost there
+    this.chartData.push(currentScore);       // Peak at actual score!
     
-    // Sideways consolidation after the spike (stays high, slight wobble)
+    // Sideways consolidation after the spike (stays high, gentle wobble - NO RED DROP)
     const peakScore = currentScore;
-    this.chartData.push(peakScore * 0.98);  // Tiny dip
-    this.chartData.push(peakScore * 0.99);  // Stabilize
+    this.chartData.push(peakScore * 0.99);  // Tiny dip
+    this.chartData.push(peakScore * 0.98);  // A bit more
+    this.chartData.push(peakScore * 0.99);  // Coming back
     this.chartData.push(peakScore);          // Back to peak
-    this.chartData.push(peakScore * 0.99);  // Slight wobble
-    this.chartData.push(peakScore * 1.01);  // Tiny up
+    this.chartData.push(peakScore * 0.995); // Tiny wobble
+    this.chartData.push(peakScore * 1.005); // Tiny up
+    this.chartData.push(peakScore);          // Stable
+    this.chartData.push(peakScore * 0.998); // Very slight wobble
     this.chartData.push(peakScore);          // Stable - ready for normal operation
     
     // Keep only last 60 data points
