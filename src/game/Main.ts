@@ -3,6 +3,7 @@ import Player from './entities/Player';
 import Spawner from './entities/Obstacles';
 import { useGameStore, gameActions } from '../utils/store';
 import { spawnSpark } from '../utils/particles';
+import { getDevice } from '../utils/device';
 
 interface ChunkConfig {
   weight: number;
