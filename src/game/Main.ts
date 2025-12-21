@@ -823,20 +823,29 @@ export default class MainScene extends Phaser.Scene {
   }
 
   addChartCrash() {
-    // When player dies - dramatic crash to flat red line
+    // When player dies - dramatic crash to flat red line at absolute bottom
     const state = useGameStore.getState();
     const currentScore = state.score || this.chartData[this.chartData.length - 1] || 100;
     
-    // Add rapid crash points
-    this.chartData.push(currentScore * 0.7);  // Start crashing
-    this.chartData.push(currentScore * 0.4);  // Keep falling
-    this.chartData.push(currentScore * 0.15); // Almost at bottom
-    this.chartData.push(0);                    // Hit zero
+    // Find the minimum value in existing data to ensure crash goes BELOW it
+    const minInChart = Math.min(...this.chartData, currentScore);
+    const crashBottom = -minInChart * 0.1; // Go slightly negative to ensure it's at the very bottom
     
-    // Fill the rest of the chart with flat zero (red line at bottom)
-    const pointsToFill = 60 - this.chartData.length;
-    for (let i = 0; i < pointsToFill; i++) {
-      this.chartData.push(0);
+    // Add rapid crash points - steep drop
+    this.chartData.push(currentScore * 0.5);   // Start crashing hard
+    this.chartData.push(currentScore * 0.2);   // Keep falling
+    this.chartData.push(currentScore * 0.05);  // Almost at bottom
+    this.chartData.push(crashBottom);           // Hit absolute bottom
+    
+    // Add flat line at bottom - but only enough to show crash while keeping some green visible
+    // Fill about 15-20 more points (not the whole chart)
+    for (let i = 0; i < 18; i++) {
+      this.chartData.push(crashBottom);
+    }
+    
+    // Keep only last 60 data points - this preserves some green on the left
+    while (this.chartData.length > 60) {
+      this.chartData.shift();
     }
     
     // Redraw to show the crash
