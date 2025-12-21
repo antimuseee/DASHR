@@ -436,173 +436,194 @@ export default class MainScene extends Phaser.Scene {
   }
 
   updateWhaleEvents(dt: number) {
-    // Check if whale alert should end
-    if (this.controlsReversed && this.time.now > this.whaleAlertUntil) {
-      this.controlsReversed = false;
-      if (this.whaleAlertText) {
-        this.whaleAlertText.destroy();
-        this.whaleAlertText = null;
-      }
-    }
-
-    // Check if any whale trail bubbles were missed (went past player)
-    if (this.whaleTrailActive) {
-      let shouldFail = false;
-      const children = [...this.spawner.group.getChildren()]; // Copy array to avoid mutation issues
-      
-      for (const child of children) {
-        const sprite = child as Phaser.Physics.Arcade.Sprite;
-        if (!sprite.active || !sprite.getData('isWhaleTrail')) continue;
-        
-        const z = sprite.getData('z') as number;
-        const bubbleIndex = sprite.getData('bubbleIndex') as number;
-        
-        // If bubble is behind player and not yet collected
-        if (z < -50 && bubbleIndex >= this.whaleTrailProgress) {
-          shouldFail = true;
-          break;
+    try {
+      // Check if whale alert should end
+      if (this.controlsReversed && this.time.now > this.whaleAlertUntil) {
+        this.controlsReversed = false;
+        if (this.whaleAlertText) {
+          this.whaleAlertText.destroy();
+          this.whaleAlertText = null;
         }
       }
-      
-      if (shouldFail) {
-        this.failWhaleTrail();
-      }
-    }
 
-    // Check if whale events should unlock (requires using boosts + distance)
-    const state = useGameStore.getState();
-    if (!this.whaleEventsUnlocked) {
-      // Unlock whale events after player has used 4+ boosts AND traveled 4000m+
-      if (state.boostsUsed >= 4 && this.distance >= 4000) {
-        this.whaleEventsUnlocked = true;
-        this.nextWhaleEventDistance = this.distance + Phaser.Math.Between(300, 600); // First event soon after unlock
+      // Check if any whale trail bubbles were missed (went past player)
+      if (this.whaleTrailActive && this.spawner?.group) {
+        let shouldFail = false;
+        const children = [...this.spawner.group.getChildren()]; // Copy array to avoid mutation issues
         
-        // Announce whale events unlocked
-        const unlockText = this.add.text(this.centerX, this.scale.height / 2 - 80, '🐋 WHALE ZONE ENTERED 🐋', {
-          fontSize: '24px',
-          fontFamily: 'Arial Black',
-          color: '#00aaff',
-          stroke: '#000033',
-          strokeThickness: 5,
-          align: 'center',
-        }).setOrigin(0.5).setDepth(1000);
+        for (const child of children) {
+          const sprite = child as Phaser.Physics.Arcade.Sprite;
+          if (!sprite.active || !sprite.getData('isWhaleTrail')) continue;
+          
+          const z = sprite.getData('z') as number;
+          const bubbleIndex = sprite.getData('bubbleIndex') as number;
+          
+          // If bubble is behind player and not yet collected
+          if (z < -50 && bubbleIndex >= this.whaleTrailProgress) {
+            shouldFail = true;
+            break;
+          }
+        }
         
-        this.tweens.add({
-          targets: unlockText,
-          alpha: 0,
-          y: unlockText.y - 40,
-          duration: 2000,
-          onComplete: () => unlockText.destroy(),
-        });
+        if (shouldFail) {
+          this.failWhaleTrail();
+        }
       }
-      return; // Don't trigger events until unlocked
-    }
 
-    // Trigger new whale event at distance threshold
-    if (this.distance >= this.nextWhaleEventDistance && !this.controlsReversed && !this.whaleTrailActive) {
-      // Randomly choose: whale alert (control reversal) or whale trail
-      const eventType = Math.random() < 0.5 ? 'alert' : 'trail';
-      
-      if (eventType === 'alert') {
-        this.triggerWhaleAlert();
-      } else {
-        this.triggerWhaleTrail();
+      // Check if whale events should unlock (requires using boosts + distance)
+      const state = useGameStore.getState();
+      if (!this.whaleEventsUnlocked) {
+        // Unlock whale events after player has used 4+ boosts AND traveled 4000m+
+        if (state.boostsUsed >= 4 && this.distance >= 4000) {
+          this.whaleEventsUnlocked = true;
+          this.nextWhaleEventDistance = this.distance + Phaser.Math.Between(300, 600); // First event soon after unlock
+          
+          // Announce whale events unlocked
+          const unlockText = this.add.text(this.centerX, this.scale.height / 2 - 80, '🐋 WHALE ZONE ENTERED 🐋', {
+            fontSize: '24px',
+            fontFamily: 'Arial Black',
+            color: '#00aaff',
+            stroke: '#000033',
+            strokeThickness: 5,
+            align: 'center',
+          }).setOrigin(0.5).setDepth(1000);
+          
+          this.tweens.add({
+            targets: unlockText,
+            alpha: 0,
+            y: unlockText.y - 40,
+            duration: 2000,
+            onComplete: () => unlockText.destroy(),
+          });
+        }
+        return; // Don't trigger events until unlocked
       }
-      
-      // Next whale event in 800-1500m
-      this.nextWhaleEventDistance = this.distance + Phaser.Math.Between(800, 1500);
+
+      // Trigger new whale event at distance threshold
+      if (this.distance >= this.nextWhaleEventDistance && !this.controlsReversed && !this.whaleTrailActive) {
+        // Randomly choose: whale alert (control reversal) or whale trail
+        const eventType = Math.random() < 0.5 ? 'alert' : 'trail';
+        
+        if (eventType === 'alert') {
+          this.triggerWhaleAlert();
+        } else {
+          this.triggerWhaleTrail();
+        }
+        
+        // Next whale event in 800-1500m
+        this.nextWhaleEventDistance = this.distance + Phaser.Math.Between(800, 1500);
+      }
+    } catch (e) {
+      console.error('[WhaleEvents] Error in update:', e);
     }
   }
 
   triggerWhaleAlert() {
-    this.controlsReversed = true;
-    this.whaleAlertUntil = this.time.now + 4000; // 4 seconds of reversed controls
-    
-    // Show warning text
-    this.whaleAlertText = this.add.text(this.centerX, this.scale.height / 2 - 50, '🐋 WHALE ALERT! 🐋\nCONTROLS REVERSED!', {
-      fontSize: '28px',
-      fontFamily: 'Arial Black',
-      color: '#00aaff',
-      stroke: '#000033',
-      strokeThickness: 6,
-      align: 'center',
-    }).setOrigin(0.5).setDepth(1000);
-    
-    // Flash effect
-    this.tweens.add({
-      targets: this.whaleAlertText,
-      alpha: 0.3,
-      duration: 200,
-      yoyo: true,
-      repeat: 8,
-    });
-    
-    // Tint screen blue briefly
-    const overlay = this.add.rectangle(this.centerX, this.scale.height / 2, this.scale.width, this.scale.height, 0x0066ff, 0.3);
-    overlay.setDepth(999);
-    this.tweens.add({
-      targets: overlay,
-      alpha: 0,
-      duration: 500,
-      onComplete: () => overlay.destroy(),
-    });
+    try {
+      this.controlsReversed = true;
+      this.whaleAlertUntil = this.time.now + 4000; // 4 seconds of reversed controls
+      
+      // Show warning text
+      this.whaleAlertText = this.add.text(this.centerX, this.scale.height / 2 - 50, '🐋 WHALE ALERT! 🐋\nCONTROLS REVERSED!', {
+        fontSize: '28px',
+        fontFamily: 'Arial Black',
+        color: '#00aaff',
+        stroke: '#000033',
+        strokeThickness: 6,
+        align: 'center',
+      }).setOrigin(0.5).setDepth(1000);
+      
+      // Flash effect
+      this.tweens.add({
+        targets: this.whaleAlertText,
+        alpha: 0.3,
+        duration: 200,
+        yoyo: true,
+        repeat: 8,
+      });
+      
+      // Tint screen blue briefly
+      const overlay = this.add.rectangle(this.centerX, this.scale.height / 2, this.scale.width, this.scale.height, 0x0066ff, 0.3);
+      overlay.setDepth(999);
+      this.tweens.add({
+        targets: overlay,
+        alpha: 0,
+        duration: 500,
+        onComplete: () => overlay.destroy(),
+      });
+    } catch (e) {
+      console.error('[WhaleAlert] Error:', e);
+      this.controlsReversed = false;
+    }
   }
 
   triggerWhaleTrail() {
-    this.whaleTrailActive = true;
-    this.whaleTrailProgress = 0;
-    this.whaleTrailBubbles = [];
-    
-    // Generate a lane pattern for 6 bubbles
-    this.whaleTrailLanes = [];
-    let currentLane = this.player.laneIndex;
-    for (let i = 0; i < 6; i++) {
-      this.whaleTrailLanes.push(currentLane);
-      // Randomly move to adjacent lane for next bubble
-      const move = Phaser.Math.Between(-1, 1);
-      currentLane = Math.max(0, Math.min(2, currentLane + move));
+    try {
+      this.whaleTrailActive = true;
+      this.whaleTrailProgress = 0;
+      this.whaleTrailBubbles = [];
+      
+      // Generate a lane pattern for 6 bubbles
+      this.whaleTrailLanes = [];
+      let currentLane = this.player.laneIndex;
+      for (let i = 0; i < 6; i++) {
+        this.whaleTrailLanes.push(currentLane);
+        // Randomly move to adjacent lane for next bubble
+        const move = Phaser.Math.Between(-1, 1);
+        currentLane = Math.max(0, Math.min(2, currentLane + move));
+      }
+      
+      // Show trail starting message
+      const trailText = this.add.text(this.centerX, this.scale.height / 2 - 50, '🐋 WHALE TRAIL! 🐋\nFOLLOW THE BUBBLES!', {
+        fontSize: '24px',
+        fontFamily: 'Arial Black',
+        color: '#88ffff',
+        stroke: '#003333',
+        strokeThickness: 5,
+        align: 'center',
+      }).setOrigin(0.5).setDepth(1000);
+      
+      this.tweens.add({
+        targets: trailText,
+        alpha: 0,
+        y: trailText.y - 50,
+        duration: 1500,
+        onComplete: () => trailText.destroy(),
+      });
+      
+      // Spawn the bubble trail
+      this.spawnWhaleTrailBubbles();
+    } catch (e) {
+      console.error('[WhaleTrail] Error:', e);
+      this.whaleTrailActive = false;
     }
-    
-    // Show trail starting message
-    const trailText = this.add.text(this.centerX, this.scale.height / 2 - 50, '🐋 WHALE TRAIL! 🐋\nFOLLOW THE BUBBLES!', {
-      fontSize: '24px',
-      fontFamily: 'Arial Black',
-      color: '#88ffff',
-      stroke: '#003333',
-      strokeThickness: 5,
-      align: 'center',
-    }).setOrigin(0.5).setDepth(1000);
-    
-    this.tweens.add({
-      targets: trailText,
-      alpha: 0,
-      y: trailText.y - 50,
-      duration: 1500,
-      onComplete: () => trailText.destroy(),
-    });
-    
-    // Spawn the bubble trail
-    this.spawnWhaleTrailBubbles();
   }
 
   spawnWhaleTrailBubbles() {
-    const spacing = 150; // Z distance between bubbles
-    
-    for (let i = 0; i < this.whaleTrailLanes.length; i++) {
-      const lane = this.whaleTrailLanes[i];
-      const zOffset = 200 + (i * spacing); // Start further away, space them out
+    try {
+      const spacing = 150; // Z distance between bubbles
       
-      const bubbleKey = `whale-bubble-${i}`;
-      this.whaleTrailBubbles.push(bubbleKey);
-      
-      // Spawn bubble using spawner with custom texture
-      const sprite = this.spawner.spawn('collectible', lane, zOffset, 'item-bubble');
-      sprite.setData('bubbleIndex', i);
-      sprite.setData('isWhaleTrail', true);
-      sprite.setName(bubbleKey);
-      
-      // Make trail bubbles glow
-      sprite.setTint(0x88ffff);
+      for (let i = 0; i < this.whaleTrailLanes.length; i++) {
+        const lane = this.whaleTrailLanes[i];
+        const zOffset = 200 + (i * spacing); // Start further away, space them out
+        
+        const bubbleKey = `whale-bubble-${i}`;
+        this.whaleTrailBubbles.push(bubbleKey);
+        
+        // Spawn bubble using spawner with custom texture
+        const sprite = this.spawner.spawn('collectible', lane, zOffset, 'item-bubble');
+        if (sprite) {
+          sprite.setData('bubbleIndex', i);
+          sprite.setData('isWhaleTrail', true);
+          sprite.setName(bubbleKey);
+          
+          // Make trail bubbles glow
+          sprite.setTint(0x88ffff);
+        }
+      }
+    } catch (e) {
+      console.error('[WhaleTrail] Error spawning bubbles:', e);
+      this.whaleTrailActive = false;
     }
   }
 
