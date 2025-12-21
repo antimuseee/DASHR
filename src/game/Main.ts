@@ -861,12 +861,12 @@ export default class MainScene extends Phaser.Scene {
     // START FRESH SEQUENCE
     this.pendingChartPoints = [];
     
-    // VERTICAL MOON SHOT - goes straight up for a long time (100 points - ~5 seconds)
-    // Shoots to 5X the current score - EXTREME vertical line
-    const peakMultiplier = 5.0; // 5x the score gain for truly vertical appearance
-    for (let i = 1; i <= 100; i++) {
-      const progress = i / 100;
-      // Linear for completely vertical line - constant steep slope
+    // VERTICAL MOON SHOT - FEW points for truly vertical appearance (15 points - ~0.75 seconds)
+    // Shoots to 5X the current score in a short horizontal distance = VERTICAL
+    const peakMultiplier = 5.0; // 5x the score gain
+    for (let i = 1; i <= 15; i++) {
+      const progress = i / 15;
+      // Linear but COMPRESSED - shoots up fast in few points
       const curveProgress = peakMultiplier * progress;
       this.pendingChartPoints.push(lastPoint + (currentScore - lastPoint) * curveProgress);
     }
