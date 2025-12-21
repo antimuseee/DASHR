@@ -523,9 +523,12 @@ export default class MainScene extends Phaser.Scene {
           this.nextWhaleEventDistance = this.distance + Phaser.Math.Between(2500, 4000);
         } else {
           // After trail completed: only whale alerts (control reversal), no more trails
-          this.triggerWhaleAlert();
-          // Wait a while before next alert too
-          this.nextWhaleEventDistance = this.distance + Phaser.Math.Between(2000, 3000);
+          // BUT requires 3 inventory usages before whale manipulation can activate
+          if (state.boostsUsed >= 3) {
+            this.triggerWhaleAlert();
+            // Wait a while before next alert too
+            this.nextWhaleEventDistance = this.distance + Phaser.Math.Between(2000, 3000);
+          }
         }
       }
     } catch (e) {
