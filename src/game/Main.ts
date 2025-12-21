@@ -904,6 +904,7 @@ export default class MainScene extends Phaser.Scene {
 
   addChartCrash() {
     // When player dies - dramatic crash to flat red line at absolute bottom
+    // Reverted to immediate update because game loop stops on death
     const state = useGameStore.getState();
     const currentScore = state.score || this.chartData[this.chartData.length - 1] || 100;
     
@@ -911,17 +912,25 @@ export default class MainScene extends Phaser.Scene {
     const minInChart = Math.min(...this.chartData, currentScore);
     const crashBottom = -minInChart * 0.1; // Go slightly negative to ensure it's at the very bottom
     
-    // Clear pending and add rapid crash sequence
+    // Clear any pending points and push directly to data for immediate visual
     this.pendingChartPoints = [];
-    this.pendingChartPoints.push(currentScore * 0.5);   // Start crashing hard
-    this.pendingChartPoints.push(currentScore * 0.2);   // Keep falling
-    this.pendingChartPoints.push(currentScore * 0.05);  // Almost at bottom
-    this.pendingChartPoints.push(crashBottom);           // Hit absolute bottom
+    this.chartData.push(currentScore * 0.5);   // Start crashing hard
+    this.chartData.push(currentScore * 0.2);   // Keep falling
+    this.chartData.push(currentScore * 0.05);  // Almost at bottom
+    this.chartData.push(crashBottom);           // Hit absolute bottom
     
-    // Add flat line at bottom
+    // Add flat line at bottom - but only enough to show crash while keeping some green visible
     for (let i = 0; i < 18; i++) {
-      this.pendingChartPoints.push(crashBottom);
+      this.chartData.push(crashBottom);
     }
+    
+    // Keep only last 60 data points
+    while (this.chartData.length > 60) {
+      this.chartData.shift();
+    }
+    
+    // Redraw immediately to show the crash since the update loop is about to stop
+    this.drawTradingChart();
   }
 
   triggerWhaleAlert() {
