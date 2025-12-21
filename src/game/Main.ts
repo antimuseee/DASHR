@@ -874,10 +874,10 @@ export default class MainScene extends Phaser.Scene {
       this.pendingChartPoints.push(baseValue * wobble);
     }
     
-    // 2. Massive vertical takeoff (12 points - shoots WAY past the actual score)
+    // 2. Massive vertical takeoff (30 points - LONG straight shot up)
     // Shoots to 150% of the gain to make the zig-zags look tiny
-    for (let i = 1; i <= 12; i++) {
-      const progress = i / 12;
+    for (let i = 1; i <= 30; i++) {
+      const progress = i / 30;
       // Power of 6 for extreme "straight shot" curve
       const curveProgress = 0.1 + 1.4 * Math.pow(progress, 6);
       this.pendingChartPoints.push(lastPoint + (currentScore - lastPoint) * curveProgress);
