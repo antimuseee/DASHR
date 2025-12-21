@@ -64,6 +64,8 @@ export default class MainScene extends Phaser.Scene {
   private whaleAlertTimer = 0; // Countdown timer in seconds
   private whaleAlertEnding = false; // Flag to prevent repeat end-of-alert processing
   private whaleAlertText: Phaser.GameObjects.Text | null = null;
+  private whaleExclaim1: Phaser.GameObjects.Text | null = null;
+  private whaleExclaim2: Phaser.GameObjects.Text | null = null;
   private whaleEventsUnlocked = false; // Whale events only after player has used boosts
   private nextWhaleEventDistance = 0; // Set when unlocked
   private whaleTrailCompleted = false; // First event is always trail, then alerts can happen
@@ -502,13 +504,23 @@ export default class MainScene extends Phaser.Scene {
         
         // Check if whale alert should end
         if (this.whaleAlertTimer <= 0) {
+          console.log('[WhaleManipulation] Timer expired, ending manipulation');
           this.controlsReversed = false;
           isControlsReversed = false; // Update module-level variable for swipe handlers
           this.whaleAlertTimer = 0;
           
+          // Destroy all whale alert text elements
           if (this.whaleAlertText) {
             this.whaleAlertText.destroy();
             this.whaleAlertText = null;
+          }
+          if (this.whaleExclaim1) {
+            this.whaleExclaim1.destroy();
+            this.whaleExclaim1 = null;
+          }
+          if (this.whaleExclaim2) {
+            this.whaleExclaim2.destroy();
+            this.whaleExclaim2 = null;
           }
         
         // Show "controls restored" message so player knows it's safe
@@ -558,6 +570,7 @@ export default class MainScene extends Phaser.Scene {
         
         // IMPORTANT: Return here to prevent immediately triggering another whale event
         // in the same frame (since controlsReversed is now false)
+        console.log('[WhaleManipulation] Cleanup complete, returning to prevent re-trigger');
         return;
         }
       }
@@ -636,6 +649,7 @@ export default class MainScene extends Phaser.Scene {
 
   triggerWhaleAlert() {
     try {
+      console.log('[WhaleManipulation] Triggering whale manipulation');
       this.controlsReversed = true;
       isControlsReversed = true; // Update module-level variable for swipe handlers
       this.whaleAlertTimer = 4; // 4 seconds of reversed controls (countdown in seconds)
@@ -656,26 +670,32 @@ export default class MainScene extends Phaser.Scene {
       }).setOrigin(0.5).setDepth(1000);
       
       // Add blinking red exclamation marks
-      const exclaim1 = this.add.text(this.centerX - exclaimOffset, this.scale.height / 2 - 65, '❗', {
+      this.whaleExclaim1 = this.add.text(this.centerX - exclaimOffset, this.scale.height / 2 - 65, '❗', {
         fontSize: exclaimSize,
         color: '#ff0000',
       }).setOrigin(0.5).setDepth(1001);
       
-      const exclaim2 = this.add.text(this.centerX + exclaimOffset, this.scale.height / 2 - 65, '❗', {
+      this.whaleExclaim2 = this.add.text(this.centerX + exclaimOffset, this.scale.height / 2 - 65, '❗', {
         fontSize: exclaimSize,
         color: '#ff0000',
       }).setOrigin(0.5).setDepth(1001);
       
       // Blink the exclamation marks red
       this.tweens.add({
-        targets: [exclaim1, exclaim2],
+        targets: [this.whaleExclaim1, this.whaleExclaim2],
         alpha: 0,
         duration: 150,
         yoyo: true,
         repeat: 12,
         onComplete: () => {
-          exclaim1.destroy();
-          exclaim2.destroy();
+          if (this.whaleExclaim1) {
+            this.whaleExclaim1.destroy();
+            this.whaleExclaim1 = null;
+          }
+          if (this.whaleExclaim2) {
+            this.whaleExclaim2.destroy();
+            this.whaleExclaim2 = null;
+          }
         }
       });
       
