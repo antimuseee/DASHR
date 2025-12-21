@@ -853,7 +853,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   addChartSpike() {
-    // Add a massive spike when whale is caught - sharp zig-zag, vertical overshoot, then high sideways
+    // Add a massive spike when whale is caught - short upward zig-zag, then vertical moon shot, long sideways hold
     const state = useGameStore.getState();
     const currentScore = state.score;
     const lastPoint = this.chartData[this.chartData.length - 1] || currentScore * 0.5;
@@ -861,40 +861,41 @@ export default class MainScene extends Phaser.Scene {
     // START FRESH SEQUENCE
     this.pendingChartPoints = [];
     
-    // 1. Slower Zig-zag build (24 points - approx 1.2s at 0.05s frequency)
-    // 3 distinct zig-zags with increasing peaks, staying very low (10% of gain)
-    for (let i = 1; i <= 24; i++) {
-      const progress = i / 24;
-      const baseValue = lastPoint + (currentScore - lastPoint) * 0.1 * progress;
-      const zzIndex = Math.floor((i - 1) / 8);
-      const zzProgress = ((i - 1) % 8) / 7; 
-      const amp = 0.08 + (zzIndex * 0.06); 
+    // 1. SHORTER Zig-zag build on an UPWARD TREND (12 points - approx 0.6s at 0.05s frequency)
+    // 3 distinct zig-zags with increasing peaks on a steep upward slope (15% of gain)
+    for (let i = 1; i <= 12; i++) {
+      const progress = i / 12;
+      // Strong upward trend - each zig-zag peak is higher than the last
+      const baseValue = lastPoint + (currentScore - lastPoint) * 0.15 * progress;
+      const zzIndex = Math.floor((i - 1) / 4); // 3 cycles of 4 points each
+      const zzProgress = ((i - 1) % 4) / 3; 
+      const amp = 0.10 + (zzIndex * 0.08); // 10%, 18%, 26% amplitude - sharp!
       const triangle = zzProgress < 0.5 ? (zzProgress * 2) : (1 - (zzProgress - 0.5) * 2);
       const wobble = 1 + (triangle - 0.5) * amp;
       this.pendingChartPoints.push(baseValue * wobble);
     }
     
-    // 2. Massive vertical takeoff (30 points - LONG straight shot up)
+    // 2. LONG vertical takeoff (60 points - ~3 seconds straight up)
     // Shoots to 150% of the gain to make the zig-zags look tiny
-    for (let i = 1; i <= 30; i++) {
-      const progress = i / 30;
+    for (let i = 1; i <= 60; i++) {
+      const progress = i / 60;
       // Power of 6 for extreme "straight shot" curve
-      const curveProgress = 0.1 + 1.4 * Math.pow(progress, 6);
+      const curveProgress = 0.15 + 1.35 * Math.pow(progress, 6);
       this.pendingChartPoints.push(lastPoint + (currentScore - lastPoint) * curveProgress);
     }
     
     const peakValue = lastPoint + (currentScore - lastPoint) * 1.5;
     
-    // 3. Sideways consolidation at the peak (25 points)
-    for (let i = 1; i <= 25; i++) {
+    // 3. LONG sideways consolidation at the peak (200 points - 10 seconds at 0.05s freq)
+    for (let i = 1; i <= 200; i++) {
       const wobble = 0.995 + Math.random() * 0.01;
       this.pendingChartPoints.push(peakValue * wobble);
     }
     
-    // 4. Slow drift back to actual currentScore (30 points)
+    // 4. Slow drift back to actual currentScore (40 points)
     // Stays green because the drop per point is very small
-    for (let i = 1; i <= 30; i++) {
-      const progress = i / 30;
+    for (let i = 1; i <= 40; i++) {
+      const progress = i / 40;
       const value = peakValue - (peakValue - currentScore) * progress;
       this.pendingChartPoints.push(value);
     }
