@@ -27,6 +27,9 @@ function pickChunk() {
   return chunks[0];
 }
 
+// Module-level variable for controls reversal (avoids closure issues with event handlers)
+let isControlsReversed = false;
+
 export default class MainScene extends Phaser.Scene {
   player!: Player;
   spawner!: Spawner;
@@ -163,17 +166,15 @@ export default class MainScene extends Phaser.Scene {
     this.game.events.off('input:left');
     this.game.events.off('input:right');
     
-    // Swipe events - bind to current scene instance
+    // Swipe events - use module-level isControlsReversed to avoid closure issues
     const scene = this;
     this.game.events.on('input:jump', () => scene.player.jump());
     this.game.events.on('input:slide', () => scene.player.slide());
     this.game.events.on('input:left', () => {
-      console.log('[SWIPE LEFT] controlsReversed:', scene.controlsReversed);
-      scene.player.moveLane(scene.controlsReversed ? 1 : -1);
+      scene.player.moveLane(isControlsReversed ? 1 : -1);
     });
     this.game.events.on('input:right', () => {
-      console.log('[SWIPE RIGHT] controlsReversed:', scene.controlsReversed);
-      scene.player.moveLane(scene.controlsReversed ? -1 : 1);
+      scene.player.moveLane(isControlsReversed ? -1 : 1);
     });
 
     // Start
@@ -185,6 +186,8 @@ export default class MainScene extends Phaser.Scene {
     this.scorePopups = [];
     this.invincibleUntil = 0;
     this.hasExtraLife = false; // Reset extra life on new game
+    this.controlsReversed = false; // Reset controls on new game
+    isControlsReversed = false; // Reset module-level variable too
 
     gameActions.startRun();
 
@@ -493,9 +496,8 @@ export default class MainScene extends Phaser.Scene {
     try {
       // Check if whale alert should end
       if (this.controlsReversed && this.time.now > this.whaleAlertUntil) {
-        console.log('[WHALE] Controls reverting to normal! Was reversed:', this.controlsReversed);
         this.controlsReversed = false;
-        console.log('[WHALE] controlsReversed now:', this.controlsReversed);
+        isControlsReversed = false; // Update module-level variable for swipe handlers
         
         if (this.whaleAlertText) {
           this.whaleAlertText.destroy();
@@ -620,6 +622,7 @@ export default class MainScene extends Phaser.Scene {
   triggerWhaleAlert() {
     try {
       this.controlsReversed = true;
+      isControlsReversed = true; // Update module-level variable for swipe handlers
       this.whaleAlertUntil = this.time.now + 4000; // 4 seconds of reversed controls
       
       // Show warning text with blinking red exclamation marks (slightly smaller on mobile)
@@ -682,6 +685,7 @@ export default class MainScene extends Phaser.Scene {
     } catch (e) {
       console.error('[WhaleAlert] Error:', e);
       this.controlsReversed = false;
+      isControlsReversed = false;
     }
   }
 
