@@ -58,6 +58,7 @@ export default class MainScene extends Phaser.Scene {
   private whaleAlertText: Phaser.GameObjects.Text | null = null;
   private whaleEventsUnlocked = false; // Whale events only after player has used boosts
   private nextWhaleEventDistance = 0; // Set when unlocked
+  private whaleTrailCompleted = false; // First event is always trail, then alerts can happen
   
   // Whale trail
   private whaleTrailActive = false;
@@ -501,13 +502,20 @@ export default class MainScene extends Phaser.Scene {
 
       // Trigger new whale event at distance threshold
       if (this.distance >= this.nextWhaleEventDistance && !this.controlsReversed && !this.whaleTrailActive) {
-        // Randomly choose: whale alert (control reversal) or whale trail
-        const eventType = Math.random() < 0.5 ? 'alert' : 'trail';
-        
-        if (eventType === 'alert') {
-          this.triggerWhaleAlert();
-        } else {
+        // First event is always whale trail (bonus opportunity)
+        // After that, randomly choose between alert and trail
+        if (!this.whaleTrailCompleted) {
+          // First event: always whale trail for bonus chance
           this.triggerWhaleTrail();
+        } else {
+          // After first trail: randomly choose (60% trail, 40% alert)
+          const eventType = Math.random() < 0.6 ? 'trail' : 'alert';
+          
+          if (eventType === 'alert') {
+            this.triggerWhaleAlert();
+          } else {
+            this.triggerWhaleTrail();
+          }
         }
         
         // Next whale event in 800-1500m
@@ -647,6 +655,7 @@ export default class MainScene extends Phaser.Scene {
 
   completeWhaleTrail() {
     this.whaleTrailActive = false;
+    this.whaleTrailCompleted = true; // Allow whale alerts after first trail
     
     // Show success message
     const successText = this.add.text(this.centerX, this.scale.height / 2, '🐋 WHALE INCOMING! 🐋', {
@@ -682,6 +691,7 @@ export default class MainScene extends Phaser.Scene {
 
   failWhaleTrail() {
     this.whaleTrailActive = false;
+    this.whaleTrailCompleted = true; // Allow whale alerts after first trail (even if failed)
     
     // Remove remaining bubbles - collect first, then destroy to avoid mutation during iteration
     const toDestroy: Phaser.Physics.Arcade.Sprite[] = [];
