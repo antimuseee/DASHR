@@ -704,11 +704,11 @@ export default class MainScene extends Phaser.Scene {
     
     this.chartGraphics.clear();
     
-    // Chart dimensions and position (left side, below wallet status)
+    // Chart dimensions and position (left side, well below wallet status)
     const chartWidth = 160;
     const chartHeight = 70;
     const chartX = 10;
-    const chartY = 55; // Below the wallet status box
+    const chartY = 100; // Well below the wallet status box
     const padding = 6;
     
     // Background with border
