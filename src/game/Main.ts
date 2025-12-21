@@ -541,7 +541,7 @@ export default class MainScene extends Phaser.Scene {
       this.whaleAlertUntil = this.time.now + 4000; // 4 seconds of reversed controls
       
       // Show warning text
-      this.whaleAlertText = this.add.text(this.centerX, this.scale.height / 2 - 50, '🐋 WHALE ALERT! 🐋\nCONTROLS REVERSED!', {
+      this.whaleAlertText = this.add.text(this.centerX, this.scale.height / 2 - 50, '🐋 WHALE MANIPULATION! 🐋\nCONTROLS REVERSED!', {
         fontSize: '28px',
         fontFamily: 'Arial Black',
         color: '#00aaff',
