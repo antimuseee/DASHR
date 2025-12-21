@@ -200,6 +200,31 @@ export default class MainScene extends Phaser.Scene {
     this.controlsReversed = false; // Reset controls on new game
     this.whaleAlertTimer = 0; // Reset whale alert timer
     isControlsReversed = false; // Reset module-level variable too
+    
+    // Reset whale event thresholds for new game
+    this.whaleEventsUnlocked = false;
+    this.nextWhaleEventDistance = 0;
+    this.lastWhaleEventWasTrail = false;
+    this.whaleTrailBoostThreshold = 4;
+    this.whaleManipulationBoostThreshold = 7;
+    this.whaleTrailActive = false;
+    this.whaleTrailCompleted = false;
+    this.whaleTrailProgress = 0;
+    this.whaleTrailPath = [];
+    this.whaleTrailBubbles = [];
+    if (this.whaleLeader) {
+      this.whaleLeader.destroy();
+      this.whaleLeader = null;
+    }
+    if (this.whaleAlertText) {
+      this.whaleAlertText.destroy();
+      this.whaleAlertText = null;
+    }
+    
+    // Reset trading chart for new game
+    this.chartData = [];
+    this.chartUpdateTimer = 0;
+    this.lastChartScore = 0;
 
     gameActions.startRun();
 
