@@ -65,6 +65,7 @@ export default class MainScene extends Phaser.Scene {
   private whaleTrailBubbles: string[] = []; // Keys of bubbles in order
   private whaleTrailProgress = 0;
   private whaleTrailLanes: number[] = []; // Lane pattern for trail
+  private whaleTrailStartTime = 0; // Time when trail started (for grace period)
 
   private keyHandler!: (e: KeyboardEvent) => void;
 
@@ -448,19 +449,28 @@ export default class MainScene extends Phaser.Scene {
       }
 
       // Check if any whale trail bubbles were missed (went past player)
-      if (this.whaleTrailActive && this.spawner?.group) {
+      // Grace period of 2 seconds before fail checks start
+      if (this.whaleTrailActive && this.spawner?.group && (this.time.now - this.whaleTrailStartTime > 2000)) {
         let shouldFail = false;
         const children = [...this.spawner.group.getChildren()]; // Copy array to avoid mutation issues
         
         for (const child of children) {
           const sprite = child as Phaser.Physics.Arcade.Sprite;
-          if (!sprite.active || !sprite.getData('isWhaleTrail')) continue;
+          if (!sprite.active) continue;
+          
+          // Must be explicitly marked as whale trail bubble
+          const isWhaleTrail = sprite.getData('isWhaleTrail');
+          if (isWhaleTrail !== true) continue;
           
           const z = sprite.getData('z') as number;
-          const bubbleIndex = sprite.getData('bubbleIndex') as number;
+          const bubbleIndex = sprite.getData('bubbleIndex');
           
-          // If bubble is behind player and not yet collected
-          if (z < -50 && bubbleIndex >= this.whaleTrailProgress) {
+          // Make sure we have valid data
+          if (typeof z !== 'number' || typeof bubbleIndex !== 'number') continue;
+          
+          // If bubble is behind player and not yet collected (must be well past player)
+          if (z < -100 && bubbleIndex >= this.whaleTrailProgress) {
+            console.log('[WhaleTrail] Missed bubble', bubbleIndex, 'at z', z);
             shouldFail = true;
             break;
           }
@@ -570,6 +580,7 @@ export default class MainScene extends Phaser.Scene {
       this.whaleTrailActive = true;
       this.whaleTrailProgress = 0;
       this.whaleTrailBubbles = [];
+      this.whaleTrailStartTime = this.time.now; // Grace period before fail checks
       
       // Generate a lane pattern for 6 bubbles
       this.whaleTrailLanes = [];
