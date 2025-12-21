@@ -153,6 +153,12 @@ export default class MainScene extends Phaser.Scene {
     };
     document.addEventListener('keydown', this.keyHandler);
 
+    // Remove old swipe event listeners before adding new ones (prevents double-firing on restart)
+    this.game.events.off('input:jump');
+    this.game.events.off('input:slide');
+    this.game.events.off('input:left');
+    this.game.events.off('input:right');
+    
     // Swipe events
     this.game.events.on('input:jump', () => this.player.jump());
     this.game.events.on('input:slide', () => this.player.slide());
@@ -170,7 +176,14 @@ export default class MainScene extends Phaser.Scene {
 
     gameActions.startRun();
 
+    this.scale.off('resize', this.handleResize, this); // Remove old listener first
     this.scale.on('resize', this.handleResize, this);
+    
+    // Force a resize check shortly after start for mobile first-load positioning
+    this.time.delayedCall(100, () => {
+      this.handleResize({ width: this.scale.width, height: this.scale.height } as Phaser.Structs.Size);
+    });
+    
     this.events.once('shutdown', () => {
       document.removeEventListener('keydown', this.keyHandler);
     });
