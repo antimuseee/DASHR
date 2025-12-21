@@ -410,32 +410,39 @@ export default class MainScene extends Phaser.Scene {
   }
 
   spawnByDistance() {
+    // During whale trail, don't spawn ANYTHING new - only the bubble trail, whale, and existing pits
+    if (this.whaleTrailActive) {
+      // Still advance spawn distance so we don't get a flood after trail ends
+      while (this.distance >= this.nextSpawnDistance) {
+        this.nextSpawnDistance += Phaser.Math.Between(200, 300);
+      }
+      return;
+    }
+    
     while (this.distance >= this.nextSpawnDistance) {
       const chunk = pickChunk();
 
       // Spawn very close to the horizon so they immediately start moving toward the player.
       const zBase = this.zFar * Phaser.Math.FloatBetween(0.94, 0.99);
 
-      // Spawn obstacles (pits) - always spawn, even during whale trail
+      // Spawn obstacles (pits)
       chunk.obstacles.forEach((o) => {
         o.lanes.forEach((lane) => {
           this.spawner.spawn(o.type, lane, zBase);
         });
       });
 
-      // Spawn collectibles (but not during whale trail to avoid confusion with bubbles)
-      if (!this.whaleTrailActive) {
-        for (let i = 0; i < chunk.collectibles; i++) {
-          const lane = Phaser.Math.Between(0, 2);
-          this.spawner.spawn('collectible', lane, zBase + 120 + i * 140);
-        }
+      // Spawn collectibles
+      for (let i = 0; i < chunk.collectibles; i++) {
+        const lane = Phaser.Math.Between(0, 2);
+        this.spawner.spawn('collectible', lane, zBase + 120 + i * 140);
       }
 
       this.nextSpawnDistance += Phaser.Math.Between(200, 300);
     }
 
-    // Spawn boosts occasionally (but not during whale trail)
-    if (this.distance >= this.nextBoostDistance && !this.whaleTrailActive) {
+    // Spawn boosts occasionally
+    if (this.distance >= this.nextBoostDistance) {
       const lane = Phaser.Math.Between(0, 2);
       const zBase = this.zFar * Phaser.Math.FloatBetween(0.94, 0.99);
       this.spawner.spawn('boost', lane, zBase);
