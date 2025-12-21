@@ -256,7 +256,6 @@ export default function Menus({ phase }: { phase: string }) {
       <div className="topbar" style={{ pointerEvents: 'none' }}>
         <div className="stat-pill">Score: {score.toFixed(0)}</div>
         <div className="stat-pill">Dist: {distance.toFixed(0)}m</div>
-        <div className="stat-pill">x{multiplier.toFixed(1)}</div>
         <div className="stat-pill">TT: {tokens.toFixed(0)}</div>
         <div className={`stat-pill combo-pill ${comboCount > 0 || comboProgress > 0 ? 'active' : 'inactive'} ${activeBoost === 'double' ? 'energized' : ''}`}>
           <div 
