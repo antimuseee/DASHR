@@ -229,6 +229,21 @@ export default class MainScene extends Phaser.Scene {
 
     gameActions.startRun();
 
+    // TEMPORARY: Spawn whale at beginning for testing chart
+    this.time.delayedCall(1000, () => {
+      const spawned = this.spawner.spawn('collectible', 1, 300, 'item-whale');
+      if (spawned && spawned.sprite) {
+        spawned.sprite.setData('isWhaleToken', true);
+        spawned.sprite.setScale(1.5);
+        this.tweens.add({
+          targets: spawned.sprite,
+          angle: 360,
+          duration: 2000,
+          repeat: -1,
+        });
+      }
+    });
+
     this.scale.off('resize', this.handleResize, this); // Remove old listener first
     this.scale.on('resize', this.handleResize, this);
     
