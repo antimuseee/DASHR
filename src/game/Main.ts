@@ -862,22 +862,22 @@ export default class MainScene extends Phaser.Scene {
     this.pendingChartPoints = [];
     
     // 1. Slower Zig-zag build (24 points - approx 1.2s at 0.05s frequency)
-    // 3 distinct zig-zags with increasing peaks
+    // 3 distinct zig-zags with increasing peaks - made SHARPER
     for (let i = 1; i <= 24; i++) {
       const progress = i / 24;
-      // Small overall upward slope (covers only 10% of total gain to make takeoff look massive)
+      // Small overall upward slope (covers only 10% of total gain)
       const baseValue = lastPoint + (currentScore - lastPoint) * 0.1 * progress;
       
       // Determine which of the 3 zig-zags we are in (0, 1, or 2)
       const zzIndex = Math.floor((i - 1) / 8);
       const zzProgress = ((i - 1) % 8) / 7; // 0 to 1 within this specific zig-zag
       
-      // Amplitude (height of the peaks)
-      const amp = 0.02 + (zzIndex * 0.015); // 2%, 3.5%, 5% wobble
+      // Amplitude (height of the peaks) - significantly increased for SHARPNESS
+      const amp = 0.08 + (zzIndex * 0.06); // 8%, 14%, 20% swings
       
-      // Triangular wave pattern: 0 -> 1 -> 0
+      // Sharp triangular wave: spikes UP then spikes DOWN
+      // This creates a jagged look
       const triangle = zzProgress < 0.5 ? (zzProgress * 2) : (1 - (zzProgress - 0.5) * 2);
-      // Centered at baseline
       const wobble = 1 + (triangle - 0.5) * amp;
       
       this.pendingChartPoints.push(baseValue * wobble);
