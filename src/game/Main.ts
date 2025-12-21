@@ -586,6 +586,9 @@ export default class MainScene extends Phaser.Scene {
       this.whaleTrailStartTime = this.time.now;
       this.whaleTrailBubbles = [];
       
+      // Clear ALL existing collectibles and boosts from the track - only pits remain
+      this.clearTrackForWhaleTrail();
+      
       // Generate a bubble trail path that starts near player and goes far
       // Path weaves across lanes, avoiding pits
       this.generateWhaleTrailPath();
@@ -721,6 +724,25 @@ export default class MainScene extends Phaser.Scene {
     });
     
     return foundPit;
+  }
+  
+  clearTrackForWhaleTrail() {
+    // Remove ALL collectibles and boosts from the track - only keep pits (obstacle-block)
+    const toDestroy: Phaser.Physics.Arcade.Sprite[] = [];
+    
+    this.spawner.group.getChildren().forEach((child) => {
+      const sprite = child as Phaser.Physics.Arcade.Sprite;
+      if (!sprite.active) return;
+      
+      const key = sprite.texture.key;
+      
+      // Keep pits (obstacle-block), destroy everything else
+      if (key !== 'obstacle-block') {
+        toDestroy.push(sprite);
+      }
+    });
+    
+    toDestroy.forEach(sprite => sprite.destroy());
   }
   
   checkWhaleTrailMissedBubbles() {
