@@ -566,18 +566,18 @@ export default class MainScene extends Phaser.Scene {
       this.controlsReversed = true;
       this.whaleAlertUntil = this.time.now + 4000; // 4 seconds of reversed controls
       
-      // Show warning text with blinking red exclamation marks (smaller on mobile)
+      // Show warning text with blinking red exclamation marks (slightly smaller on mobile)
       const device = getDevice();
-      const fontSize = device.isMobile ? '18px' : '28px';
-      const exclaimSize = device.isMobile ? '24px' : '32px';
-      const exclaimOffset = device.isMobile ? 110 : 155;
+      const fontSize = device.isMobile ? '24px' : '28px'; // Just a tiny bit smaller on mobile
+      const exclaimSize = device.isMobile ? '28px' : '32px';
+      const exclaimOffset = device.isMobile ? 140 : 155;
       
       this.whaleAlertText = this.add.text(this.centerX, this.scale.height / 2 - 50, '🐋 WHALE MANIPULATION 🐋\nCONTROLS REVERSED!', {
         fontSize: fontSize,
         fontFamily: 'Arial Black',
         color: '#00aaff',
         stroke: '#000033',
-        strokeThickness: device.isMobile ? 4 : 6,
+        strokeThickness: 6,
         align: 'center',
       }).setOrigin(0.5).setDepth(1000);
       
