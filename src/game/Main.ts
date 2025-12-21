@@ -413,15 +413,21 @@ export default class MainScene extends Phaser.Scene {
       // Spawn very close to the horizon so they immediately start moving toward the player.
       const zBase = this.zFar * Phaser.Math.FloatBetween(0.94, 0.99);
 
-      chunk.obstacles.forEach((o) => {
-        o.lanes.forEach((lane) => {
-          this.spawner.spawn(o.type, lane, zBase);
+      // Don't spawn obstacles during whale trail - keep the path clear
+      if (!this.whaleTrailActive) {
+        chunk.obstacles.forEach((o) => {
+          o.lanes.forEach((lane) => {
+            this.spawner.spawn(o.type, lane, zBase);
+          });
         });
-      });
+      }
 
-      for (let i = 0; i < chunk.collectibles; i++) {
-        const lane = Phaser.Math.Between(0, 2);
-        this.spawner.spawn('collectible', lane, zBase + 120 + i * 140);
+      // Still spawn collectibles (but not during whale trail to avoid confusion)
+      if (!this.whaleTrailActive) {
+        for (let i = 0; i < chunk.collectibles; i++) {
+          const lane = Phaser.Math.Between(0, 2);
+          this.spawner.spawn('collectible', lane, zBase + 120 + i * 140);
+        }
       }
 
       this.nextSpawnDistance += Phaser.Math.Between(200, 300);
@@ -626,9 +632,12 @@ export default class MainScene extends Phaser.Scene {
       this.whaleTrailStartTime = this.time.now; // Grace period before fail checks
       this.cleanupWhaleTrailDots(); // Clear any leftover dots
       
-      // Generate a lane pattern for 6 bubbles
+      // Clear any obstacles in the upcoming path to make trail safe
+      this.clearObstaclesForWhaleTrail();
+      
+      // Generate a lane pattern for 6 bubbles - starts at player's current lane
       this.whaleTrailLanes = [];
-      let currentLane = this.player.laneIndex;
+      let currentLane = this.player.laneIndex; // Start exactly where player is
       for (let i = 0; i < 6; i++) {
         this.whaleTrailLanes.push(currentLane);
         // Randomly move to adjacent lane for next bubble
@@ -812,6 +821,31 @@ export default class MainScene extends Phaser.Scene {
       });
       this.whaleTrailDots = [];
     }
+  }
+
+  clearObstaclesForWhaleTrail() {
+    // Remove all obstacles (pits) in the upcoming area where whale trail will be
+    const toDestroy: Phaser.Physics.Arcade.Sprite[] = [];
+    const trailZRange = { min: 100, max: 1200 }; // Z range where trail bubbles will be
+    
+    this.spawner.group.getChildren().forEach((child) => {
+      const sprite = child as Phaser.Physics.Arcade.Sprite;
+      if (!sprite.active) return;
+      
+      const key = sprite.texture.key;
+      const z = sprite.getData('z') as number;
+      
+      // Remove pits/obstacles in the trail area
+      if (key === 'obstacle-block' && z > trailZRange.min && z < trailZRange.max) {
+        const label = sprite.getData('label') as Phaser.GameObjects.Text;
+        if (label) label.destroy();
+        const chartGraphic = sprite.getData('chartGraphic') as Phaser.GameObjects.Graphics;
+        if (chartGraphic) chartGraphic.destroy();
+        toDestroy.push(sprite);
+      }
+    });
+    
+    toDestroy.forEach(sprite => sprite.destroy());
   }
 
   checkCollisions() {
