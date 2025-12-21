@@ -844,12 +844,24 @@ export default class MainScene extends Phaser.Scene {
     this.pendingChartPoints = [];
     
     // 1. Slower Zig-zag build (24 points - approx 1.2s at 0.05s frequency)
-    // We cover first 30% of the gain here very gradually
+    // 3 distinct zig-zags with increasing peaks
     for (let i = 1; i <= 24; i++) {
       const progress = i / 24;
+      // Overall upward slope (covers 30% of the total gain)
       const baseValue = lastPoint + (currentScore - lastPoint) * 0.3 * progress;
-      // More visible wobble for the zig-zag feel
-      const wobble = i % 2 === 0 ? 1.015 : 0.985;
+      
+      // Determine which of the 3 zig-zags we are in (0, 1, or 2)
+      const zzIndex = Math.floor((i - 1) / 8);
+      const zzProgress = ((i - 1) % 8) / 7; // 0 to 1 within this specific zig-zag
+      
+      // Amplitude (height of the peaks) increases for each successive zig-zag
+      const amp = 0.03 + (zzIndex * 0.02); // 3%, 5%, 7% wobble
+      
+      // Triangular wave pattern: 0 -> 1 -> 0
+      const triangle = zzProgress < 0.5 ? (zzProgress * 2) : (1 - (zzProgress - 0.5) * 2);
+      // Centered at baseline, wobbling up and down
+      const wobble = 1 + (triangle - 0.5) * amp;
+      
       this.pendingChartPoints.push(baseValue * wobble);
     }
     
