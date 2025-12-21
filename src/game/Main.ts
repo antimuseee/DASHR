@@ -873,8 +873,8 @@ export default class MainScene extends Phaser.Scene {
     
     const peakValue = lastPoint + (currentScore - lastPoint) * peakMultiplier;
     
-    // 3. LONG sideways consolidation at the peak (200 points - 10 seconds at 0.05s freq)
-    for (let i = 1; i <= 200; i++) {
+    // 3. EXTRA LONG sideways consolidation at the peak (500 points - 25 seconds at 0.05s freq)
+    for (let i = 1; i <= 500; i++) {
       const wobble = 0.995 + Math.random() * 0.01;
       this.pendingChartPoints.push(peakValue * wobble);
     }
