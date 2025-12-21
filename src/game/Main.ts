@@ -184,6 +184,18 @@ export default class MainScene extends Phaser.Scene {
       this.handleResize({ width: this.scale.width, height: this.scale.height } as Phaser.Structs.Size);
     });
     
+    // Pre-warm particle system on mobile to prevent slowdown on first boost activation
+    const device = getDevice();
+    if (device.isMobile) {
+      const warmupEmitter = this.add.particles(-100, -100, 'particle', {
+        lifespan: 50,
+        speed: 1,
+        scale: { start: 0.01, end: 0 },
+        quantity: 1,
+      });
+      this.time.delayedCall(100, () => warmupEmitter.destroy());
+    }
+    
     this.events.once('shutdown', () => {
       document.removeEventListener('keydown', this.keyHandler);
     });
