@@ -806,20 +806,61 @@ export default class MainScene extends Phaser.Scene {
   }
 
   addChartSpike() {
-    // Add a spike when whale is caught
+    // Add a dramatic spike when whale is caught - zig-zag then parabolic up
     const state = useGameStore.getState();
     const currentScore = state.score;
+    const baseScore = this.chartData[this.chartData.length - 1] || currentScore * 0.8;
     
-    // Add a point showing the spike
-    this.chartData.push(currentScore);
+    // Zig-zag pattern going up
+    this.chartData.push(baseScore * 1.1);   // Up
+    this.chartData.push(baseScore * 1.05);  // Slight dip
+    this.chartData.push(baseScore * 1.2);   // Up more
+    this.chartData.push(baseScore * 1.15);  // Slight dip
+    this.chartData.push(baseScore * 1.35);  // Up more
+    this.chartData.push(baseScore * 1.3);   // Tiny dip
+    
+    // Parabolic spike up!
+    this.chartData.push(baseScore * 1.5);   // Accelerating
+    this.chartData.push(baseScore * 1.8);   // Faster
+    this.chartData.push(baseScore * 2.2);   // Even faster
+    this.chartData.push(currentScore);       // Peak at actual score
     
     // Keep only last 60 data points
-    if (this.chartData.length > 60) {
+    while (this.chartData.length > 60) {
       this.chartData.shift();
     }
     
     // Redraw immediately to show the spike
     this.drawTradingChart();
+    
+    // Flash green "RUNNER" text on chart
+    this.flashChartText();
+  }
+
+  flashChartText() {
+    // Flash green text over the chart when whale is caught
+    const chartX = 10;
+    const chartY = 180;
+    const chartWidth = 160;
+    const chartHeight = 70;
+    
+    const flashText = this.add.text(chartX + chartWidth / 2, chartY + chartHeight / 2, '🚀 MOON!', {
+      fontSize: '20px',
+      fontFamily: 'Arial Black',
+      color: '#00ff00',
+      stroke: '#003300',
+      strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(1000);
+    
+    // Pulse and fade animation
+    this.tweens.add({
+      targets: flashText,
+      scale: { from: 0.5, to: 1.5 },
+      alpha: { from: 1, to: 0 },
+      duration: 800,
+      ease: 'Power2',
+      onComplete: () => flashText.destroy(),
+    });
   }
 
   addChartCrash() {
