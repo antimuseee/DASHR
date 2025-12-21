@@ -47,6 +47,31 @@ function Leaderboard({ scores, currentScore }: { scores: HighScoreEntry[]; curre
   );
 }
 
+function ControlsHelp() {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  return (
+    <div className="controls-help" style={{ pointerEvents: 'auto' }}>
+      {isOpen ? (
+        <div className="controls-panel" onClick={() => setIsOpen(false)}>
+          <div className="controls-content">
+            <strong>Controls</strong>
+            <div>Move: WASD / Arrows</div>
+            <div>Jump: Space / W / Up</div>
+            <div>Slide: S / Down</div>
+            <div>Boosts: 1 / 2 / 3</div>
+          </div>
+          <span className="controls-close">✕</span>
+        </div>
+      ) : (
+        <button className="controls-toggle" onClick={() => setIsOpen(true)}>
+          ?
+        </button>
+      )}
+    </div>
+  );
+}
+
 function TitleMenu() {
   const [scores, setScores] = useState<HighScoreEntry[]>([]);
   const device = getDevice();
@@ -338,13 +363,7 @@ export default function Menus({ phase }: { phase: string }) {
       {phase === 'title' && <TitleMenu />}
       {phase === 'paused' && <PauseMenu />}
       {phase === 'gameover' && <GameOver />}
-      {phase === 'running' && device.isDesktop && (
-        <div className="center-bottom">
-          <div className="menu-card" style={{ padding: '8px 12px' }}>
-            Move: WASD/Arrows | Jump: Space | Slide: S/Down | Boosts: 1/2/3
-          </div>
-        </div>
-      )}
+      {phase === 'running' && device.isDesktop && <ControlsHelp />}
     </>
   );
 }
