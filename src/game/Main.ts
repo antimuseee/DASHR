@@ -861,28 +861,12 @@ export default class MainScene extends Phaser.Scene {
     // START FRESH SEQUENCE
     this.pendingChartPoints = [];
     
-    // 1. SHORTER Zig-zag build on an UPWARD TREND (12 points - approx 0.6s at 0.05s frequency)
-    // 3 distinct zig-zags with increasing peaks on a steep upward slope (20% of gain)
-    const zigzagEndPercent = 0.20; // Where zig-zags end
-    for (let i = 1; i <= 12; i++) {
-      const progress = i / 12;
-      // Strong upward trend - each zig-zag peak is higher than the last
-      const baseValue = lastPoint + (currentScore - lastPoint) * zigzagEndPercent * progress;
-      const zzIndex = Math.floor((i - 1) / 4); // 3 cycles of 4 points each
-      const zzProgress = ((i - 1) % 4) / 3; 
-      const amp = 0.10 + (zzIndex * 0.08); // 10%, 18%, 26% amplitude - sharp!
-      const triangle = zzProgress < 0.5 ? (zzProgress * 2) : (1 - (zzProgress - 0.5) * 2);
-      const wobble = 1 + (triangle - 0.5) * amp;
-      this.pendingChartPoints.push(baseValue * wobble);
-    }
-    
-    // 2. EXTRA LONG vertical takeoff (80 points - ~4 seconds straight up)
-    // Starts exactly where zig-zags ended and shoots to 150% of the gain
-    const remainingGain = 1.5 - zigzagEndPercent; // How much more to go from end of zigzag to peak
-    for (let i = 1; i <= 80; i++) {
-      const progress = i / 80;
-      // Power of 5 for extreme "straight shot" curve - starts immediately
-      const curveProgress = zigzagEndPercent + remainingGain * Math.pow(progress, 5);
+    // VERTICAL MOON SHOT - goes straight up for a long time (100 points - ~5 seconds)
+    // Shoots to 150% of the gain - completely vertical line
+    for (let i = 1; i <= 100; i++) {
+      const progress = i / 100;
+      // Linear for completely vertical line - constant steep slope
+      const curveProgress = 1.5 * progress;
       this.pendingChartPoints.push(lastPoint + (currentScore - lastPoint) * curveProgress);
     }
     
