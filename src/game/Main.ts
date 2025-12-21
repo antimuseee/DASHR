@@ -68,8 +68,9 @@ export default class MainScene extends Phaser.Scene {
   private whaleExclaim2: Phaser.GameObjects.Text | null = null;
   private whaleEventsUnlocked = false; // Whale events only after player has used boosts
   private nextWhaleEventDistance = 0; // Set when unlocked
-  private whaleTrailCompleted = false; // First event is always trail, then alerts can happen
-  private whaleManipulationBoostThreshold = 7; // How many boosts needed for next manipulation (increases each time)
+  private lastWhaleEventWasTrail = false; // Alternate between trail and manipulation
+  private whaleTrailBoostThreshold = 4; // Boosts needed for next trail
+  private whaleManipulationBoostThreshold = 7; // Boosts needed for next manipulation
   
   // Whale trail - follow the bubble trail to catch the whale!
   private whaleTrailActive = false;
@@ -628,22 +629,27 @@ export default class MainScene extends Phaser.Scene {
       }
 
       // Trigger new whale event at distance threshold
+      // Alternate between whale trail (bonus) and whale manipulation (challenge)
       if (this.distance >= this.nextWhaleEventDistance && !this.controlsReversed && !this.whaleTrailActive) {
-        if (!this.whaleTrailCompleted) {
-          // First and ONLY whale trail - bonus opportunity
+        // Check if we should trigger a trail or manipulation based on boost count
+        const canTriggerTrail = state.boostsUsed >= this.whaleTrailBoostThreshold && !this.lastWhaleEventWasTrail;
+        const canTriggerManipulation = state.boostsUsed >= this.whaleManipulationBoostThreshold && this.lastWhaleEventWasTrail;
+        
+        if (canTriggerTrail) {
+          console.log(`[WhaleTrail] Boost threshold met (${state.boostsUsed} >= ${this.whaleTrailBoostThreshold})`);
           this.triggerWhaleTrail();
+          this.lastWhaleEventWasTrail = true;
+          // Increase threshold for next trail (need to use more boosts each time)
+          this.whaleTrailBoostThreshold += 6;
           // Distance will be set in completeWhaleTrail/failWhaleTrail AFTER trail ends
-        } else {
-          // After trail completed: only whale alerts (control reversal), no more trails
-          // Whale trail requires 4 boosts, manipulation requires threshold (increases each time)
-          if (state.boostsUsed >= this.whaleManipulationBoostThreshold) {
-            console.log(`[WhaleManipulation] Boost threshold met (${state.boostsUsed} >= ${this.whaleManipulationBoostThreshold})`);
-            this.triggerWhaleAlert();
-            // Increase threshold for next manipulation (need 3 more boosts each time)
-            this.whaleManipulationBoostThreshold += 3;
-            // Wait a while before next alert too
-            this.nextWhaleEventDistance = this.distance + Phaser.Math.Between(2000, 3000);
-          }
+        } else if (canTriggerManipulation) {
+          console.log(`[WhaleManipulation] Boost threshold met (${state.boostsUsed} >= ${this.whaleManipulationBoostThreshold})`);
+          this.triggerWhaleAlert();
+          this.lastWhaleEventWasTrail = false;
+          // Increase threshold for next manipulation (need 6 more boosts each time)
+          this.whaleManipulationBoostThreshold += 6;
+          // Wait a while before next event
+          this.nextWhaleEventDistance = this.distance + Phaser.Math.Between(2000, 3000);
         }
       }
     } catch (e) {
@@ -1186,6 +1192,7 @@ export default class MainScene extends Phaser.Scene {
       score: state.score + totalPoints,
       collectibleScore: state.collectibleScore + totalPoints,
       tokens: state.tokens + 1,
+      whaleTokens: state.whaleTokens + 1,
     });
     
     // Big sparkle effect

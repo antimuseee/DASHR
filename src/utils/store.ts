@@ -99,6 +99,7 @@ interface GameState {
   comboTimer: number;
   maxCombo: number;
   boostsUsed: number;
+  whaleTokens: number; // Count of rare whale tokens collected
   // Platform detection
   device: DeviceInfo;
   platformSettings: PlatformSettings;
@@ -135,6 +136,7 @@ const initialState: GameState = {
   comboTimer: 0,
   maxCombo: 0,
   boostsUsed: 0,
+  whaleTokens: 0,
   // Platform detection
   device: getDevice(),
   platformSettings: getSettings(),
@@ -184,6 +186,7 @@ export const gameActions = {
       comboTimer: 0,
       maxCombo: 0,
       boostsUsed: 0,
+      whaleTokens: 0,
     })),
   pause: () => useGameStore.setState({ phase: 'paused' }),
   resume: () => useGameStore.setState({ phase: 'running' }),

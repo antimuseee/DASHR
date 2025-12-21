@@ -115,7 +115,7 @@ function PauseMenu() {
 }
 
 function GameOver() {
-  const { score, distance, tokens, best, distanceScore, collectibleScore, maxCombo, boostsUsed } = useGameStore();
+  const { score, distance, tokens, best, distanceScore, collectibleScore, maxCombo, boostsUsed, whaleTokens } = useGameStore();
   const [showNameEntry, setShowNameEntry] = useState(false);
   const [playerName, setPlayerName] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -167,6 +167,12 @@ function GameOver() {
             <span className="score-label">🪙 Tokens</span>
             <span className="score-value">{tokens}</span>
           </div>
+          {whaleTokens > 0 && (
+            <div className="score-row whale-bonus">
+              <span className="score-label">🐋 Whale Bonus</span>
+              <span className="score-value">{whaleTokens} × 500 pts</span>
+            </div>
+          )}
           <div className="score-row">
             <span className="score-label">🔥 Max Combo</span>
             <span className="score-value">x{maxCombo}</span>
