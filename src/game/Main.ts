@@ -881,8 +881,8 @@ export default class MainScene extends Phaser.Scene {
     const remainingGain = 1.5 - zigzagEndPercent; // How much more to go from end of zigzag to peak
     for (let i = 1; i <= 80; i++) {
       const progress = i / 80;
-      // LINEAR for true "straight up" - no delay, constant steep slope
-      const curveProgress = zigzagEndPercent + remainingGain * progress;
+      // Power of 5 for extreme "straight shot" curve - starts immediately
+      const curveProgress = zigzagEndPercent + remainingGain * Math.pow(progress, 5);
       this.pendingChartPoints.push(lastPoint + (currentScore - lastPoint) * curveProgress);
     }
     
