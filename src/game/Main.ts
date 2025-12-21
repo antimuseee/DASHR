@@ -60,16 +60,16 @@ export default class MainScene extends Phaser.Scene {
   private nextWhaleEventDistance = 0; // Set when unlocked
   private whaleTrailCompleted = false; // First event is always trail, then alerts can happen
   
-  // Whale trail - chase the whale!
+  // Whale trail - follow the bubble trail to catch the whale!
   private whaleTrailActive = false;
-  private whaleLeader: Phaser.GameObjects.Sprite | null = null; // The whale to chase
-  private whaleLeaderZ = 0; // Whale's z distance
+  private whaleLeader: Phaser.GameObjects.Sprite | null = null; // The whale to catch
+  private whaleLeaderZ = 0; // Whale's current z distance (starts far, gets closer)
   private whaleLeaderLane = 1; // Whale's current lane
-  private whaleNextLaneChange = 0; // When whale changes lanes
-  private whaleNextBubbleDrop = 0; // When whale drops next bubble
-  private whaleBubblesCollected = 0; // How many trail bubbles collected
-  private whaleBubblesNeeded = 8; // Bubbles needed to catch the whale
-  private whaleTrailStartTime = 0; // Time when trail started (for grace period)
+  private whaleTrailPath: { lane: number; z: number }[] = []; // Pre-generated bubble path
+  private whaleTrailProgress = 0; // Current bubble index player needs to collect
+  private whaleTrailBubbles: Phaser.Physics.Arcade.Sprite[] = []; // Active bubble sprites
+  private whaleStartZ = 0; // Where whale started (for lerping closer)
+  private whaleTrailStartTime = 0; // Time when trail started
 
   private keyHandler!: (e: KeyboardEvent) => void;
 
@@ -456,55 +456,26 @@ export default class MainScene extends Phaser.Scene {
         }
       }
       
-      // Update whale leader position and behavior
+      // Update whale leader position (whale gets closer as player collects bubbles)
       if (this.whaleTrailActive && this.whaleLeader) {
-        // Whale is SWIMMING AWAY (trying to escape up the lanes toward horizon)
-        // But player's running speed pulls everything closer
-        // As bubbles are collected, whale gets tired and slows its escape
-        const whaleEscapeSpeed = this.speed * 0.6; // Whale swims at 60% of game speed (trying to escape)
-        const tiredness = Math.min(0.5, this.whaleBubblesCollected * 0.06); // Up to 50% slower escape as bubbles collected
-        const effectiveEscapeSpeed = whaleEscapeSpeed * (1 - tiredness);
-        
-        // Net movement: game pulls whale closer, whale tries to swim away
-        // Whale z decreases (gets closer) but slower than normal because it's swimming away
-        this.whaleLeaderZ -= (this.speed - effectiveEscapeSpeed) * dt;
-        
-        // Whale changes lanes occasionally (trying to escape)
-        if (this.time.now > this.whaleNextLaneChange) {
-          const move = Phaser.Math.Between(-1, 1);
-          this.whaleLeaderLane = Math.max(0, Math.min(2, this.whaleLeaderLane + move));
-          this.whaleNextLaneChange = this.time.now + Phaser.Math.Between(600, 1200);
-        }
-        
-        // Whale drops bubbles behind it (the trail to follow)
-        if (this.time.now > this.whaleNextBubbleDrop) {
-          this.dropWhaleBubble();
-          this.whaleNextBubbleDrop = this.time.now + 300; // Drop bubble every 300ms
-        }
-        
         // Update whale visual position with perspective
+        // whaleLeaderZ is updated in onWhaleTrailBubbleCollected based on progress
         const e = Math.max(0, Math.min(1, this.whaleLeaderZ / this.zFar));
         const laneFactor = Phaser.Math.Linear(1, this.farLaneFactor, e);
         const x = this.centerX + (this.whaleLeaderLane - 1) * this.laneWidth * laneFactor;
         const y = Phaser.Math.Linear(this.nearY, this.horizonY, e);
-        const scale = Phaser.Math.Linear(1.0, 0.25, e); // Bigger when closer
+        const scale = Phaser.Math.Linear(1.2, 0.15, e); // Bigger when closer, very small when far
         
         this.whaleLeader.setPosition(x, y);
         this.whaleLeader.setScale(scale);
-        this.whaleLeader.setAlpha(Phaser.Math.Linear(1, 0.6, e));
+        this.whaleLeader.setAlpha(Phaser.Math.Linear(1, 0.4, e));
         
-        // Add gentle swimming animation (bob up/down)
+        // Add gentle swimming animation (bob up/down, wiggle side to side)
         this.whaleLeader.y += Math.sin(this.time.now / 150) * 3;
+        this.whaleLeader.x += Math.sin(this.time.now / 300) * 2;
         
-        // Check if player caught the whale (collected enough bubbles and whale is close enough)
-        if (this.whaleBubblesCollected >= this.whaleBubblesNeeded && this.whaleLeaderZ < 200) {
-          this.completeWhaleTrail();
-        }
-        
-        // Fail if player hasn't collected enough bubbles and whale somehow escapes far
-        if (this.whaleLeaderZ > 1200 && this.time.now - this.whaleTrailStartTime > 8000) {
-          this.failWhaleTrail();
-        }
+        // Check if any bubble was missed (went past player without being collected)
+        this.checkWhaleTrailMissedBubbles();
       }
 
       // Check if whale events should unlock (requires using boosts + distance)
@@ -604,22 +575,29 @@ export default class MainScene extends Phaser.Scene {
   triggerWhaleTrail() {
     try {
       this.whaleTrailActive = true;
-      this.whaleBubblesCollected = 0;
+      this.whaleTrailProgress = 0;
       this.whaleTrailStartTime = this.time.now;
+      this.whaleTrailBubbles = [];
       
-      // Spawn the whale leader ahead of the player, in the player's current lane
-      this.whaleLeaderLane = this.player.laneIndex;
-      this.whaleLeaderZ = 500; // Start ahead of player
-      this.whaleNextLaneChange = this.time.now + 1500; // First lane change after 1.5s
-      this.whaleNextBubbleDrop = this.time.now + 300; // Drop first bubble soon
+      // Generate a bubble trail path that starts near player and goes far
+      // Path weaves across lanes, avoiding pits
+      this.generateWhaleTrailPath();
       
-      // Create the whale sprite
+      // Spawn all bubbles along the path
+      this.spawnWhaleTrailBubbles();
+      
+      // Spawn whale FAR away at the horizon (where objects spawn)
+      this.whaleStartZ = this.zFar * 0.95; // Very far, near spawn point
+      this.whaleLeaderZ = this.whaleStartZ;
+      this.whaleLeaderLane = this.whaleTrailPath[this.whaleTrailPath.length - 1]?.lane ?? 1;
+      
+      // Create the whale sprite (starts tiny because it's far)
       this.whaleLeader = this.add.sprite(this.centerX, this.horizonY, 'whale-leader');
       this.whaleLeader.setDepth(100);
-      this.whaleLeader.setScale(0.3); // Start small (far away)
+      this.whaleLeader.setScale(0.15); // Very small (far away)
       
       // Show chase message
-      const trailText = this.add.text(this.centerX, this.scale.height / 2 - 50, '🐋 CATCH THE WHALE! 🐋\nFOLLOW THE BUBBLE TRAIL!', {
+      const trailText = this.add.text(this.centerX, this.scale.height / 2 - 50, '🐋 FOLLOW THE TRAIL! 🐋\nCATCH THE WHALE!', {
         fontSize: '24px',
         fontFamily: 'Arial Black',
         color: '#88ffff',
@@ -641,44 +619,83 @@ export default class MainScene extends Phaser.Scene {
     }
   }
 
-  dropWhaleBubble() {
-    try {
-      // Whale drops a small white bubble behind it, but avoid pits!
-      const bubbleZ = this.whaleLeaderZ + 80; // Slightly behind whale
-      let bubbleLane = this.whaleLeaderLane;
+  generateWhaleTrailPath() {
+    // Generate a path of 10 bubbles from near player to far away
+    // Path weaves across lanes, avoiding pits
+    this.whaleTrailPath = [];
+    const numBubbles = 10;
+    const startZ = 150; // Start close to player
+    const endZ = this.zFar * 0.85; // End far away
+    const zStep = (endZ - startZ) / (numBubbles - 1);
+    
+    let currentLane = this.player.laneIndex; // Start in player's lane
+    
+    for (let i = 0; i < numBubbles; i++) {
+      const z = startZ + (i * zStep);
       
-      // Check if there's a pit in this lane at this z range - if so, find a safe lane
-      const pitInLane = this.isPitAtPosition(bubbleLane, bubbleZ);
-      if (pitInLane) {
-        // Try adjacent lanes
-        const alternatives = [0, 1, 2].filter(lane => lane !== bubbleLane && !this.isPitAtPosition(lane, bubbleZ));
-        if (alternatives.length > 0) {
-          // Pick the closest alternative lane
-          alternatives.sort((a, b) => Math.abs(a - bubbleLane) - Math.abs(b - bubbleLane));
-          bubbleLane = alternatives[0];
-        }
-        // If all lanes have pits, skip this bubble drop
-        else {
-          return;
+      // Find a safe lane (no pit) at this z position
+      let safeLane = this.findSafeLaneAt(z, currentLane);
+      
+      this.whaleTrailPath.push({ lane: safeLane, z: z });
+      
+      // For next bubble, try to change lanes (weave across) but prefer adjacent lanes
+      if (i < numBubbles - 1) {
+        const nextZ = startZ + ((i + 1) * zStep);
+        // Try to move to an adjacent lane for variety
+        const possibleMoves = [-1, 0, 1];
+        const shuffled = possibleMoves.sort(() => Math.random() - 0.5);
+        
+        for (const move of shuffled) {
+          const testLane = Math.max(0, Math.min(2, safeLane + move));
+          if (!this.isPitAtPosition(testLane, nextZ)) {
+            currentLane = testLane;
+            break;
+          }
         }
       }
-      
-      const spawned = this.spawner.spawn('collectible', bubbleLane, bubbleZ, 'item-bubble');
+    }
+  }
+  
+  findSafeLaneAt(z: number, preferredLane: number): number {
+    // Find a lane without a pit at this z, preferring the given lane
+    if (!this.isPitAtPosition(preferredLane, z)) {
+      return preferredLane;
+    }
+    
+    // Try adjacent lanes
+    const alternatives = [0, 1, 2].filter(lane => lane !== preferredLane);
+    alternatives.sort((a, b) => Math.abs(a - preferredLane) - Math.abs(b - preferredLane));
+    
+    for (const lane of alternatives) {
+      if (!this.isPitAtPosition(lane, z)) {
+        return lane;
+      }
+    }
+    
+    // If all lanes have pits, return preferred (player will have to jump/slide)
+    return preferredLane;
+  }
+  
+  spawnWhaleTrailBubbles() {
+    // Spawn all bubbles along the pre-generated path
+    for (let i = 0; i < this.whaleTrailPath.length; i++) {
+      const point = this.whaleTrailPath[i];
+      const spawned = this.spawner.spawn('collectible', point.lane, point.z, 'item-bubble');
       
       if (spawned && spawned.sprite) {
         spawned.sprite.setData('isWhaleTrail', true);
+        spawned.sprite.setData('bubbleIndex', i);
         spawned.sprite.setTint(0xffffff); // White bubbles
-        spawned.sprite.setScale(0.8); // Small bubbles
-        spawned.sprite.setAlpha(0.9);
+        spawned.sprite.setScale(i === 0 ? 1.2 : 0.9); // First bubble bigger
+        spawned.sprite.setAlpha(0.95);
+        this.whaleTrailBubbles.push(spawned.sprite);
       }
-    } catch (e) {
-      console.error('[WhaleTrail] Error dropping bubble:', e);
     }
   }
   
   isPitAtPosition(lane: number, z: number): boolean {
     // Check if there's a pit obstacle at the given lane and z position
-    const zTolerance = 150; // Check within this z range
+    const zTolerance = 120; // Check within this z range
     let foundPit = false;
     
     this.spawner.group.getChildren().forEach((child) => {
@@ -698,24 +715,59 @@ export default class MainScene extends Phaser.Scene {
     
     return foundPit;
   }
+  
+  checkWhaleTrailMissedBubbles() {
+    // Check if the bubble the player needs to collect has gone past them
+    if (!this.whaleTrailActive) return;
+    if (this.whaleTrailProgress >= this.whaleTrailPath.length) return;
+    
+    // Find the current bubble player needs to collect
+    for (const bubble of this.whaleTrailBubbles) {
+      if (!bubble.active) continue;
+      
+      const bubbleIndex = bubble.getData('bubbleIndex') as number;
+      if (bubbleIndex !== this.whaleTrailProgress) continue;
+      
+      // This is the bubble they need - check if it went past
+      const z = bubble.getData('z') as number;
+      if (z < -50) {
+        // Bubble went past player without being collected - trail lost!
+        this.failWhaleTrail();
+        return;
+      }
+    }
+  }
 
-  onWhaleTrailBubbleCollected() {
-    // Collected a whale trail bubble - getting closer to the whale!
-    this.whaleBubblesCollected++;
+  onWhaleTrailBubbleCollected(bubbleIndex: number) {
+    // Check if this is the correct bubble in sequence
+    if (bubbleIndex !== this.whaleTrailProgress) {
+      // Wrong bubble - player skipped one, trail lost!
+      this.failWhaleTrail();
+      return;
+    }
+    
+    // Correct bubble! Progress the trail
+    this.whaleTrailProgress++;
     
     // Show progress popup
-    this.showBoostPopup(this.player.x, this.player.y - 40, `${this.whaleBubblesCollected}/${this.whaleBubblesNeeded} 🐋`, 0x88ffff);
+    const total = this.whaleTrailPath.length;
+    this.showBoostPopup(this.player.x, this.player.y - 40, `${this.whaleTrailProgress}/${total} 🐋`, 0x88ffff);
     
-    // Check if we've collected enough to catch the whale
-    if (this.whaleBubblesCollected >= this.whaleBubblesNeeded) {
-      // Make whale slow down dramatically so player catches it
-      this.whaleLeaderZ = Math.min(this.whaleLeaderZ, 250); // Pull whale closer
+    // Move whale closer based on progress (lerp from far to catchable)
+    const progress = this.whaleTrailProgress / total;
+    const targetZ = 150; // Where whale can be caught
+    this.whaleLeaderZ = Phaser.Math.Linear(this.whaleStartZ, targetZ, progress);
+    
+    // Check if trail complete - whale caught!
+    if (this.whaleTrailProgress >= total) {
+      this.completeWhaleTrail();
     }
   }
 
   completeWhaleTrail() {
     this.whaleTrailActive = false;
     this.whaleTrailCompleted = true; // Allow whale alerts after first trail
+    this.whaleTrailBubbles = []; // Clear bubble references
     
     // Destroy the whale leader with a catch animation
     if (this.whaleLeader) {
@@ -777,6 +829,7 @@ export default class MainScene extends Phaser.Scene {
   failWhaleTrail() {
     this.whaleTrailActive = false;
     this.whaleTrailCompleted = true; // Allow whale alerts after first trail (even if failed)
+    this.whaleTrailBubbles = []; // Clear bubble references
     
     // Whale escapes - animate it swimming away
     if (this.whaleLeader) {
@@ -847,7 +900,8 @@ export default class MainScene extends Phaser.Scene {
         
         // Check if this is a whale trail bubble
         if (sprite.getData('isWhaleTrail')) {
-          this.onWhaleTrailBubbleCollected();
+          const bubbleIndex = sprite.getData('bubbleIndex') as number;
+          this.onWhaleTrailBubbleCollected(bubbleIndex);
           sprite.destroy();
           return;
         }
