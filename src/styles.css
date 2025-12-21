@@ -339,14 +339,15 @@ body {
   }
 }
 
-/* Boost inventory */
+/* Boost inventory - positioned on right side for both desktop and mobile */
 .boost-inventory {
   position: absolute;
-  bottom: 70px;
-  left: 50%;
-  transform: translateX(-50%);
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  gap: 10px;
   z-index: 50;
   pointer-events: auto;
 }
@@ -774,16 +775,9 @@ body {
     padding-right: max(10px, env(safe-area-inset-right));
   }
   
-  /* Move inventory to right side for thumb access on mobile */
+  /* Inventory already on right side, just adjust for safe area on mobile */
   .boost-inventory {
-    bottom: auto;
-    left: auto;
-    right: 10px;
     right: max(10px, env(safe-area-inset-right));
-    top: 50%;
-    transform: translateY(-50%);
-    flex-direction: column;
-    gap: 10px;
   }
   
   /* Make menu cards fit mobile screens */

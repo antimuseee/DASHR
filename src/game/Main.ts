@@ -779,19 +779,25 @@ export default class MainScene extends Phaser.Scene {
   }
 
   addChartDip(severity: 'shield' | 'extralife') {
-    // Add a sudden dip to the chart when shield or extra life saves the player
+    // Add a dramatic dip to the chart when shield or extra life saves the player
     const state = useGameStore.getState();
     const currentScore = state.score;
     
-    // Calculate dip amount based on severity
-    const dipAmount = severity === 'shield' ? currentScore * 0.15 : currentScore * 0.25;
-    const dippedScore = Math.max(0, currentScore - dipAmount);
+    // Calculate dip amount based on severity - more dramatic drops
+    const dipPercent = severity === 'shield' ? 0.35 : 0.50; // 35% for shield, 50% for extra life
+    const dippedScore = Math.max(0, currentScore * (1 - dipPercent));
     
-    // Add the dip immediately
-    this.chartData.push(dippedScore);
+    // Add multiple points to show the crash and slow recovery
+    // First: sharp drop down
+    this.chartData.push(currentScore * 0.85); // Start dropping
+    this.chartData.push(currentScore * 0.6);  // Keep falling
+    this.chartData.push(dippedScore);          // Bottom of the dip
+    this.chartData.push(dippedScore);          // Stay at bottom briefly
+    this.chartData.push(dippedScore * 1.05);   // Tiny recovery
+    this.chartData.push(dippedScore * 1.08);   // Slow climb back
     
     // Keep only last 60 data points
-    if (this.chartData.length > 60) {
+    while (this.chartData.length > 60) {
       this.chartData.shift();
     }
     
