@@ -853,7 +853,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   addChartSpike() {
-    // Add a massive spike when whale is caught - sharp zig-zag, VERY long vertical overshoot, long hold, then slow drift
+    // Add a massive spike when whale is caught - sharp zig-zag, vertical overshoot, then high sideways
     const state = useGameStore.getState();
     const currentScore = state.score;
     const lastPoint = this.chartData[this.chartData.length - 1] || currentScore * 0.5;
@@ -867,17 +867,17 @@ export default class MainScene extends Phaser.Scene {
       const progress = i / 24;
       const baseValue = lastPoint + (currentScore - lastPoint) * 0.1 * progress;
       const zzIndex = Math.floor((i - 1) / 8);
-      const zzProgress = ((i - 1) % 8) / 7;
-      const amp = 0.08 + (zzIndex * 0.06);
+      const zzProgress = ((i - 1) % 8) / 7; 
+      const amp = 0.08 + (zzIndex * 0.06); 
       const triangle = zzProgress < 0.5 ? (zzProgress * 2) : (1 - (zzProgress - 0.5) * 2);
       const wobble = 1 + (triangle - 0.5) * amp;
       this.pendingChartPoints.push(baseValue * wobble);
     }
     
-    // 2. Massive vertical takeoff (60 points - VERY LONG straight shot up)
+    // 2. Massive vertical takeoff (30 points - LONG straight shot up)
     // Shoots to 150% of the gain to make the zig-zags look tiny
-    for (let i = 1; i <= 60; i++) {
-      const progress = i / 60;
+    for (let i = 1; i <= 30; i++) {
+      const progress = i / 30;
       // Power of 6 for extreme "straight shot" curve
       const curveProgress = 0.1 + 1.4 * Math.pow(progress, 6);
       this.pendingChartPoints.push(lastPoint + (currentScore - lastPoint) * curveProgress);
@@ -885,16 +885,16 @@ export default class MainScene extends Phaser.Scene {
     
     const peakValue = lastPoint + (currentScore - lastPoint) * 1.5;
     
-    // 3. Sideways consolidation at the peak (200 points) ~10 seconds at 0.05s per point
-    for (let i = 1; i <= 200; i++) {
+    // 3. Sideways consolidation at the peak (25 points)
+    for (let i = 1; i <= 25; i++) {
       const wobble = 0.995 + Math.random() * 0.01;
       this.pendingChartPoints.push(peakValue * wobble);
     }
     
-    // 4. Slow drift back to actual currentScore (40 points)
+    // 4. Slow drift back to actual currentScore (30 points)
     // Stays green because the drop per point is very small
-    for (let i = 1; i <= 40; i++) {
-      const progress = i / 40;
+    for (let i = 1; i <= 30; i++) {
+      const progress = i / 30;
       const value = peakValue - (peakValue - currentScore) * progress;
       this.pendingChartPoints.push(value);
     }
