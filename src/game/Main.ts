@@ -822,6 +822,27 @@ export default class MainScene extends Phaser.Scene {
     this.drawTradingChart();
   }
 
+  addChartCrash() {
+    // When player dies - dramatic crash to flat red line
+    const state = useGameStore.getState();
+    const currentScore = state.score || this.chartData[this.chartData.length - 1] || 100;
+    
+    // Add rapid crash points
+    this.chartData.push(currentScore * 0.7);  // Start crashing
+    this.chartData.push(currentScore * 0.4);  // Keep falling
+    this.chartData.push(currentScore * 0.15); // Almost at bottom
+    this.chartData.push(0);                    // Hit zero
+    
+    // Fill the rest of the chart with flat zero (red line at bottom)
+    const pointsToFill = 60 - this.chartData.length;
+    for (let i = 0; i < pointsToFill; i++) {
+      this.chartData.push(0);
+    }
+    
+    // Redraw to show the crash
+    this.drawTradingChart();
+  }
+
   triggerWhaleAlert() {
     try {
       console.log('[WhaleManipulation] Triggering whale manipulation');
@@ -1541,6 +1562,10 @@ export default class MainScene extends Phaser.Scene {
     }
     
     console.log('[GAME OVER] No shield or extra life - player died');
+    
+    // Crash the trading chart to flat red line
+    this.addChartCrash();
+    
     this.runActive = false;
     const state = useGameStore.getState();
     const best = Math.max(state.best, state.score);
