@@ -59,6 +59,12 @@ export default class MainScene extends Phaser.Scene {
   // Extra life from surviving whale manipulation
   private hasExtraLife = false;
 
+  // Trading chart (portfolio tracker)
+  private chartGraphics: Phaser.GameObjects.Graphics | null = null;
+  private chartData: number[] = []; // Score history for chart
+  private chartUpdateTimer = 0;
+  private lastChartScore = 0;
+
   // Whale events
   private controlsReversed = false;
   private whaleAlertTimer = 0; // Countdown timer in seconds
@@ -216,6 +222,11 @@ export default class MainScene extends Phaser.Scene {
       });
       this.time.delayedCall(100, () => warmupEmitter.destroy());
     }
+    
+    // Create trading chart graphics
+    this.chartGraphics = this.add.graphics();
+    this.chartGraphics.setScrollFactor(0).setDepth(999);
+    this.chartData = [0]; // Start with initial point
     
     this.events.once('shutdown', () => {
       document.removeEventListener('keydown', this.keyHandler);
@@ -379,6 +390,9 @@ export default class MainScene extends Phaser.Scene {
 
     // Update whale alert
     this.updateWhaleEvents(dt);
+    
+    // Update trading chart
+    this.updateTradingChart(dt);
 
     // Distance-based scoring
     gameActions.addDistanceScore(distanceDelta);
@@ -655,6 +669,124 @@ export default class MainScene extends Phaser.Scene {
     } catch (e) {
       console.error('[WhaleEvents] Error in update:', e);
     }
+  }
+
+  updateTradingChart(dt: number) {
+    if (!this.chartGraphics) return;
+    
+    const state = useGameStore.getState();
+    const currentScore = state.score;
+    
+    // Update chart every 0.2 seconds to keep it smooth but not too expensive
+    this.chartUpdateTimer += dt;
+    if (this.chartUpdateTimer >= 0.2) {
+      this.chartUpdateTimer = 0;
+      
+      // Add current score to chart data
+      this.chartData.push(currentScore);
+      
+      // Keep only last 60 data points (12 seconds at 0.2s intervals)
+      if (this.chartData.length > 60) {
+        this.chartData.shift();
+      }
+      
+      this.lastChartScore = currentScore;
+    }
+    
+    // Redraw chart every frame for smooth appearance
+    this.drawTradingChart();
+  }
+
+  drawTradingChart() {
+    if (!this.chartGraphics || this.chartData.length < 2) return;
+    
+    this.chartGraphics.clear();
+    
+    // Chart dimensions and position (top-right corner)
+    const chartWidth = 180;
+    const chartHeight = 80;
+    const chartX = this.scale.width - chartWidth - 10;
+    const chartY = 10;
+    const padding = 8;
+    
+    // Background with border
+    this.chartGraphics.fillStyle(0x000000, 0.5);
+    this.chartGraphics.fillRoundedRect(chartX, chartY, chartWidth, chartHeight, 4);
+    this.chartGraphics.lineStyle(2, 0x00ff00, 0.3);
+    this.chartGraphics.strokeRoundedRect(chartX, chartY, chartWidth, chartHeight, 4);
+    
+    // Find min/max for scaling
+    const minScore = Math.min(...this.chartData);
+    const maxScore = Math.max(...this.chartData);
+    const scoreRange = maxScore - minScore || 1; // Avoid division by zero
+    
+    // Draw the line chart
+    const graphWidth = chartWidth - padding * 2;
+    const graphHeight = chartHeight - padding * 2;
+    const graphX = chartX + padding;
+    const graphY = chartY + padding;
+    
+    this.chartGraphics.lineStyle(2, 0x00ff00, 1);
+    
+    for (let i = 0; i < this.chartData.length - 1; i++) {
+      const x1 = graphX + (i / (this.chartData.length - 1)) * graphWidth;
+      const y1 = graphY + graphHeight - ((this.chartData[i] - minScore) / scoreRange) * graphHeight;
+      
+      const x2 = graphX + ((i + 1) / (this.chartData.length - 1)) * graphWidth;
+      const y2 = graphY + graphHeight - ((this.chartData[i + 1] - minScore) / scoreRange) * graphHeight;
+      
+      // Color the line segment based on direction (green for up, red for down)
+      if (this.chartData[i + 1] < this.chartData[i] * 0.95) {
+        // Significant drop (5% or more) - red
+        this.chartGraphics.lineStyle(2, 0xff0000, 1);
+      } else if (this.chartData[i + 1] > this.chartData[i] * 1.1) {
+        // Big spike (10% or more, like whale catch) - bright green
+        this.chartGraphics.lineStyle(3, 0x00ffaa, 1);
+      } else {
+        // Normal uptrend - green
+        this.chartGraphics.lineStyle(2, 0x00ff00, 1);
+      }
+      
+      this.chartGraphics.lineBetween(x1, y1, x2, y2);
+    }
+  }
+
+  addChartDip(severity: 'shield' | 'extralife') {
+    // Add a sudden dip to the chart when shield or extra life saves the player
+    const state = useGameStore.getState();
+    const currentScore = state.score;
+    
+    // Calculate dip amount based on severity
+    const dipAmount = severity === 'shield' ? currentScore * 0.15 : currentScore * 0.25;
+    const dippedScore = Math.max(0, currentScore - dipAmount);
+    
+    // Add the dip immediately
+    this.chartData.push(dippedScore);
+    
+    // Keep only last 60 data points
+    if (this.chartData.length > 60) {
+      this.chartData.shift();
+    }
+    
+    // Redraw immediately to show the dip
+    this.drawTradingChart();
+  }
+
+  addChartSpike() {
+    // Add a spike when whale is caught
+    const state = useGameStore.getState();
+    const currentScore = state.score;
+    
+    // Add a point showing the spike
+    this.chartData.push(currentScore);
+    
+    // Keep only last 60 data points
+    if (this.chartData.length > 60) {
+      this.chartData.shift();
+    }
+    
+    // Redraw immediately to show the spike
+    this.drawTradingChart();
   }
 
   triggerWhaleAlert() {
@@ -1195,6 +1327,9 @@ export default class MainScene extends Phaser.Scene {
       whaleTokens: state.whaleTokens + 1,
     });
     
+    // Add chart spike for whale catch!
+    this.addChartSpike();
+    
     // Big sparkle effect
     for (let i = 0; i < 5; i++) {
       setTimeout(() => {
@@ -1306,6 +1441,9 @@ export default class MainScene extends Phaser.Scene {
     if (gameActions.useShield()) {
       console.log('[SHIELD] Shield saved the player!');
       
+      // Add chart dip for shield save
+      this.addChartDip('shield');
+      
       // Shield absorbed the hit! Show effect and continue
       this.showBoostPopup(this.player.x, this.player.y - 50, '🛡️ SHIELD SAVED!', 0x00ffff);
       spawnSpark(this, this.player.x, this.player.y, 0x00ffff);
@@ -1329,6 +1467,9 @@ export default class MainScene extends Phaser.Scene {
     if (this.hasExtraLife) {
       console.log('[EXTRA LIFE] Extra life saved the player!');
       this.hasExtraLife = false; // Use up the extra life
+      
+      // Add chart dip for extra life usage
+      this.addChartDip('extralife');
       
       // Show extra life used message
       this.showBoostPopup(this.player.x, this.player.y - 50, '💚 EXTRA LIFE USED!', 0x00ff00);
