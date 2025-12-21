@@ -702,10 +702,10 @@ export default class MainScene extends Phaser.Scene {
     
     this.chartGraphics.clear();
     
-    // Chart dimensions and position (top-right corner)
+    // Chart dimensions and position (top-left corner)
     const chartWidth = 180;
     const chartHeight = 80;
-    const chartX = this.scale.width - chartWidth - 10;
+    const chartX = 10;
     const chartY = 10;
     const padding = 8;
     
