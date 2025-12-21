@@ -522,29 +522,32 @@ export default class MainScene extends Phaser.Scene {
           onComplete: () => restoredText.destroy(),
         });
         
-        // Grant extra life for surviving whale manipulation!
-        this.hasExtraLife = true;
-        
-        // Show extra life granted message
-        this.time.delayedCall(800, () => {
-          const extraLifeText = this.add.text(this.centerX, this.scale.height / 2 - 20, '💚 EXTRA LIFE GRANTED! 💚', {
-            fontSize: '20px',
-            fontFamily: 'Arial Black',
-            color: '#ffff00',
-            stroke: '#333300',
-            strokeThickness: 4,
-            align: 'center',
-          }).setOrigin(0.5).setDepth(1000);
+        // Grant extra life for surviving whale manipulation (only if still alive!)
+        if (this.runActive) {
+          this.hasExtraLife = true;
           
-          this.tweens.add({
-            targets: extraLifeText,
-            alpha: 0,
-            y: extraLifeText.y - 40,
-            scale: 1.3,
-            duration: 1500,
-            onComplete: () => extraLifeText.destroy(),
+          // Show extra life granted message
+          this.time.delayedCall(800, () => {
+            if (!this.runActive) return; // Don't show if game ended
+            const extraLifeText = this.add.text(this.centerX, this.scale.height / 2 - 20, '💚 EXTRA LIFE GRANTED! 💚', {
+              fontSize: '20px',
+              fontFamily: 'Arial Black',
+              color: '#ffff00',
+              stroke: '#333300',
+              strokeThickness: 4,
+              align: 'center',
+            }).setOrigin(0.5).setDepth(1000);
+            
+            this.tweens.add({
+              targets: extraLifeText,
+              alpha: 0,
+              y: extraLifeText.y - 40,
+              scale: 1.3,
+              duration: 1500,
+              onComplete: () => extraLifeText.destroy(),
+            });
           });
-        });
+        }
       }
       
       // Update whale leader position (whale gets closer as player collects bubbles)
