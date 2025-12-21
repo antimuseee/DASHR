@@ -519,8 +519,7 @@ export default class MainScene extends Phaser.Scene {
         if (!this.whaleTrailCompleted) {
           // First and ONLY whale trail - bonus opportunity
           this.triggerWhaleTrail();
-          // After trail, wait a LONG time before any more whale events (back to normal gameplay)
-          this.nextWhaleEventDistance = this.distance + Phaser.Math.Between(2500, 4000);
+          // Distance will be set in completeWhaleTrail/failWhaleTrail AFTER trail ends
         } else {
           // After trail completed: only whale alerts (control reversal), no more trails
           // Whale trail requires 4 boosts, manipulation requires 3 MORE (7 total)
@@ -794,6 +793,9 @@ export default class MainScene extends Phaser.Scene {
     this.whaleTrailCompleted = true; // Allow whale alerts after first trail
     this.whaleTrailBubbles = []; // Clear bubble references
     
+    // Set next whale event FAR in the future (back to normal gameplay for a long time)
+    this.nextWhaleEventDistance = this.distance + Phaser.Math.Between(3000, 5000);
+    
     // Destroy the whale leader with a catch animation
     if (this.whaleLeader) {
       const whale = this.whaleLeader;
@@ -855,6 +857,9 @@ export default class MainScene extends Phaser.Scene {
     this.whaleTrailActive = false;
     this.whaleTrailCompleted = true; // Allow whale alerts after first trail (even if failed)
     this.whaleTrailBubbles = []; // Clear bubble references
+    
+    // Set next whale event FAR in the future (back to normal gameplay for a long time)
+    this.nextWhaleEventDistance = this.distance + Phaser.Math.Between(3000, 5000);
     
     // Whale escapes - animate it swimming away
     if (this.whaleLeader) {
