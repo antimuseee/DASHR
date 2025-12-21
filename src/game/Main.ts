@@ -835,39 +835,40 @@ export default class MainScene extends Phaser.Scene {
   }
 
   addChartSpike() {
-    // Add a dramatic spike when whale is caught - slow zig-zag build, then parabolic up, then consolidate sideways
+    // Add a dramatic spike when whale is caught - slower zig-zag build, then steep parabolic shot up, then sideways
     const state = useGameStore.getState();
     const currentScore = state.score;
     const lastPoint = this.chartData[this.chartData.length - 1] || currentScore * 0.5;
     
-    // START FRESH SEQUENCE in pending to be processed by updateTradingChart
+    // START FRESH SEQUENCE
     this.pendingChartPoints = [];
     
-    // 1. Slow zig-zag build (12 points)
-    // We cover first 30% of the gain here
-    for (let i = 1; i <= 12; i++) {
-      const progress = i / 12;
+    // 1. Slower Zig-zag build (24 points - approx 1.2s at 0.05s frequency)
+    // We cover first 30% of the gain here very gradually
+    for (let i = 1; i <= 24; i++) {
+      const progress = i / 24;
       const baseValue = lastPoint + (currentScore - lastPoint) * 0.3 * progress;
-      const wobble = i % 2 === 0 ? 1.01 : 0.99;
+      // More visible wobble for the zig-zag feel
+      const wobble = i % 2 === 0 ? 1.015 : 0.985;
       this.pendingChartPoints.push(baseValue * wobble);
     }
     
-    // 2. Parabolic run up (10 points) - NO overshooting, strictly approach currentScore
-    for (let i = 1; i <= 10; i++) {
-      const progress = i / 10;
-      // Curve starts at 30% of total gain and ends at 100%
-      const curveProgress = 0.3 + 0.7 * (progress * progress);
+    // 2. Parabolic straight shot up (8 points - very fast acceleration)
+    // Higher power (progress^3) makes it look like a vertical "straight shot" at the end
+    for (let i = 1; i <= 8; i++) {
+      const progress = i / 8;
+      // Curve starts at 30% and accelerates rapidly to 100%
+      const curveProgress = 0.3 + 0.7 * (progress * progress * progress);
       this.pendingChartPoints.push(lastPoint + (currentScore - lastPoint) * curveProgress);
     }
     
-    // 3. Sideways consolidation (15 points) - very stable, stays green
+    // 3. Sideways consolidation (15 points - staying high and green)
     for (let i = 1; i <= 15; i++) {
-      // Just tiny wobbles +/- 0.5%, will stay green because threshold is 10%
       const wobble = 0.995 + Math.random() * 0.01;
       this.pendingChartPoints.push(currentScore * wobble);
     }
     
-    // Final point must be exact current score to synchronize with game
+    // Final point must be exact current score
     this.pendingChartPoints.push(currentScore);
     
     // Flash green "MOON" text on chart
