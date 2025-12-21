@@ -66,6 +66,7 @@ export default class MainScene extends Phaser.Scene {
   private whaleTrailProgress = 0;
   private whaleTrailLanes: number[] = []; // Lane pattern for trail
   private whaleTrailStartTime = 0; // Time when trail started (for grace period)
+  private whaleTrailDots: Phaser.GameObjects.Arc[] = []; // Small connector dots
 
   private keyHandler!: (e: KeyboardEvent) => void;
 
@@ -447,6 +448,48 @@ export default class MainScene extends Phaser.Scene {
           this.whaleAlertText = null;
         }
       }
+      
+      // Update trail dot positions
+      if (this.whaleTrailDots && this.whaleTrailDots.length > 0) {
+        const dotsToRemove: number[] = [];
+        
+        this.whaleTrailDots.forEach((dot, index) => {
+          if (!dot.active) {
+            dotsToRemove.push(index);
+            return;
+          }
+          
+          // Move dots closer (decrease z)
+          let z = (dot.getData('z') as number) || 0;
+          z -= this.speed * dt;
+          dot.setData('z', z);
+          
+          // Remove if past player
+          if (z < -50) {
+            dot.destroy();
+            dotsToRemove.push(index);
+            return;
+          }
+          
+          // Calculate screen position using perspective
+          const lane = (dot.getData('lane') as number) || 1;
+          const e = Math.max(0, Math.min(1, z / this.zFar));
+          const laneFactor = Phaser.Math.Linear(1, this.farLaneFactor, e);
+          const x = this.centerX + (lane - 1) * this.laneWidth * laneFactor;
+          const y = Phaser.Math.Linear(this.nearY, this.horizonY, e);
+          const scale = Phaser.Math.Linear(this.nearScaleMul, this.farScaleMul, e);
+          const alpha = Phaser.Math.Linear(1, 0.3, e);
+          
+          dot.setPosition(x, y);
+          dot.setScale(scale);
+          dot.setAlpha(alpha * 0.7);
+        });
+        
+        // Clean up destroyed dots
+        for (let i = dotsToRemove.length - 1; i >= 0; i--) {
+          this.whaleTrailDots.splice(dotsToRemove[i], 1);
+        }
+      }
 
       // Check if any whale trail bubbles were missed (went past player)
       // Grace period of 2 seconds before fail checks start
@@ -581,6 +624,7 @@ export default class MainScene extends Phaser.Scene {
       this.whaleTrailProgress = 0;
       this.whaleTrailBubbles = [];
       this.whaleTrailStartTime = this.time.now; // Grace period before fail checks
+      this.cleanupWhaleTrailDots(); // Clear any leftover dots
       
       // Generate a lane pattern for 6 bubbles
       this.whaleTrailLanes = [];
@@ -620,7 +664,7 @@ export default class MainScene extends Phaser.Scene {
 
   spawnWhaleTrailBubbles() {
     try {
-      const spacing = 150; // Z distance between bubbles
+      const spacing = 150; // Z distance between main bubbles
       
       for (let i = 0; i < this.whaleTrailLanes.length; i++) {
         const lane = this.whaleTrailLanes[i];
@@ -629,16 +673,39 @@ export default class MainScene extends Phaser.Scene {
         const bubbleKey = `whale-bubble-${i}`;
         this.whaleTrailBubbles.push(bubbleKey);
         
-        // Spawn bubble using spawner with custom texture - spawn returns { sprite, ... }
+        // Spawn main bubble using spawner with custom texture
         const spawned = this.spawner.spawn('collectible', lane, zOffset, 'item-bubble');
         
         if (spawned && spawned.sprite) {
           spawned.sprite.setData('bubbleIndex', i);
           spawned.sprite.setData('isWhaleTrail', true);
           spawned.sprite.setName(bubbleKey);
-          
-          // Make trail bubbles pulse bright
           spawned.sprite.setTint(0x00ff88);
+          spawned.sprite.setScale(1.5); // Make main bubbles bigger
+        }
+        
+        // Add small white connector bubbles between this bubble and the next
+        if (i < this.whaleTrailLanes.length - 1) {
+          const nextLane = this.whaleTrailLanes[i + 1];
+          const nextZ = 200 + ((i + 1) * spacing);
+          
+          // Create 4 small bubbles curving between main bubbles
+          for (let j = 1; j <= 4; j++) {
+            const t = j / 5; // 0.2, 0.4, 0.6, 0.8
+            const midLane = lane + (nextLane - lane) * t; // Interpolate lane
+            const midZ = zOffset + (nextZ - zOffset) * t; // Interpolate z
+            
+            // Add small white trail bubble (just visual, not collectible)
+            const trailDot = this.add.circle(0, 0, 4, 0xffffff, 0.7);
+            trailDot.setDepth(3);
+            trailDot.setData('isTrailDot', true);
+            trailDot.setData('lane', midLane);
+            trailDot.setData('z', midZ);
+            
+            // Add to a group for cleanup
+            if (!this.whaleTrailDots) this.whaleTrailDots = [];
+            this.whaleTrailDots.push(trailDot);
+          }
         }
       }
     } catch (e) {
@@ -668,6 +735,7 @@ export default class MainScene extends Phaser.Scene {
   completeWhaleTrail() {
     this.whaleTrailActive = false;
     this.whaleTrailCompleted = true; // Allow whale alerts after first trail
+    this.cleanupWhaleTrailDots();
     
     // Show success message
     const successText = this.add.text(this.centerX, this.scale.height / 2, '🐋 WHALE INCOMING! 🐋', {
@@ -706,6 +774,7 @@ export default class MainScene extends Phaser.Scene {
   failWhaleTrail() {
     this.whaleTrailActive = false;
     this.whaleTrailCompleted = true; // Allow whale alerts after first trail (even if failed)
+    this.cleanupWhaleTrailDots();
     
     // Remove remaining bubbles - collect first, then destroy to avoid mutation during iteration
     const toDestroy: Phaser.Physics.Arcade.Sprite[] = [];
@@ -734,6 +803,15 @@ export default class MainScene extends Phaser.Scene {
       duration: 1000,
       onComplete: () => failText.destroy(),
     });
+  }
+
+  cleanupWhaleTrailDots() {
+    if (this.whaleTrailDots) {
+      this.whaleTrailDots.forEach(dot => {
+        if (dot && dot.active) dot.destroy();
+      });
+      this.whaleTrailDots = [];
+    }
   }
 
   checkCollisions() {
