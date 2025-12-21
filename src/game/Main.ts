@@ -484,8 +484,8 @@ export default class MainScene extends Phaser.Scene {
       // Check if whale events should unlock (requires using boosts + distance)
       const state = useGameStore.getState();
       if (!this.whaleEventsUnlocked) {
-        // TEMPORARY: Testing at 1000m - will revert to: boostsUsed >= 4 && distance >= 4000
-        if (this.distance >= 1000) {
+        // Unlock whale events after player has used 4+ boosts AND traveled 4000m+
+        if (state.boostsUsed >= 4 && this.distance >= 4000) {
           this.whaleEventsUnlocked = true;
           this.nextWhaleEventDistance = this.distance + Phaser.Math.Between(300, 600); // First event soon after unlock
           
@@ -621,7 +621,6 @@ export default class MainScene extends Phaser.Scene {
   spawnWhaleTrailBubbles() {
     try {
       const spacing = 150; // Z distance between bubbles
-      console.log('[WhaleTrail] Spawning', this.whaleTrailLanes.length, 'bubbles');
       
       for (let i = 0; i < this.whaleTrailLanes.length; i++) {
         const lane = this.whaleTrailLanes[i];
@@ -630,25 +629,18 @@ export default class MainScene extends Phaser.Scene {
         const bubbleKey = `whale-bubble-${i}`;
         this.whaleTrailBubbles.push(bubbleKey);
         
-        console.log('[WhaleTrail] Spawning bubble', i, 'at lane', lane, 'z', zOffset);
-        
         // Spawn bubble using spawner with custom texture - spawn returns { sprite, ... }
         const spawned = this.spawner.spawn('collectible', lane, zOffset, 'item-bubble');
-        console.log('[WhaleTrail] Spawn result:', spawned);
         
         if (spawned && spawned.sprite) {
           spawned.sprite.setData('bubbleIndex', i);
           spawned.sprite.setData('isWhaleTrail', true);
           spawned.sprite.setName(bubbleKey);
           
-          // Make trail bubbles glow
-          spawned.sprite.setTint(0x88ffff);
-          console.log('[WhaleTrail] Bubble', i, 'configured successfully');
-        } else {
-          console.error('[WhaleTrail] Failed to spawn bubble', i);
+          // Make trail bubbles pulse bright
+          spawned.sprite.setTint(0x00ff88);
         }
       }
-      console.log('[WhaleTrail] Finished spawning bubbles');
     } catch (e) {
       console.error('[WhaleTrail] Error spawning bubbles:', e);
       this.whaleTrailActive = false;

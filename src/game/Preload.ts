@@ -330,18 +330,24 @@ export default class Preload extends Phaser.Scene {
     g.fillCircle(12, 4, 2);
     g.generateTexture('item-whale', 40, 40);
 
-    // BUBBLE - Trail marker
+    // BUBBLE - Trail marker (bright green/yellow to stand out)
     g.clear();
-    g.fillStyle(0x00ffff, 0.3);
-    g.fillCircle(12, 12, 12);
-    g.fillStyle(0x88ffff, 0.5);
-    g.fillCircle(12, 12, 9);
-    g.fillStyle(0xaaffff, 0.4);
-    g.fillCircle(12, 12, 6);
+    // Outer glow - bright green
+    g.fillStyle(0x00ff88, 0.4);
+    g.fillCircle(14, 14, 14);
+    // Middle ring - yellow
+    g.fillStyle(0xffff00, 0.7);
+    g.fillCircle(14, 14, 10);
+    // Inner - bright green
+    g.fillStyle(0x00ff44, 0.9);
+    g.fillCircle(14, 14, 6);
+    // Whale icon hint - small blue center
+    g.fillStyle(0x00aaff, 1);
+    g.fillCircle(14, 14, 3);
     // Shine
-    g.fillStyle(0xffffff, 0.7);
-    g.fillCircle(8, 8, 3);
-    g.generateTexture('item-bubble', 24, 24);
+    g.fillStyle(0xffffff, 0.9);
+    g.fillCircle(10, 10, 2);
+    g.generateTexture('item-bubble', 28, 28);
     
     g.destroy();
   }
