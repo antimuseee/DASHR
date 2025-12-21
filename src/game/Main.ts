@@ -638,9 +638,10 @@ export default class MainScene extends Phaser.Scene {
       this.whaleLeader.setDepth(100);
       this.whaleLeader.setScale(0.15); // Very small (far away)
       
-      // Show chase message
+      // Show chase message (longer on mobile for more reaction time)
+      const device = getDevice();
       const trailText = this.add.text(this.centerX, this.scale.height / 2 - 50, '🐋 FOLLOW THE TRAIL! 🐋\nCATCH THE WHALE!', {
-        fontSize: '24px',
+        fontSize: device.isMobile ? '20px' : '24px',
         fontFamily: 'Arial Black',
         color: '#88ffff',
         stroke: '#003333',
@@ -652,7 +653,7 @@ export default class MainScene extends Phaser.Scene {
         targets: trailText,
         alpha: 0,
         y: trailText.y - 50,
-        duration: 1500,
+        duration: device.isMobile ? 2500 : 1500, // Longer on mobile
         onComplete: () => trailText.destroy(),
       });
     } catch (e) {
@@ -666,7 +667,10 @@ export default class MainScene extends Phaser.Scene {
     // Path weaves across lanes, avoiding pits
     this.whaleTrailPath = [];
     const numBubbles = 10;
-    const startZ = 150; // Start close to player
+    
+    // On mobile, start bubbles further away to give player more time to see and react
+    const device = getDevice();
+    const startZ = device.isMobile ? 350 : 150; // Mobile: further away for more reaction time
     const endZ = this.zFar * 0.85; // End far away
     const zStep = (endZ - startZ) / (numBubbles - 1);
     
