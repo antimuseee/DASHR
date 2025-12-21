@@ -62,6 +62,7 @@ export default class MainScene extends Phaser.Scene {
   // Whale events
   private controlsReversed = false;
   private whaleAlertTimer = 0; // Countdown timer in seconds
+  private whaleAlertEnding = false; // Flag to prevent repeat end-of-alert processing
   private whaleAlertText: Phaser.GameObjects.Text | null = null;
   private whaleEventsUnlocked = false; // Whale events only after player has used boosts
   private nextWhaleEventDistance = 0; // Set when unlocked
@@ -554,6 +555,10 @@ export default class MainScene extends Phaser.Scene {
             });
           });
         }
+        
+        // IMPORTANT: Return here to prevent immediately triggering another whale event
+        // in the same frame (since controlsReversed is now false)
+        return;
         }
       }
       
