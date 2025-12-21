@@ -52,6 +52,9 @@ export default class MainScene extends Phaser.Scene {
   
   // Invincibility after shield save
   private invincibleUntil = 0;
+  
+  // Extra life from surviving whale manipulation
+  private hasExtraLife = false;
 
   // Whale events
   private controlsReversed = false;
@@ -174,6 +177,7 @@ export default class MainScene extends Phaser.Scene {
     this.runActive = true;
     this.scorePopups = [];
     this.invincibleUntil = 0;
+    this.hasExtraLife = false; // Reset extra life on new game
 
     gameActions.startRun();
 
@@ -504,6 +508,30 @@ export default class MainScene extends Phaser.Scene {
           y: restoredText.y - 30,
           duration: 1200,
           onComplete: () => restoredText.destroy(),
+        });
+        
+        // Grant extra life for surviving whale manipulation!
+        this.hasExtraLife = true;
+        
+        // Show extra life granted message
+        this.time.delayedCall(800, () => {
+          const extraLifeText = this.add.text(this.centerX, this.scale.height / 2 - 20, '💚 EXTRA LIFE GRANTED! 💚', {
+            fontSize: '20px',
+            fontFamily: 'Arial Black',
+            color: '#ffff00',
+            stroke: '#333300',
+            strokeThickness: 4,
+            align: 'center',
+          }).setOrigin(0.5).setDepth(1000);
+          
+          this.tweens.add({
+            targets: extraLifeText,
+            alpha: 0,
+            y: extraLifeText.y - 40,
+            scale: 1.3,
+            duration: 1500,
+            onComplete: () => extraLifeText.destroy(),
+          });
         });
       }
       
@@ -1214,7 +1242,7 @@ export default class MainScene extends Phaser.Scene {
   triggerGameOver() {
     if (!this.runActive) return;
     
-    // Check for shield
+    // Check for shield first
     if (gameActions.useShield()) {
       console.log('[SHIELD] Shield saved the player!');
       
@@ -1237,7 +1265,48 @@ export default class MainScene extends Phaser.Scene {
       return;
     }
     
-    console.log('[GAME OVER] No shield - player died');
+    // Check for extra life from surviving whale manipulation
+    if (this.hasExtraLife) {
+      console.log('[EXTRA LIFE] Extra life saved the player!');
+      this.hasExtraLife = false; // Use up the extra life
+      
+      // Show extra life used message
+      this.showBoostPopup(this.player.x, this.player.y - 50, '💚 EXTRA LIFE USED!', 0x00ff00);
+      spawnSpark(this, this.player.x, this.player.y, 0x00ff00);
+      
+      // Show explanation text
+      const usedText = this.add.text(this.centerX, this.scale.height / 2 - 80, '💚 EXTRA LIFE KEPT YOU ALIVE! 💚', {
+        fontSize: '22px',
+        fontFamily: 'Arial Black',
+        color: '#00ff00',
+        stroke: '#003300',
+        strokeThickness: 4,
+        align: 'center',
+      }).setOrigin(0.5).setDepth(1000);
+      
+      this.tweens.add({
+        targets: usedText,
+        alpha: 0,
+        y: usedText.y - 40,
+        duration: 2000,
+        onComplete: () => usedText.destroy(),
+      });
+      
+      // Grant 1.5 seconds of invincibility
+      this.invincibleUntil = this.time.now + 1500;
+      
+      // Flash effect
+      this.tweens.add({
+        targets: this.player.sprite,
+        alpha: 0.3,
+        duration: 100,
+        yoyo: true,
+        repeat: 7,
+      });
+      return;
+    }
+    
+    console.log('[GAME OVER] No shield or extra life - player died');
     this.runActive = false;
     const state = useGameStore.getState();
     const best = Math.max(state.best, state.score);
