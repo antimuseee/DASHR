@@ -690,7 +690,7 @@ body {
 /* Controls help toggle */
 .controls-help {
   position: fixed;
-  bottom: 20px;
+  bottom: 120px;
   left: 20px;
   z-index: 100;
 }
