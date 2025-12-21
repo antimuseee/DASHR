@@ -241,7 +241,6 @@ export default class MainScene extends Phaser.Scene {
     });
     
     // Pre-warm particle system on mobile to prevent slowdown on first boost activation
-    const device = getDevice();
     if (device.isMobile) {
       const warmupEmitter = this.add.particles(-100, -100, 'particle', {
         lifespan: 50,
