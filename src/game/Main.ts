@@ -65,7 +65,6 @@ export default class MainScene extends Phaser.Scene {
   private chartUpdateTimer = 0;
   private lastChartScore = 0;
   private pendingChartPoints: number[] = []; // Points to be added gradually (e.g. during spike)
-  private testWhaleSpawned = false; // TEMPORARY: For testing whale catch chart
 
   // Whale events
   private controlsReversed = false;
@@ -227,7 +226,6 @@ export default class MainScene extends Phaser.Scene {
     this.chartData = [];
     this.chartUpdateTimer = 0;
     this.lastChartScore = 0;
-    this.testWhaleSpawned = false;
 
     gameActions.startRun();
 
@@ -436,21 +434,6 @@ export default class MainScene extends Phaser.Scene {
 
     this.spawnByDistance();
     
-    // TEMPORARY: Spawn test whale at 1000m
-    if (!this.testWhaleSpawned && this.distance >= 1000) {
-      this.testWhaleSpawned = true;
-      const spawned = this.spawner.spawn('collectible', 1, this.zFar * 0.95, 'item-whale');
-      if (spawned && spawned.sprite) {
-        spawned.sprite.setData('isWhaleToken', true);
-        spawned.sprite.setScale(1.5);
-        this.tweens.add({
-          targets: spawned.sprite,
-          angle: 360,
-          duration: 2000,
-          repeat: -1,
-        });
-      }
-    }
     
     // Magnet effect - attract collectibles
     this.updateMagnetEffect(dt);
@@ -853,43 +836,42 @@ export default class MainScene extends Phaser.Scene {
   }
 
   addChartSpike() {
-    // Add a massive spike when whale is caught - short upward zig-zag, then vertical moon shot, long sideways hold
+    // Add a massive spike when whale is caught - immediate vertical moon shot, long sideways hold
     const state = useGameStore.getState();
     const currentScore = state.score;
-    const lastPoint = this.chartData[this.chartData.length - 1] || currentScore * 0.5;
-    
+    const lastPoint = this.chartData[this.chartData.length - 1] ?? currentScore;
+
     // START FRESH SEQUENCE
     this.pendingChartPoints = [];
-    
-    // VERTICAL MOON SHOT - Extended vertical climb (60 points - ~3 seconds)
-    // Shoots to 5X the current score - steep vertical line that lasts longer
-    const peakMultiplier = 5.0; // 5x the score gain
-    for (let i = 1; i <= 60; i++) {
-      const progress = i / 60;
-      // Linear - shoots up at constant steep vertical angle
-      const curveProgress = peakMultiplier * progress;
-      this.pendingChartPoints.push(lastPoint + (currentScore - lastPoint) * curveProgress);
-    }
-    
-    const peakValue = lastPoint + (currentScore - lastPoint) * peakMultiplier;
-    
-    // 3. EXTRA LONG sideways consolidation at the peak (500 points - 25 seconds at 0.05s freq)
-    for (let i = 1; i <= 500; i++) {
-      const wobble = 0.995 + Math.random() * 0.01;
-      this.pendingChartPoints.push(peakValue * wobble);
-    }
-    
-    // 4. Slow drift back to actual currentScore (40 points)
-    // Stays green because the drop per point is very small
-    for (let i = 1; i <= 40; i++) {
-      const progress = i / 40;
-      const value = peakValue - (peakValue - currentScore) * progress;
+
+    // Force a straight-up vertical jump that lasts longer on screen
+    // Use the actual post-whale score as the peak so we don't drop afterward
+    // and lift the baseline close to that value to avoid a future red fall.
+    const baseValue = Math.min(currentScore * 0.92, currentScore);
+    const peakValue = currentScore; // New baseline/peak is the real score after whale
+
+    // Reset the chart line so the spike starts clean (prevents old noise)
+    this.chartData = [baseValue];
+
+    // Multi-step vertical ramp so the run-up lasts longer but stays extremely steep
+    const rampFrames = 25; // ~1.25s at 0.05s update cadence
+    for (let i = 1; i <= rampFrames; i++) {
+      const progress = i / rampFrames;
+      const curve = Math.pow(progress, 3); // Accelerate upward near the end for a near-vertical look
+      const value = baseValue + (peakValue - baseValue) * curve;
       this.pendingChartPoints.push(value);
     }
-    
-    // Final point must be exact current score
+
+    // Gentle upward settle so it transitions into normal growth without a flat line
+    const settleFrames = 20; // ~1s soft continuation upward
+    for (let i = 1; i <= settleFrames; i++) {
+      const drift = 1 + i * 0.002; // tiny upward drift
+      this.pendingChartPoints.push(peakValue * drift);
+    }
+
+    // Final point must be exact current score to realign with live data
     this.pendingChartPoints.push(currentScore);
-    
+
     // Flash green "MOON" text on chart
     this.flashChartText();
   }
