@@ -64,6 +64,7 @@ export default class MainScene extends Phaser.Scene {
   private chartData: number[] = []; // Score history for chart
   private chartUpdateTimer = 0;
   private lastChartScore = 0;
+  private pendingChartPoints: number[] = []; // Points to be added gradually (e.g. during spike)
 
   // Whale events
   private controlsReversed = false;
@@ -704,16 +705,24 @@ export default class MainScene extends Phaser.Scene {
     const state = useGameStore.getState();
     const currentScore = state.score;
     
-    // Update chart every 0.2 seconds to keep it smooth but not too expensive
+    // Update chart frequency: faster if we have pending points to show (like a spike)
+    const updateFreq = this.pendingChartPoints.length > 0 ? 0.05 : 0.2;
+    
     this.chartUpdateTimer += dt;
-    if (this.chartUpdateTimer >= 0.2) {
+    if (this.chartUpdateTimer >= updateFreq) {
       this.chartUpdateTimer = 0;
       
-      // Add current score to chart data
-      this.chartData.push(currentScore);
+      if (this.pendingChartPoints.length > 0) {
+        // Add next point from the pending sequence (spike/crash)
+        const nextPoint = this.pendingChartPoints.shift()!;
+        this.chartData.push(nextPoint);
+      } else {
+        // Normal score update
+        this.chartData.push(currentScore);
+      }
       
       // Keep only last 60 data points (12 seconds at 0.2s intervals)
-      if (this.chartData.length > 60) {
+      while (this.chartData.length > 60) {
         this.chartData.shift();
       }
       
@@ -779,14 +788,15 @@ export default class MainScene extends Phaser.Scene {
       const y2 = graphY + graphHeight - ((this.chartData[i + 1] - minScore) / scoreRange) * graphHeight;
       
       // Color the line segment based on direction (green for up, red for down)
-      if (this.chartData[i + 1] < this.chartData[i] * 0.95) {
-        // Significant drop (5% or more) - red
+      // Threshold: red if drop is > 10% (more forgiving for small wobbles)
+      if (this.chartData[i + 1] < this.chartData[i] * 0.90) {
+        // Significant drop - red
         this.chartGraphics.lineStyle(2, 0xff3333, 1);
       } else if (this.chartData[i + 1] > this.chartData[i] * 1.1) {
         // Big spike (10% or more, like whale catch) - bright cyan-green
         this.chartGraphics.lineStyle(3, 0x00ffaa, 1);
       } else {
-        // Normal uptrend - green
+        // Normal uptrend or small consolidation - green
         this.chartGraphics.lineStyle(2, 0x00ff00, 0.9);
       }
       
@@ -814,73 +824,51 @@ export default class MainScene extends Phaser.Scene {
     const dipPercent = severity === 'shield' ? 0.35 : 0.50; // 35% for shield, 50% for extra life
     const dippedScore = Math.max(0, currentScore * (1 - dipPercent));
     
-    // Add multiple points to show the crash and slow recovery
-    // First: sharp drop down
-    this.chartData.push(currentScore * 0.85); // Start dropping
-    this.chartData.push(currentScore * 0.6);  // Keep falling
-    this.chartData.push(dippedScore);          // Bottom of the dip
-    this.chartData.push(dippedScore);          // Stay at bottom briefly
-    this.chartData.push(dippedScore * 1.05);   // Tiny recovery
-    this.chartData.push(dippedScore * 1.08);   // Slow climb back
-    
-    // Keep only last 60 data points
-    while (this.chartData.length > 60) {
-      this.chartData.shift();
-    }
-    
-    // Redraw immediately to show the dip
-    this.drawTradingChart();
+    // Clear pending and add new sequence to be processed gradually
+    this.pendingChartPoints = []; 
+    this.pendingChartPoints.push(currentScore * 0.85); // Start dropping
+    this.pendingChartPoints.push(currentScore * 0.6);  // Keep falling
+    this.pendingChartPoints.push(dippedScore);          // Bottom of the dip
+    this.pendingChartPoints.push(dippedScore);          // Stay at bottom briefly
+    this.pendingChartPoints.push(dippedScore * 1.05);   // Tiny recovery
+    this.pendingChartPoints.push(dippedScore * 1.08);   // Slow climb back
   }
 
   addChartSpike() {
     // Add a dramatic spike when whale is caught - slow zig-zag build, then parabolic up, then consolidate sideways
     const state = useGameStore.getState();
     const currentScore = state.score;
-    const baseScore = this.chartData[this.chartData.length - 1] || currentScore * 0.8;
+    const lastPoint = this.chartData[this.chartData.length - 1] || currentScore * 0.5;
     
-    // Slow zig-zag pattern going up (gradual build)
-    this.chartData.push(baseScore * 1.02);  // Tiny up
-    this.chartData.push(baseScore * 1.04);  // Keep climbing slowly
-    this.chartData.push(baseScore * 1.03);  // Slight dip
-    this.chartData.push(baseScore * 1.06);  // Up a bit
-    this.chartData.push(baseScore * 1.05);  // Tiny dip
-    this.chartData.push(baseScore * 1.09);  // Up
-    this.chartData.push(baseScore * 1.08);  // Tiny dip
-    this.chartData.push(baseScore * 1.12);  // Up more
-    this.chartData.push(baseScore * 1.11);  // Tiny dip
-    this.chartData.push(baseScore * 1.16);  // Up more
-    this.chartData.push(baseScore * 1.14);  // Slight dip
-    this.chartData.push(baseScore * 1.20);  // Building momentum
-    this.chartData.push(baseScore * 1.18);  // Tiny pullback
-    this.chartData.push(baseScore * 1.25);  // Stronger now
+    // START FRESH SEQUENCE in pending to be processed by updateTradingChart
+    this.pendingChartPoints = [];
     
-    // Parabolic spike up! (more gradual acceleration)
-    this.chartData.push(baseScore * 1.32);  // Starting to accelerate
-    this.chartData.push(baseScore * 1.42);  // Faster
-    this.chartData.push(baseScore * 1.55);  // Even faster
-    this.chartData.push(baseScore * 1.70);  // Accelerating more
-    this.chartData.push(baseScore * 1.88);  // Almost there
-    this.chartData.push(currentScore);       // Peak at actual score!
-    
-    // Sideways consolidation after the spike (stays high, gentle wobble - NO RED DROP)
-    const peakScore = currentScore;
-    this.chartData.push(peakScore * 0.99);  // Tiny dip
-    this.chartData.push(peakScore * 0.98);  // A bit more
-    this.chartData.push(peakScore * 0.99);  // Coming back
-    this.chartData.push(peakScore);          // Back to peak
-    this.chartData.push(peakScore * 0.995); // Tiny wobble
-    this.chartData.push(peakScore * 1.005); // Tiny up
-    this.chartData.push(peakScore);          // Stable
-    this.chartData.push(peakScore * 0.998); // Very slight wobble
-    this.chartData.push(peakScore);          // Stable - ready for normal operation
-    
-    // Keep only last 60 data points
-    while (this.chartData.length > 60) {
-      this.chartData.shift();
+    // 1. Slow zig-zag build (12 points)
+    // We cover first 30% of the gain here
+    for (let i = 1; i <= 12; i++) {
+      const progress = i / 12;
+      const baseValue = lastPoint + (currentScore - lastPoint) * 0.3 * progress;
+      const wobble = i % 2 === 0 ? 1.01 : 0.99;
+      this.pendingChartPoints.push(baseValue * wobble);
     }
     
-    // Redraw immediately to show the spike
-    this.drawTradingChart();
+    // 2. Parabolic run up (10 points) - NO overshooting, strictly approach currentScore
+    for (let i = 1; i <= 10; i++) {
+      const progress = i / 10;
+      // Curve starts at 30% of total gain and ends at 100%
+      const curveProgress = 0.3 + 0.7 * (progress * progress);
+      this.pendingChartPoints.push(lastPoint + (currentScore - lastPoint) * curveProgress);
+    }
+    
+    // 3. Sideways consolidation (15 points) - very stable, stays green
+    for (let i = 1; i <= 15; i++) {
+      // Just tiny wobbles +/- 0.5%, will stay green because threshold is 10%
+      const wobble = 0.995 + Math.random() * 0.01;
+      this.pendingChartPoints.push(currentScore * wobble);
+    }
+    
+    // Final point must be exact current score to synchronize with game
+    this.pendingChartPoints.push(currentScore);
     
     // Flash green "MOON" text on chart
     this.flashChartText();
@@ -922,25 +910,17 @@ export default class MainScene extends Phaser.Scene {
     const minInChart = Math.min(...this.chartData, currentScore);
     const crashBottom = -minInChart * 0.1; // Go slightly negative to ensure it's at the very bottom
     
-    // Add rapid crash points - steep drop
-    this.chartData.push(currentScore * 0.5);   // Start crashing hard
-    this.chartData.push(currentScore * 0.2);   // Keep falling
-    this.chartData.push(currentScore * 0.05);  // Almost at bottom
-    this.chartData.push(crashBottom);           // Hit absolute bottom
+    // Clear pending and add rapid crash sequence
+    this.pendingChartPoints = [];
+    this.pendingChartPoints.push(currentScore * 0.5);   // Start crashing hard
+    this.pendingChartPoints.push(currentScore * 0.2);   // Keep falling
+    this.pendingChartPoints.push(currentScore * 0.05);  // Almost at bottom
+    this.pendingChartPoints.push(crashBottom);           // Hit absolute bottom
     
-    // Add flat line at bottom - but only enough to show crash while keeping some green visible
-    // Fill about 15-20 more points (not the whole chart)
+    // Add flat line at bottom
     for (let i = 0; i < 18; i++) {
-      this.chartData.push(crashBottom);
+      this.pendingChartPoints.push(crashBottom);
     }
-    
-    // Keep only last 60 data points - this preserves some green on the left
-    while (this.chartData.length > 60) {
-      this.chartData.shift();
-    }
-    
-    // Redraw to show the crash
-    this.drawTradingChart();
   }
 
   triggerWhaleAlert() {
