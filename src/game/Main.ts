@@ -226,7 +226,9 @@ export default class MainScene extends Phaser.Scene {
     // Create trading chart graphics
     this.chartGraphics = this.add.graphics();
     this.chartGraphics.setScrollFactor(0).setDepth(999);
-    this.chartData = [0]; // Start with initial point
+    this.chartData = []; // Start empty - line will build as points accumulate
+    this.chartUpdateTimer = 0;
+    this.lastChartScore = 0;
     
     this.events.once('shutdown', () => {
       document.removeEventListener('keydown', this.keyHandler);
@@ -698,56 +700,81 @@ export default class MainScene extends Phaser.Scene {
   }
 
   drawTradingChart() {
-    if (!this.chartGraphics || this.chartData.length < 2) return;
+    if (!this.chartGraphics) return;
     
     this.chartGraphics.clear();
     
-    // Chart dimensions and position (top-left corner)
-    const chartWidth = 180;
-    const chartHeight = 80;
+    // Chart dimensions and position (left side, below wallet status)
+    const chartWidth = 160;
+    const chartHeight = 70;
     const chartX = 10;
-    const chartY = 10;
-    const padding = 8;
+    const chartY = 55; // Below the wallet status box
+    const padding = 6;
     
     // Background with border
-    this.chartGraphics.fillStyle(0x000000, 0.5);
+    this.chartGraphics.fillStyle(0x000000, 0.6);
     this.chartGraphics.fillRoundedRect(chartX, chartY, chartWidth, chartHeight, 4);
-    this.chartGraphics.lineStyle(2, 0x00ff00, 0.3);
+    this.chartGraphics.lineStyle(1, 0x00ff00, 0.4);
     this.chartGraphics.strokeRoundedRect(chartX, chartY, chartWidth, chartHeight, 4);
+    
+    // Draw grid lines for trading chart feel
+    this.chartGraphics.lineStyle(1, 0x00ff00, 0.1);
+    const graphHeight = chartHeight - padding * 2;
+    const graphX = chartX + padding;
+    const graphY = chartY + padding;
+    for (let i = 1; i < 4; i++) {
+      const y = graphY + (graphHeight / 4) * i;
+      this.chartGraphics.lineBetween(graphX, y, chartX + chartWidth - padding, y);
+    }
+    
+    // Need at least 2 points to draw a line
+    if (this.chartData.length < 2) return;
     
     // Find min/max for scaling
     const minScore = Math.min(...this.chartData);
     const maxScore = Math.max(...this.chartData);
     const scoreRange = maxScore - minScore || 1; // Avoid division by zero
     
-    // Draw the line chart
+    // Draw the line chart - builds from LEFT to RIGHT
     const graphWidth = chartWidth - padding * 2;
-    const graphHeight = chartHeight - padding * 2;
-    const graphX = chartX + padding;
-    const graphY = chartY + padding;
-    
-    this.chartGraphics.lineStyle(2, 0x00ff00, 1);
+    const maxPoints = 60; // Max points we'll show
+    const pointSpacing = graphWidth / maxPoints; // Fixed spacing per point
     
     for (let i = 0; i < this.chartData.length - 1; i++) {
-      const x1 = graphX + (i / (this.chartData.length - 1)) * graphWidth;
-      const y1 = graphY + graphHeight - ((this.chartData[i] - minScore) / scoreRange) * graphHeight;
+      // Points build from left side, each point has fixed spacing
+      const x1 = graphX + i * pointSpacing;
+      const x2 = graphX + (i + 1) * pointSpacing;
       
-      const x2 = graphX + ((i + 1) / (this.chartData.length - 1)) * graphWidth;
+      // Don't draw beyond chart bounds
+      if (x2 > chartX + chartWidth - padding) break;
+      
+      const y1 = graphY + graphHeight - ((this.chartData[i] - minScore) / scoreRange) * graphHeight;
       const y2 = graphY + graphHeight - ((this.chartData[i + 1] - minScore) / scoreRange) * graphHeight;
       
       // Color the line segment based on direction (green for up, red for down)
       if (this.chartData[i + 1] < this.chartData[i] * 0.95) {
         // Significant drop (5% or more) - red
-        this.chartGraphics.lineStyle(2, 0xff0000, 1);
+        this.chartGraphics.lineStyle(2, 0xff3333, 1);
       } else if (this.chartData[i + 1] > this.chartData[i] * 1.1) {
-        // Big spike (10% or more, like whale catch) - bright green
+        // Big spike (10% or more, like whale catch) - bright cyan-green
         this.chartGraphics.lineStyle(3, 0x00ffaa, 1);
       } else {
         // Normal uptrend - green
-        this.chartGraphics.lineStyle(2, 0x00ff00, 1);
+        this.chartGraphics.lineStyle(2, 0x00ff00, 0.9);
       }
       
       this.chartGraphics.lineBetween(x1, y1, x2, y2);
+    }
+    
+    // Draw a small dot at the current position (rightmost point)
+    if (this.chartData.length > 0) {
+      const lastIndex = this.chartData.length - 1;
+      const lastX = graphX + lastIndex * pointSpacing;
+      if (lastX <= chartX + chartWidth - padding) {
+        const lastY = graphY + graphHeight - ((this.chartData[lastIndex] - minScore) / scoreRange) * graphHeight;
+        this.chartGraphics.fillStyle(0x00ff00, 1);
+        this.chartGraphics.fillCircle(lastX, lastY, 3);
+      }
     }
   }
 
