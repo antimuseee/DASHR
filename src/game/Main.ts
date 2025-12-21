@@ -65,6 +65,7 @@ export default class MainScene extends Phaser.Scene {
   private chartUpdateTimer = 0;
   private lastChartScore = 0;
   private pendingChartPoints: number[] = []; // Points to be added gradually (e.g. during spike)
+  private testWhaleSpawned = false; // TEMPORARY: For testing whale catch chart
 
   // Whale events
   private controlsReversed = false;
@@ -226,23 +227,9 @@ export default class MainScene extends Phaser.Scene {
     this.chartData = [];
     this.chartUpdateTimer = 0;
     this.lastChartScore = 0;
+    this.testWhaleSpawned = false;
 
     gameActions.startRun();
-
-    // TEMPORARY: Spawn whale at beginning for testing chart
-    this.time.delayedCall(1000, () => {
-      const spawned = this.spawner.spawn('collectible', 1, 300, 'item-whale');
-      if (spawned && spawned.sprite) {
-        spawned.sprite.setData('isWhaleToken', true);
-        spawned.sprite.setScale(1.5);
-        this.tweens.add({
-          targets: spawned.sprite,
-          angle: 360,
-          duration: 2000,
-          repeat: -1,
-        });
-      }
-    });
 
     this.scale.off('resize', this.handleResize, this); // Remove old listener first
     this.scale.on('resize', this.handleResize, this);
@@ -448,6 +435,22 @@ export default class MainScene extends Phaser.Scene {
     });
 
     this.spawnByDistance();
+    
+    // TEMPORARY: Spawn test whale at 1000m
+    if (!this.testWhaleSpawned && this.distance >= 1000) {
+      this.testWhaleSpawned = true;
+      const spawned = this.spawner.spawn('collectible', 1, this.zFar * 0.95, 'item-whale');
+      if (spawned && spawned.sprite) {
+        spawned.sprite.setData('isWhaleToken', true);
+        spawned.sprite.setScale(1.5);
+        this.tweens.add({
+          targets: spawned.sprite,
+          angle: 360,
+          duration: 2000,
+          repeat: -1,
+        });
+      }
+    }
     
     // Magnet effect - attract collectibles
     this.updateMagnetEffect(dt);
