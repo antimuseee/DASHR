@@ -862,11 +862,12 @@ export default class MainScene extends Phaser.Scene {
     this.pendingChartPoints = [];
     
     // 1. SHORTER Zig-zag build on an UPWARD TREND (12 points - approx 0.6s at 0.05s frequency)
-    // 3 distinct zig-zags with increasing peaks on a steep upward slope (15% of gain)
+    // 3 distinct zig-zags with increasing peaks on a steep upward slope (20% of gain)
+    const zigzagEndPercent = 0.20; // Where zig-zags end
     for (let i = 1; i <= 12; i++) {
       const progress = i / 12;
       // Strong upward trend - each zig-zag peak is higher than the last
-      const baseValue = lastPoint + (currentScore - lastPoint) * 0.15 * progress;
+      const baseValue = lastPoint + (currentScore - lastPoint) * zigzagEndPercent * progress;
       const zzIndex = Math.floor((i - 1) / 4); // 3 cycles of 4 points each
       const zzProgress = ((i - 1) % 4) / 3; 
       const amp = 0.10 + (zzIndex * 0.08); // 10%, 18%, 26% amplitude - sharp!
@@ -875,12 +876,13 @@ export default class MainScene extends Phaser.Scene {
       this.pendingChartPoints.push(baseValue * wobble);
     }
     
-    // 2. LONG vertical takeoff (60 points - ~3 seconds straight up)
-    // Shoots to 150% of the gain to make the zig-zags look tiny
-    for (let i = 1; i <= 60; i++) {
-      const progress = i / 60;
-      // Power of 6 for extreme "straight shot" curve
-      const curveProgress = 0.15 + 1.35 * Math.pow(progress, 6);
+    // 2. EXTRA LONG vertical takeoff (80 points - ~4 seconds straight up)
+    // Starts exactly where zig-zags ended and shoots to 150% of the gain
+    const remainingGain = 1.5 - zigzagEndPercent; // How much more to go from end of zigzag to peak
+    for (let i = 1; i <= 80; i++) {
+      const progress = i / 80;
+      // Power of 5 for extreme "straight shot" curve - starts immediately
+      const curveProgress = zigzagEndPercent + remainingGain * Math.pow(progress, 5);
       this.pendingChartPoints.push(lastPoint + (currentScore - lastPoint) * curveProgress);
     }
     
