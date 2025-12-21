@@ -516,24 +516,17 @@ export default class MainScene extends Phaser.Scene {
 
       // Trigger new whale event at distance threshold
       if (this.distance >= this.nextWhaleEventDistance && !this.controlsReversed && !this.whaleTrailActive) {
-        // First event is always whale trail (bonus opportunity)
-        // After that, randomly choose between alert and trail
         if (!this.whaleTrailCompleted) {
-          // First event: always whale trail for bonus chance
+          // First and ONLY whale trail - bonus opportunity
           this.triggerWhaleTrail();
+          // After trail, wait a LONG time before any more whale events (back to normal gameplay)
+          this.nextWhaleEventDistance = this.distance + Phaser.Math.Between(2500, 4000);
         } else {
-          // After first trail: randomly choose (60% trail, 40% alert)
-          const eventType = Math.random() < 0.6 ? 'trail' : 'alert';
-          
-          if (eventType === 'alert') {
-            this.triggerWhaleAlert();
-          } else {
-            this.triggerWhaleTrail();
-          }
+          // After trail completed: only whale alerts (control reversal), no more trails
+          this.triggerWhaleAlert();
+          // Wait a while before next alert too
+          this.nextWhaleEventDistance = this.distance + Phaser.Math.Between(2000, 3000);
         }
-        
-        // Next whale event in 800-1500m
-        this.nextWhaleEventDistance = this.distance + Phaser.Math.Between(800, 1500);
       }
     } catch (e) {
       console.error('[WhaleEvents] Error in update:', e);
