@@ -847,35 +847,35 @@ export default class MainScene extends Phaser.Scene {
     // 3 distinct zig-zags with increasing peaks
     for (let i = 1; i <= 24; i++) {
       const progress = i / 24;
-      // Overall upward slope (covers 30% of the total gain)
-      const baseValue = lastPoint + (currentScore - lastPoint) * 0.3 * progress;
+      // Small overall upward slope (covers only 10% of total gain to make takeoff look massive)
+      const baseValue = lastPoint + (currentScore - lastPoint) * 0.1 * progress;
       
       // Determine which of the 3 zig-zags we are in (0, 1, or 2)
       const zzIndex = Math.floor((i - 1) / 8);
       const zzProgress = ((i - 1) % 8) / 7; // 0 to 1 within this specific zig-zag
       
-      // Amplitude (height of the peaks) increases for each successive zig-zag
-      const amp = 0.03 + (zzIndex * 0.02); // 3%, 5%, 7% wobble
+      // Amplitude (height of the peaks)
+      const amp = 0.02 + (zzIndex * 0.015); // 2%, 3.5%, 5% wobble
       
       // Triangular wave pattern: 0 -> 1 -> 0
       const triangle = zzProgress < 0.5 ? (zzProgress * 2) : (1 - (zzProgress - 0.5) * 2);
-      // Centered at baseline, wobbling up and down
+      // Centered at baseline
       const wobble = 1 + (triangle - 0.5) * amp;
       
       this.pendingChartPoints.push(baseValue * wobble);
     }
     
-    // 2. Parabolic straight shot up (8 points - very fast acceleration)
-    // Higher power (progress^3) makes it look like a vertical "straight shot" at the end
+    // 2. Parabolic straight shot up (8 points - extreme acceleration)
+    // Higher power (progress^5) makes it look like a vertical "straight shot"
     for (let i = 1; i <= 8; i++) {
       const progress = i / 8;
-      // Curve starts at 30% and accelerates rapidly to 100%
-      const curveProgress = 0.3 + 0.7 * (progress * progress * progress);
+      // Curve starts at 10% and accelerates rapidly to 100%
+      const curveProgress = 0.1 + 0.9 * Math.pow(progress, 5);
       this.pendingChartPoints.push(lastPoint + (currentScore - lastPoint) * curveProgress);
     }
     
-    // 3. Sideways consolidation (15 points - staying high and green)
-    for (let i = 1; i <= 15; i++) {
+    // 3. Sideways consolidation (20 points - longer stable green line)
+    for (let i = 1; i <= 20; i++) {
       const wobble = 0.995 + Math.random() * 0.01;
       this.pendingChartPoints.push(currentScore * wobble);
     }
