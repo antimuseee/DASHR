@@ -566,24 +566,29 @@ export default class MainScene extends Phaser.Scene {
       this.controlsReversed = true;
       this.whaleAlertUntil = this.time.now + 4000; // 4 seconds of reversed controls
       
-      // Show warning text with blinking red exclamation marks
-      this.whaleAlertText = this.add.text(this.centerX, this.scale.height / 2 - 50, '🐋  WHALE MANIPULATION  🐋\nCONTROLS REVERSED!', {
-        fontSize: '28px',
+      // Show warning text with blinking red exclamation marks (smaller on mobile)
+      const device = getDevice();
+      const fontSize = device.isMobile ? '18px' : '28px';
+      const exclaimSize = device.isMobile ? '24px' : '32px';
+      const exclaimOffset = device.isMobile ? 110 : 155;
+      
+      this.whaleAlertText = this.add.text(this.centerX, this.scale.height / 2 - 50, '🐋 WHALE MANIPULATION 🐋\nCONTROLS REVERSED!', {
+        fontSize: fontSize,
         fontFamily: 'Arial Black',
         color: '#00aaff',
         stroke: '#000033',
-        strokeThickness: 6,
+        strokeThickness: device.isMobile ? 4 : 6,
         align: 'center',
       }).setOrigin(0.5).setDepth(1000);
       
       // Add blinking red exclamation marks
-      const exclaim1 = this.add.text(this.centerX - 155, this.scale.height / 2 - 65, '❗', {
-        fontSize: '32px',
+      const exclaim1 = this.add.text(this.centerX - exclaimOffset, this.scale.height / 2 - 65, '❗', {
+        fontSize: exclaimSize,
         color: '#ff0000',
       }).setOrigin(0.5).setDepth(1001);
       
-      const exclaim2 = this.add.text(this.centerX + 155, this.scale.height / 2 - 65, '❗', {
-        fontSize: '32px',
+      const exclaim2 = this.add.text(this.centerX + exclaimOffset, this.scale.height / 2 - 65, '❗', {
+        fontSize: exclaimSize,
         color: '#ff0000',
       }).setOrigin(0.5).setDepth(1001);
       
