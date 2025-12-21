@@ -56,7 +56,8 @@ export default class MainScene extends Phaser.Scene {
   private controlsReversed = false;
   private whaleAlertUntil = 0;
   private whaleAlertText: Phaser.GameObjects.Text | null = null;
-  private nextWhaleEventDistance = 2000; // First whale event after 2000m (give time to build inventory)
+  private whaleEventsUnlocked = false; // Whale events only after player has used boosts
+  private nextWhaleEventDistance = 0; // Set when unlocked
   
   // Whale trail
   private whaleTrailActive = false;
@@ -466,6 +467,35 @@ export default class MainScene extends Phaser.Scene {
       if (shouldFail) {
         this.failWhaleTrail();
       }
+    }
+
+    // Check if whale events should unlock (requires using boosts + distance)
+    const state = useGameStore.getState();
+    if (!this.whaleEventsUnlocked) {
+      // Unlock whale events after player has used 4+ boosts AND traveled 4000m+
+      if (state.boostsUsed >= 4 && this.distance >= 4000) {
+        this.whaleEventsUnlocked = true;
+        this.nextWhaleEventDistance = this.distance + Phaser.Math.Between(300, 600); // First event soon after unlock
+        
+        // Announce whale events unlocked
+        const unlockText = this.add.text(this.centerX, this.scale.height / 2 - 80, '🐋 WHALE ZONE ENTERED 🐋', {
+          fontSize: '24px',
+          fontFamily: 'Arial Black',
+          color: '#00aaff',
+          stroke: '#000033',
+          strokeThickness: 5,
+          align: 'center',
+        }).setOrigin(0.5).setDepth(1000);
+        
+        this.tweens.add({
+          targets: unlockText,
+          alpha: 0,
+          y: unlockText.y - 40,
+          duration: 2000,
+          onComplete: () => unlockText.destroy(),
+        });
+      }
+      return; // Don't trigger events until unlocked
     }
 
     // Trigger new whale event at distance threshold
