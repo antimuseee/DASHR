@@ -233,7 +233,7 @@ function GameOver() {
         {showNameEntry && !submitted && (
           <div className="highscore-entry">
             <div className="highscore-banner">🎉 NEW HIGH SCORE! 🎉</div>
-            <p>You made it to the Top 10!</p>
+            <p>You made it to the Top 100!</p>
             <form onSubmit={handleSubmit}>
               <input
                 type="text"
