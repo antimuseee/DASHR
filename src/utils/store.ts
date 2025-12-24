@@ -1,12 +1,11 @@
 ﻿import { create } from 'zustand';
 import { getDevice, getSettings, DeviceInfo, PlatformSettings } from './device';
 import {
-  isFirebaseConfigured,
-  getCloudHighscores,
-  addCloudHighscore,
-  checkCloudHighscoreQualifies,
-  CloudHighScoreEntry,
-} from './firebase';
+  isLeaderboardConfigured,
+  getLeaderboard,
+  addToLeaderboard,
+  checkQualifies,
+} from './leaderboard';
 
 type GamePhase = 'title' | 'running' | 'paused' | 'gameover';
 type BoostType = 'double' | 'shield' | null;
@@ -73,9 +72,9 @@ function addLocalHighscore(name: string, score: number, distance: number): HighS
 
 // Check if score qualifies for highscore board (async for cloud support)
 export async function checkHighscoreQualifiesAsync(score: number): Promise<boolean> {
-  if (isFirebaseConfigured()) {
+  if (isLeaderboardConfigured()) {
     try {
-      return await checkCloudHighscoreQualifies(score);
+      return await checkQualifies(score);
     } catch (e) {
       console.error('Cloud check failed, using local:', e);
     }
@@ -103,11 +102,9 @@ export async function addHighscoreAsync(
   addLocalHighscore(name, score, distance);
 
   // Try to save to cloud
-  if (isFirebaseConfigured()) {
+  if (isLeaderboardConfigured()) {
     try {
-      await addCloudHighscore(name, score, distance);
-      // Return cloud scores if available
-      const cloudScores = await getCloudHighscores();
+      const cloudScores = await addToLeaderboard(name, score, distance);
       if (cloudScores.length > 0) {
         return cloudScores;
       }
@@ -123,8 +120,8 @@ export async function addHighscoreAsync(
 // Synchronous version for backward compatibility
 export function addHighscore(name: string, score: number, distance: number): HighScoreEntry[] {
   // Fire and forget cloud save
-  if (isFirebaseConfigured()) {
-    addCloudHighscore(name, score, distance).catch((e) =>
+  if (isLeaderboardConfigured()) {
+    addToLeaderboard(name, score, distance).catch((e) =>
       console.error('Cloud save failed:', e)
     );
   }
@@ -133,9 +130,9 @@ export function addHighscore(name: string, score: number, distance: number): Hig
 
 // Get current highscores (async for cloud support)
 export async function getHighscoresAsync(): Promise<HighScoreEntry[]> {
-  if (isFirebaseConfigured()) {
+  if (isLeaderboardConfigured()) {
     try {
-      const cloudScores = await getCloudHighscores();
+      const cloudScores = await getLeaderboard();
       if (cloudScores.length > 0) {
         return cloudScores;
       }

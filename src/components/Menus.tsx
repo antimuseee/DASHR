@@ -1,7 +1,7 @@
 ﻿import { useState, useEffect } from 'react';
 import { useGameStore, checkHighscoreQualifiesAsync, addHighscoreAsync, getHighscoresAsync, HighScoreEntry, gameActions } from '../utils/store';
 import { getDevice } from '../utils/device';
-import { isFirebaseConfigured } from '../utils/firebase';
+import { isLeaderboardConfigured } from '../utils/leaderboard';
 
 function restartGame() {
   const game = window.phaserGame;
@@ -18,7 +18,7 @@ function backToTitle() {
 }
 
 function Leaderboard({ scores, currentScore, loading }: { scores: HighScoreEntry[]; currentScore?: number; loading?: boolean }) {
-  const isCloud = isFirebaseConfigured();
+  const isCloud = isLeaderboardConfigured();
   
   if (loading) {
     return (
