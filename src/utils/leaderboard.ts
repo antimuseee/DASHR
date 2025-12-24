@@ -19,7 +19,7 @@ interface LeaderboardData {
   scores: LeaderboardEntry[];
 }
 
-const MAX_ENTRIES = 10;
+const MAX_ENTRIES = 100;
 
 // Check if JSONBin is configured
 export function isLeaderboardConfigured(): boolean {

@@ -23,7 +23,7 @@ function Leaderboard({ scores, currentScore, loading }: { scores: HighScoreEntry
   if (loading) {
     return (
       <div className="leaderboard">
-        <h4>🏆 {isCloud ? 'GLOBAL' : 'LOCAL'} TOP 10</h4>
+        <h4>🏆 {isCloud ? 'GLOBAL' : 'LOCAL'} TOP 100</h4>
         <p className="no-scores">Loading scores...</p>
       </div>
     );
@@ -32,7 +32,7 @@ function Leaderboard({ scores, currentScore, loading }: { scores: HighScoreEntry
   if (scores.length === 0) {
     return (
       <div className="leaderboard">
-        <h4>🏆 {isCloud ? 'GLOBAL' : 'LOCAL'} TOP 10</h4>
+        <h4>🏆 {isCloud ? 'GLOBAL' : 'LOCAL'} TOP 100</h4>
         <p className="no-scores">No scores yet. Be the first!</p>
       </div>
     );
@@ -40,7 +40,7 @@ function Leaderboard({ scores, currentScore, loading }: { scores: HighScoreEntry
   
   return (
     <div className="leaderboard">
-      <h4>🏆 {isCloud ? 'GLOBAL' : 'LOCAL'} TOP 10</h4>
+      <h4>🏆 {isCloud ? 'GLOBAL' : 'LOCAL'} TOP 100</h4>
       <div className="leaderboard-list">
         {scores.map((entry, i) => (
           <div 

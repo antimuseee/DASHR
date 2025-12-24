@@ -25,7 +25,7 @@ export interface HighScoreEntry {
 }
 
 const HIGHSCORE_KEY = 'trench-highscores';
-const MAX_HIGHSCORES = 10;
+const MAX_HIGHSCORES = 100;
 
 // ============ LOCAL STORAGE FALLBACK ============
 
