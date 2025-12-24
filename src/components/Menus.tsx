@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect } from 'react';
-import { useGameStore, checkHighscoreQualifies, addHighscore, getHighscores, HighScoreEntry, gameActions } from '../utils/store';
+import { useGameStore, checkHighscoreQualifiesAsync, addHighscoreAsync, getHighscoresAsync, HighScoreEntry, gameActions } from '../utils/store';
 import { getDevice } from '../utils/device';
+import { isFirebaseConfigured } from '../utils/firebase';
 
 function restartGame() {
   const game = window.phaserGame;
@@ -16,11 +17,22 @@ function backToTitle() {
   useGameStore.setState({ phase: 'title' });
 }
 
-function Leaderboard({ scores, currentScore }: { scores: HighScoreEntry[]; currentScore?: number }) {
+function Leaderboard({ scores, currentScore, loading }: { scores: HighScoreEntry[]; currentScore?: number; loading?: boolean }) {
+  const isCloud = isFirebaseConfigured();
+  
+  if (loading) {
+    return (
+      <div className="leaderboard">
+        <h4>🏆 {isCloud ? 'GLOBAL' : 'LOCAL'} TOP 10</h4>
+        <p className="no-scores">Loading scores...</p>
+      </div>
+    );
+  }
+  
   if (scores.length === 0) {
     return (
       <div className="leaderboard">
-        <h4>🏆 TOP 10 LEADERBOARD</h4>
+        <h4>🏆 {isCloud ? 'GLOBAL' : 'LOCAL'} TOP 10</h4>
         <p className="no-scores">No scores yet. Be the first!</p>
       </div>
     );
@@ -28,7 +40,7 @@ function Leaderboard({ scores, currentScore }: { scores: HighScoreEntry[]; curre
   
   return (
     <div className="leaderboard">
-      <h4>🏆 TOP 10 LEADERBOARD</h4>
+      <h4>🏆 {isCloud ? 'GLOBAL' : 'LOCAL'} TOP 10</h4>
       <div className="leaderboard-list">
         {scores.map((entry, i) => (
           <div 
@@ -74,10 +86,15 @@ function ControlsHelp() {
 
 function TitleMenu() {
   const [scores, setScores] = useState<HighScoreEntry[]>([]);
+  const [loading, setLoading] = useState(true);
   const device = getDevice();
   
   useEffect(() => {
-    setScores(getHighscores());
+    setLoading(true);
+    getHighscoresAsync()
+      .then((data) => setScores(data))
+      .catch((e) => console.error('Failed to load scores:', e))
+      .finally(() => setLoading(false));
   }, []);
   
   return (
@@ -94,7 +111,7 @@ function TitleMenu() {
         )}
         <button className="btn" onClick={restartGame}>Play</button>
         <button className="btn secondary" onClick={() => alert('Shop coming soon!')}>Shop</button>
-        <Leaderboard scores={scores} />
+        <Leaderboard scores={scores} loading={loading} />
       </div>
     </div>
   );
@@ -119,25 +136,47 @@ function GameOver() {
   const [showNameEntry, setShowNameEntry] = useState(false);
   const [playerName, setPlayerName] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [scores, setScores] = useState<HighScoreEntry[]>([]);
+  const [loading, setLoading] = useState(true);
   const [qualifies, setQualifies] = useState(false);
   
   useEffect(() => {
-    const doesQualify = checkHighscoreQualifies(score);
-    setQualifies(doesQualify);
-    setShowNameEntry(doesQualify);
-    setScores(getHighscores());
+    setLoading(true);
     setSubmitted(false);
     setPlayerName('');
+    
+    // Check if score qualifies and load scores
+    Promise.all([
+      checkHighscoreQualifiesAsync(score),
+      getHighscoresAsync()
+    ]).then(([doesQualify, loadedScores]) => {
+      setQualifies(doesQualify);
+      setShowNameEntry(doesQualify);
+      setScores(loadedScores);
+    }).catch((e) => {
+      console.error('Failed to check/load scores:', e);
+      setQualifies(false);
+      setShowNameEntry(false);
+    }).finally(() => {
+      setLoading(false);
+    });
   }, [score]);
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (playerName.trim().length > 0) {
-      const newScores = addHighscore(playerName.trim(), score, distance);
-      setScores(newScores);
-      setShowNameEntry(false);
-      setSubmitted(true);
+    if (playerName.trim().length > 0 && !submitting) {
+      setSubmitting(true);
+      try {
+        const newScores = await addHighscoreAsync(playerName.trim(), score, distance);
+        setScores(newScores);
+        setShowNameEntry(false);
+        setSubmitted(true);
+      } catch (err) {
+        console.error('Failed to submit score:', err);
+      } finally {
+        setSubmitting(false);
+      }
     }
   };
   
@@ -214,10 +253,10 @@ function GameOver() {
                 className="name-input"
               />
               <div className="entry-buttons">
-                <button type="submit" className="btn" disabled={playerName.trim().length === 0}>
-                  Submit
+                <button type="submit" className="btn" disabled={playerName.trim().length === 0 || submitting}>
+                  {submitting ? 'Saving...' : 'Submit'}
                 </button>
-                <button type="button" className="btn secondary" onClick={handleSkip}>
+                <button type="button" className="btn secondary" onClick={handleSkip} disabled={submitting}>
                   Skip
                 </button>
               </div>
@@ -234,7 +273,7 @@ function GameOver() {
         
         {/* Show leaderboard */}
         {!showNameEntry && (
-          <Leaderboard scores={scores} currentScore={submitted ? Math.floor(score) : undefined} />
+          <Leaderboard scores={scores} currentScore={submitted ? Math.floor(score) : undefined} loading={loading} />
         )}
         
         <div className="gameover-buttons">

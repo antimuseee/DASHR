@@ -1,5 +1,12 @@
 ﻿import { create } from 'zustand';
 import { getDevice, getSettings, DeviceInfo, PlatformSettings } from './device';
+import {
+  isFirebaseConfigured,
+  getCloudHighscores,
+  addCloudHighscore,
+  checkCloudHighscoreQualifies,
+  CloudHighScoreEntry,
+} from './firebase';
 
 type GamePhase = 'title' | 'running' | 'paused' | 'gameover';
 type BoostType = 'double' | 'shield' | null;
@@ -10,7 +17,7 @@ interface BoostInventory {
   magnet: number;
 }
 
-// Highscore entry
+// Highscore entry (same shape for local and cloud)
 export interface HighScoreEntry {
   name: string;
   score: number;
@@ -21,40 +28,35 @@ export interface HighScoreEntry {
 const HIGHSCORE_KEY = 'trench-highscores';
 const MAX_HIGHSCORES = 10;
 
+// ============ LOCAL STORAGE FALLBACK ============
+
 // Load highscores from localStorage
-function loadHighscores(): HighScoreEntry[] {
+function loadLocalHighscores(): HighScoreEntry[] {
   try {
     const data = localStorage.getItem(HIGHSCORE_KEY);
     if (data) {
       return JSON.parse(data);
     }
   } catch (e) {
-    console.error('Failed to load highscores:', e);
+    console.error('Failed to load local highscores:', e);
   }
   return [];
 }
 
 // Save highscores to localStorage
-function saveHighscores(scores: HighScoreEntry[]) {
+function saveLocalHighscores(scores: HighScoreEntry[]) {
   try {
     localStorage.setItem(HIGHSCORE_KEY, JSON.stringify(scores));
   } catch (e) {
-    console.error('Failed to save highscores:', e);
+    console.error('Failed to save local highscores:', e);
   }
 }
 
-// Check if score qualifies for highscore board
-export function checkHighscoreQualifies(score: number): boolean {
-  const highscores = loadHighscores();
-  if (highscores.length < MAX_HIGHSCORES) return true;
-  return score > highscores[highscores.length - 1].score;
-}
-
-// Add a new highscore entry
-export function addHighscore(name: string, score: number, distance: number): HighScoreEntry[] {
-  const highscores = loadHighscores();
+// Add to local highscores
+function addLocalHighscore(name: string, score: number, distance: number): HighScoreEntry[] {
+  const highscores = loadLocalHighscores();
   const newEntry: HighScoreEntry = {
-    name: name.toUpperCase().slice(0, 10), // Max 10 chars, uppercase
+    name: name.toUpperCase().slice(0, 10),
     score: Math.floor(score),
     distance: Math.floor(distance),
     date: new Date().toLocaleDateString(),
@@ -63,13 +65,90 @@ export function addHighscore(name: string, score: number, distance: number): Hig
   highscores.push(newEntry);
   highscores.sort((a, b) => b.score - a.score);
   const trimmed = highscores.slice(0, MAX_HIGHSCORES);
-  saveHighscores(trimmed);
+  saveLocalHighscores(trimmed);
   return trimmed;
 }
 
-// Get current highscores
+// ============ UNIFIED API (cloud-first, local fallback) ============
+
+// Check if score qualifies for highscore board (async for cloud support)
+export async function checkHighscoreQualifiesAsync(score: number): Promise<boolean> {
+  if (isFirebaseConfigured()) {
+    try {
+      return await checkCloudHighscoreQualifies(score);
+    } catch (e) {
+      console.error('Cloud check failed, using local:', e);
+    }
+  }
+  // Fallback to local
+  const highscores = loadLocalHighscores();
+  if (highscores.length < MAX_HIGHSCORES) return true;
+  return score > highscores[highscores.length - 1].score;
+}
+
+// Synchronous version for backward compatibility
+export function checkHighscoreQualifies(score: number): boolean {
+  const highscores = loadLocalHighscores();
+  if (highscores.length < MAX_HIGHSCORES) return true;
+  return score > highscores[highscores.length - 1].score;
+}
+
+// Add a new highscore entry (async for cloud support)
+export async function addHighscoreAsync(
+  name: string,
+  score: number,
+  distance: number
+): Promise<HighScoreEntry[]> {
+  // Always save locally first
+  addLocalHighscore(name, score, distance);
+
+  // Try to save to cloud
+  if (isFirebaseConfigured()) {
+    try {
+      await addCloudHighscore(name, score, distance);
+      // Return cloud scores if available
+      const cloudScores = await getCloudHighscores();
+      if (cloudScores.length > 0) {
+        return cloudScores;
+      }
+    } catch (e) {
+      console.error('Cloud save failed:', e);
+    }
+  }
+
+  // Return local scores as fallback
+  return loadLocalHighscores();
+}
+
+// Synchronous version for backward compatibility
+export function addHighscore(name: string, score: number, distance: number): HighScoreEntry[] {
+  // Fire and forget cloud save
+  if (isFirebaseConfigured()) {
+    addCloudHighscore(name, score, distance).catch((e) =>
+      console.error('Cloud save failed:', e)
+    );
+  }
+  return addLocalHighscore(name, score, distance);
+}
+
+// Get current highscores (async for cloud support)
+export async function getHighscoresAsync(): Promise<HighScoreEntry[]> {
+  if (isFirebaseConfigured()) {
+    try {
+      const cloudScores = await getCloudHighscores();
+      if (cloudScores.length > 0) {
+        return cloudScores;
+      }
+    } catch (e) {
+      console.error('Cloud fetch failed, using local:', e);
+    }
+  }
+  return loadLocalHighscores();
+}
+
+// Synchronous version for backward compatibility
 export function getHighscores(): HighScoreEntry[] {
-  return loadHighscores();
+  return loadLocalHighscores();
 }
 
 interface GameState {
