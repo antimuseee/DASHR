@@ -1,10 +1,12 @@
-﻿import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
+﻿import { useState, useCallback } from 'react';
+import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
 // clusterApiUrl no longer needed - using direct RPC URL
 import GameCanvas from './GameCanvas';
 import WalletUI from './WalletUI';
 import Menus from './Menus';
+import Tutorial, { hasTutorialBeenSeen } from './Tutorial';
 import { useGameStore } from '../utils/store';
 import '@solana/wallet-adapter-react-ui/styles.css';
 import '../styles.css';
@@ -25,6 +27,19 @@ const wallets = [phantomAdapter];
 
 export default function App() {
   const phase = useGameStore((s) => s.phase);
+  const [showTutorial, setShowTutorial] = useState(!hasTutorialBeenSeen());
+  const [forceShowTutorial, setForceShowTutorial] = useState(false);
+  
+  const handleTutorialComplete = useCallback(() => {
+    setShowTutorial(false);
+    setForceShowTutorial(false);
+  }, []);
+  
+  const handleShowTutorial = useCallback(() => {
+    setForceShowTutorial(true);
+    setShowTutorial(true);
+  }, []);
+  
   return (
     <ConnectionProvider endpoint={endpoint} config={{ commitment: 'processed' }}>
       <WalletProvider wallets={wallets} autoConnect>
@@ -33,8 +48,14 @@ export default function App() {
             <GameCanvas />
             <div className="hud">
               <WalletUI />
-              <Menus phase={phase} />
+              <Menus phase={phase} onShowTutorial={handleShowTutorial} />
             </div>
+            {showTutorial && (
+              <Tutorial 
+                onComplete={handleTutorialComplete} 
+                forceShow={forceShowTutorial}
+              />
+            )}
           </div>
         </WalletModalProvider>
       </WalletProvider>

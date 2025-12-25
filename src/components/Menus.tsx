@@ -296,7 +296,7 @@ function CosmeticsMenu({ onClose }: { onClose: () => void }) {
   );
 }
 
-function TitleMenu() {
+function TitleMenu({ onShowTutorial }: { onShowTutorial?: () => void }) {
   const [scores, setScores] = useState<HighScoreEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCosmetics, setShowCosmetics] = useState(false);
@@ -327,7 +327,10 @@ function TitleMenu() {
           <p>Swipe to move, tap to jump. Collect boosts!</p>
         )}
         <button className="btn" onClick={restartGame}>Play</button>
-        <button className="btn secondary" onClick={() => setShowCosmetics(true)}>🎨 Cosmetics</button>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+          <button className="btn secondary" style={{ flex: 1 }} onClick={onShowTutorial}>📖 How to Play</button>
+          <button className="btn secondary" style={{ flex: 1 }} onClick={() => setShowCosmetics(true)}>🎨 Cosmetics</button>
+        </div>
         <Leaderboard scores={scores} loading={loading} />
       </div>
     </div>
@@ -506,7 +509,7 @@ function GameOver() {
 
 import { SHIELD_DURATION, MAGNET_DURATION, CHARGES_NEEDED, COMBO_CHARGES_NEEDED } from '../utils/store';
 
-export default function Menus({ phase }: { phase: string }) {
+export default function Menus({ phase, onShowTutorial }: { phase: string; onShowTutorial?: () => void }) {
   const { score, distance, multiplier, tokens, activeBoost, boostTimer, hasShield, shieldTimer, hasMagnet, magnetTimer, comboCount, comboProgress, comboTimer, boostInventory, magnetCharges, doubleCharges, shieldCharges } = useGameStore();
   const [showCosmetics, setShowCosmetics] = useState(false);
   const device = getDevice();
@@ -664,7 +667,7 @@ export default function Menus({ phase }: { phase: string }) {
         </div>
       )}
       
-      {phase === 'title' && <TitleMenu />}
+      {phase === 'title' && <TitleMenu onShowTutorial={onShowTutorial} />}
       {phase === 'paused' && <PauseMenu />}
       {phase === 'gameover' && <GameOver />}
       {phase === 'running' && device.isDesktop && <ControlsHelp />}
