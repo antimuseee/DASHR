@@ -1565,7 +1565,7 @@ export default class MainScene extends Phaser.Scene {
     if (success) {
       // Show activation feedback
       const boostNames: Record<string, string> = {
-        double: '⚡ 2X ACTIVATED!',
+        double: '⚡ COMBOS DOUBLED!',
         shield: '🛡️ SHIELD ON!',
         magnet: '🧲 MAGNET ON!',
       };
