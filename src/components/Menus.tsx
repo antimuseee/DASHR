@@ -500,7 +500,7 @@ function GameOver() {
         
         <div className="gameover-buttons">
           <button className="btn" onClick={restartGame}>Replay</button>
-          <button className="btn secondary" onClick={backToTitle}>Back to Title</button>
+          <button className="btn secondary" onClick={backToTitle}>Main Menu</button>
         </div>
       </div>
     </div>
