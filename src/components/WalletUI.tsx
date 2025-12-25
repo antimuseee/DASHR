@@ -6,8 +6,8 @@ import { useGameStore, gameActions } from '../utils/store';
 import { TOKEN_SYMBOL, HOLDER_TIERS, formatTokenBalance, isHolder, TEST_MODE, MOCK_BALANCE, getTierFromBalance } from '../utils/token';
 import { autoEquipForTier } from '../utils/cosmetics';
 
-// Use Helius free RPC (more reliable for browser requests)
-const endpoint = 'https://mainnet.helius-rpc.com/?api-key=1d8740dc-e5f4-421c-b823-e1bad1889eff';
+// Use a public RPC for wallet connection
+const endpoint = 'https://solana-mainnet.rpc.extrnode.com';
 const connection = new Connection(endpoint, 'processed');
 
 async function fetchBalance(pk?: PublicKey) {
