@@ -192,11 +192,15 @@ function GameOver() {
         <div className="score-breakdown">
           <div className="score-row">
             <span className="score-label">🏃 Survived</span>
-            <span className="score-value">{Math.round(distance).toLocaleString()}m → {Math.round(distanceScore).toLocaleString()} pts</span>
+            <span className="score-value">{Math.round(distance).toLocaleString()}m</span>
           </div>
           <div className="score-row">
             <span className="score-label">📊 Distance Multiplier</span>
             <span className="score-value">×{Math.round(multiplier)}</span>
+          </div>
+          <div className="score-row">
+            <span className="score-label">📍 Distance Score</span>
+            <span className="score-value">{Math.round(distanceScore).toLocaleString()} pts</span>
           </div>
           <div className="score-row">
             <span className="score-label">💰 Bags</span>

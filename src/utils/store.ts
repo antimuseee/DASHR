@@ -446,11 +446,11 @@ export const gameActions = {
     return { points, combo: newComboCount, tier: value.tier };
   },
   
-  // Add distance-based score (half of distance traveled)
+  // Add distance-based score (1:1 ratio with distance)
   addDistanceScore: (distanceDelta: number) => {
     const state = useGameStore.getState();
     const boostMultiplier = state.activeBoost === 'double' ? 2 : 1;
-    const points = Math.round(distanceDelta * state.multiplier * boostMultiplier * 0.5); // 0.5 points per meter (half of distance)
+    const points = Math.round(distanceDelta * state.multiplier * boostMultiplier * 1.0); // 1 point per meter (1:1 ratio)
     
     useGameStore.setState({
       distanceScore: state.distanceScore + points,
