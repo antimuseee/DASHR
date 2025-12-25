@@ -209,7 +209,7 @@ function GameOver() {
           {whaleTokens > 0 && (
             <div className="score-row whale-bonus">
               <span className="score-label">🐋 Whale Bonus</span>
-              <span className="score-value">{whaleTokens} × 250,000 pts</span>
+              <span className="score-value">{whaleTokens} × 25,000 pts</span>
             </div>
           )}
           <div className="score-row">

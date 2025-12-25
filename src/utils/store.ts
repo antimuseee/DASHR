@@ -224,13 +224,13 @@ export const useGameStore = create<GameState>(() => initialState);
 // Scoring hierarchy: Whale >>> Collectibles > Distance
 // Whale should be worth more than an entire run's worth of collectibles
 export const COLLECTIBLE_VALUES: Record<string, { points: number; tier: string }> = {
-  coin: { points: 50, tier: 'common' },
-  wif: { points: 150, tier: 'uncommon' },
-  bonk: { points: 150, tier: 'uncommon' },
-  rome: { points: 300, tier: 'rare' },
-  gem: { points: 750, tier: 'legendary' },
-  bubble: { points: 100, tier: 'common' }, // Whale trail bubble
-  whale: { points: 250000, tier: 'legendary' }, // THE ULTIMATE PRIZE - game changer!
+  coin: { points: 5, tier: 'common' },
+  wif: { points: 15, tier: 'uncommon' },
+  bonk: { points: 15, tier: 'uncommon' },
+  rome: { points: 30, tier: 'rare' },
+  gem: { points: 75, tier: 'legendary' },
+  bubble: { points: 10, tier: 'common' }, // Whale trail bubble
+  whale: { points: 25000, tier: 'legendary' }, // THE ULTIMATE PRIZE - game changer!
 };
 
 // Boost durations in seconds
