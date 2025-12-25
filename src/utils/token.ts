@@ -1,4 +1,4 @@
-// Token Configuration
+// Token Configuration - v2
 // Set TEST_MODE to false to use real token balance fetching
 import { Connection, PublicKey, TokenAccountsFilter } from '@solana/web3.js';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
