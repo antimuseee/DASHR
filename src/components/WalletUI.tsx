@@ -126,22 +126,27 @@ export default function WalletUI() {
         </div>
       )}
       
-      {/* Refresh balance button - always visible when connected (toward center) */}
+      {/* Refresh balance button - always visible when connected */}
       {!TEST_MODE && connected && publicKey && (
         <button
           onClick={handleRefreshBalance}
           disabled={isLoadingBalance}
-          className="stat-pill"
           style={{ 
-            fontSize: '16px', 
-            padding: '8px 12px',
+            fontSize: '12px', 
+            padding: '8px 14px',
             cursor: isLoadingBalance ? 'not-allowed' : 'pointer',
             opacity: isLoadingBalance ? 0.6 : 1,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            minWidth: '40px',
+            gap: '6px',
+            background: 'linear-gradient(135deg, #9b5cff, #4ef0c5)',
+            border: 'none',
+            borderRadius: '12px',
+            color: '#0a0517',
+            fontWeight: 700,
             transition: 'all 0.2s ease',
+            pointerEvents: 'auto',
           }}
           onMouseEnter={(e) => {
             if (!isLoadingBalance) {
@@ -151,11 +156,11 @@ export default function WalletUI() {
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = '0 0 10px rgba(79, 9, 173, 0.5)';
+            e.currentTarget.style.boxShadow = 'none';
           }}
           title="Refresh token balance"
         >
-          {isLoadingBalance ? '⏳' : '🔄'}
+          {isLoadingBalance ? '⏳ Checking...' : '🔄 Refresh Balance'}
         </button>
       )}
       
