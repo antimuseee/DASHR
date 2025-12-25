@@ -5,7 +5,7 @@ import { getAccount, getAssociatedTokenAddress, getMint } from '@solana/spl-toke
 
 // ============ CONFIGURATION ============
 export const TEST_MODE = false; // Set to false for production with real token
-export const TOKEN_SYMBOL = 'PUMP'; // Token symbol
+export const TOKEN_SYMBOL = '$cpw3'; // Token symbol
 export const TOKEN_MINT = '63RFxQy57mJKhRhWbdEQNcwmQ5kFfmSGJpVxKeVCpump'; // Real token mint address
 
 // Mock balance for testing (only used when TEST_MODE = true)
