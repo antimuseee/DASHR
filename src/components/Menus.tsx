@@ -132,7 +132,7 @@ function PauseMenu() {
 }
 
 function GameOver() {
-  const { score, distance, tokens, best, distanceScore, collectibleScore, whaleScore, maxCombo, boostsUsed, whaleTokens } = useGameStore();
+  const { score, distance, tokens, best, multiplier, distanceScore, collectibleScore, whaleScore, maxCombo, boostsUsed, whaleTokens } = useGameStore();
   const [showNameEntry, setShowNameEntry] = useState(false);
   const [playerName, setPlayerName] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -211,6 +211,10 @@ function GameOver() {
           <div className="score-row">
             <span className="score-label">⚡ Boosts Burned</span>
             <span className="score-value">{boostsUsed}</span>
+          </div>
+          <div className="score-row">
+            <span className="score-label">📊 Distance Multiplier</span>
+            <span className="score-value">×{multiplier.toFixed(1)}</span>
           </div>
           <div className="score-divider"></div>
           <div className="score-row total">
