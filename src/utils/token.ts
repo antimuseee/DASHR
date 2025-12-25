@@ -102,8 +102,13 @@ export async function getTokenBalance(walletAddress: string | null): Promise<num
   try {
     console.log(`[Token] Fetching balance for wallet: ${walletAddress.slice(0, 8)}...`);
     
-    // Use Helius RPC
-    const rpcUrl = 'https://mainnet.helius-rpc.com/?api-key=1b53e1d5-75e3-43bf-a559-52dc278ca7bf';
+    // Use Helius RPC from environment variable
+    const apiKey = import.meta.env.VITE_HELIUS_API_KEY;
+    if (!apiKey) {
+      console.error('[Token] VITE_HELIUS_API_KEY not set in environment variables');
+      return 0;
+    }
+    const rpcUrl = `https://mainnet.helius-rpc.com/?api-key=${apiKey}`;
     const connection = new Connection(rpcUrl, 'confirmed');
     
     const walletPubkey = new PublicKey(walletAddress);

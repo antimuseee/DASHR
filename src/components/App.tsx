@@ -10,7 +10,11 @@ import '@solana/wallet-adapter-react-ui/styles.css';
 import '../styles.css';
 
 // Use Helius RPC for wallet connection (reliable)
-const endpoint = 'https://mainnet.helius-rpc.com/?api-key=1b53e1d5-75e3-43bf-a559-52dc278ca7bf';
+// Get API key from environment variable (set in Vercel)
+const heliusApiKey = import.meta.env.VITE_HELIUS_API_KEY;
+const endpoint = heliusApiKey 
+  ? `https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`
+  : 'https://api.mainnet-beta.solana.com'; // Fallback to public RPC if env var not set
 
 // Create wallet adapter with error handling
 const phantomAdapter = new PhantomWalletAdapter();

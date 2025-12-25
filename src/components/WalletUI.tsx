@@ -7,7 +7,11 @@ import { TOKEN_SYMBOL, HOLDER_TIERS, formatTokenBalance, isHolder, TEST_MODE, MO
 import { autoEquipForTier } from '../utils/cosmetics';
 
 // Use Helius RPC for wallet connection (reliable)
-const endpoint = 'https://mainnet.helius-rpc.com/?api-key=1b53e1d5-75e3-43bf-a559-52dc278ca7bf';
+// Get API key from environment variable (set in Vercel)
+const heliusApiKey = import.meta.env.VITE_HELIUS_API_KEY;
+const endpoint = heliusApiKey 
+  ? `https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`
+  : 'https://api.mainnet-beta.solana.com'; // Fallback to public RPC if env var not set
 const connection = new Connection(endpoint, 'processed');
 
 async function fetchBalance(pk?: PublicKey) {
