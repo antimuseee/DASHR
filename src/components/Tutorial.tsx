@@ -76,17 +76,12 @@ export function resetTutorial(): void {
 
 export default function Tutorial({ onComplete, forceShow }: TutorialProps) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
-
-  useEffect(() => {
-    // Check if tutorial should be shown
-    if (forceShow || !hasTutorialBeenSeen()) {
-      setIsVisible(true);
-    } else {
-      onComplete();
-    }
-  }, [forceShow, onComplete]);
+  
+  // Always visible when component is rendered - parent controls when to show
+  const isVisible = true;
+  
+  console.log('[Tutorial] Rendering, forceShow:', forceShow, 'step:', currentStep);
 
   const handleNext = () => {
     if (currentStep < tutorialSteps.length - 1) {

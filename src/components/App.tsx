@@ -36,6 +36,7 @@ export default function App() {
   }, []);
   
   const handleShowTutorial = useCallback(() => {
+    console.log('[App] How to Play clicked - showing tutorial');
     setForceShowTutorial(true);
     setShowTutorial(true);
   }, []);
