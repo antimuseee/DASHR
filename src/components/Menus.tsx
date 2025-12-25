@@ -195,6 +195,10 @@ function GameOver() {
             <span className="score-value">{distance.toFixed(0)}m → {distanceScore.toFixed(0)} pts</span>
           </div>
           <div className="score-row">
+            <span className="score-label">📊 Distance Multiplier</span>
+            <span className="score-value">×{multiplier.toFixed(1)}</span>
+          </div>
+          <div className="score-row">
             <span className="score-label">💰 Bags</span>
             <span className="score-value">{tokens} coins → {collectibleScore.toFixed(0)} pts</span>
           </div>
@@ -211,10 +215,6 @@ function GameOver() {
           <div className="score-row">
             <span className="score-label">⚡ Boosts Burned</span>
             <span className="score-value">{boostsUsed}</span>
-          </div>
-          <div className="score-row">
-            <span className="score-label">📊 Distance Multiplier</span>
-            <span className="score-value">×{multiplier.toFixed(1)}</span>
           </div>
           <div className="score-divider"></div>
           <div className="score-row total">
