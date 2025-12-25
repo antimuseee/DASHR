@@ -33,15 +33,36 @@ export default function WalletUI() {
     });
   }, [connected, connecting, disconnecting, publicKey, wallet]);
   
+  const [statusMessage, setStatusMessage] = useState<string>('');
+  
   const handleRefreshBalance = async () => {
-    if (!publicKey || !connected) return;
+    console.log('[WalletUI] Refresh button clicked!');
+    console.log('[WalletUI] publicKey:', publicKey?.toBase58());
+    console.log('[WalletUI] connected:', connected);
+    
+    if (!publicKey || !connected) {
+      setStatusMessage('❌ Wallet not connected');
+      console.log('[WalletUI] Wallet not connected, aborting');
+      return;
+    }
+    
     setIsLoadingBalance(true);
+    setStatusMessage('⏳ Fetching balance...');
+    
     try {
+      console.log('[WalletUI] Calling updateTokenBalance...');
       await gameActions.updateTokenBalance(publicKey.toBase58());
-    } catch (error) {
+      const newBalance = useGameStore.getState().tokenBalance;
+      const newTier = useGameStore.getState().holderTier;
+      setStatusMessage(`✅ Balance: ${newBalance} | Tier: ${newTier}`);
+      console.log('[WalletUI] Balance updated:', { newBalance, newTier });
+    } catch (error: any) {
       console.error('[WalletUI] Error refreshing balance:', error);
+      setStatusMessage(`❌ Error: ${error.message || 'Unknown error'}`);
     } finally {
       setIsLoadingBalance(false);
+      // Clear status message after 5 seconds
+      setTimeout(() => setStatusMessage(''), 5000);
     }
   };
 
@@ -168,6 +189,21 @@ export default function WalletUI() {
       {!TEST_MODE && connected && (
         <div className="stat-pill" style={{ fontSize: '11px', opacity: 0.7 }}>
           Tier: {holderTier} | Balance: {formatTokenBalance(tokenBalance)}
+        </div>
+      )}
+      
+      {/* Status message from refresh */}
+      {statusMessage && (
+        <div className="stat-pill" style={{ 
+          fontSize: '11px', 
+          background: statusMessage.includes('❌') ? 'rgba(255,0,0,0.2)' : 
+                      statusMessage.includes('✅') ? 'rgba(0,255,0,0.2)' : 
+                      'rgba(255,255,0,0.2)',
+          color: statusMessage.includes('❌') ? '#ff6666' : 
+                 statusMessage.includes('✅') ? '#66ff66' : 
+                 '#ffff66',
+        }}>
+          {statusMessage}
         </div>
       )}
       
