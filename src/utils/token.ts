@@ -101,8 +101,9 @@ export async function getTokenBalance(walletAddress: string | null): Promise<num
   // Real token balance fetching using Solana SPL token program
   try {
     console.log(`[Token] Fetching balance for wallet: ${walletAddress.slice(0, 8)}...`);
-    // Use mainnet for real token
-    const connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
+    // Use a public RPC that allows browser requests (Solana's public RPC blocks them)
+    // Options: Ankr, Helius, QuickNode - using Ankr's free public endpoint
+    const connection = new Connection('https://rpc.ankr.com/solana', 'confirmed');
     const walletPubkey = new PublicKey(walletAddress);
     const mintPubkey = new PublicKey(TOKEN_MINT);
     

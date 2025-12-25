@@ -1,7 +1,7 @@
 ﻿import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
-import { clusterApiUrl } from '@solana/web3.js';
+// clusterApiUrl no longer needed - using direct RPC URL
 import GameCanvas from './GameCanvas';
 import WalletUI from './WalletUI';
 import Menus from './Menus';
@@ -9,8 +9,8 @@ import { useGameStore } from '../utils/store';
 import '@solana/wallet-adapter-react-ui/styles.css';
 import '../styles.css';
 
-// Use mainnet for real token, or devnet for testing
-const endpoint = clusterApiUrl('mainnet-beta'); // Changed to mainnet for real token
+// Use a public RPC that allows browser requests (Solana's public RPC blocks them)
+const endpoint = 'https://rpc.ankr.com/solana'; // Ankr's free public mainnet RPC
 
 // Create wallet adapter with error handling
 const phantomAdapter = new PhantomWalletAdapter();

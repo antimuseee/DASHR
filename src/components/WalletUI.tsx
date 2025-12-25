@@ -1,13 +1,13 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { clusterApiUrl, Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { useGameStore, gameActions } from '../utils/store';
 import { TOKEN_SYMBOL, HOLDER_TIERS, formatTokenBalance, isHolder, TEST_MODE, MOCK_BALANCE, getTierFromBalance } from '../utils/token';
 import { autoEquipForTier } from '../utils/cosmetics';
 
-// Use mainnet for real token
-const endpoint = clusterApiUrl('mainnet-beta');
+// Use a public RPC that allows browser requests (Solana's public RPC blocks them)
+const endpoint = 'https://rpc.ankr.com/solana'; // Ankr's free public mainnet RPC
 const connection = new Connection(endpoint, 'processed');
 
 async function fetchBalance(pk?: PublicKey) {
