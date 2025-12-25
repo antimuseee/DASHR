@@ -131,11 +131,7 @@ export default function WalletUI() {
 
   return (
     <div className="topbar">
-      <div className="stat-pill">
-        {TEST_MODE && !publicKey ? '🧪 TEST MODE' : `Wallet: ${shortAddr}`}
-      </div>
-      
-      {/* Holder tier badge */}
+      {/* Holder tier badge - moved to leftmost position */}
       {showHolderBadge && (
         <div 
           className="holder-badge"
@@ -148,6 +144,13 @@ export default function WalletUI() {
           <span className="tier-emoji">{tierInfo.emoji}</span>
           <span className="tier-name">{tierInfo.name}</span>
           <span className="tier-balance">{formatTokenBalance(tokenBalance)} {TOKEN_SYMBOL}</span>
+        </div>
+      )}
+      
+      {/* Show TEST MODE indicator if in test mode and no tier badge */}
+      {TEST_MODE && !publicKey && !showHolderBadge && (
+        <div className="stat-pill">
+          🧪 TEST MODE
         </div>
       )}
       
