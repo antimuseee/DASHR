@@ -431,8 +431,22 @@ export default class MainScene extends Phaser.Scene {
     // Distance-based scoring
     gameActions.addDistanceScore(distanceDelta);
 
-    // Update multiplier based on distance (caps at 5x) - requires long survival!
-    const newMultiplier = Math.min(5, 1 + this.distance / 10000);
+    // Update multiplier based on distance milestones - epic survival = epic rewards!
+    let newMultiplier = 1;
+    if (this.distance >= 1000000) {
+      // 7x at 1M, then +1x for each additional million
+      newMultiplier = 7 + Math.floor((this.distance - 1000000) / 1000000);
+    } else if (this.distance >= 500000) {
+      newMultiplier = 6;
+    } else if (this.distance >= 250000) {
+      newMultiplier = 5;
+    } else if (this.distance >= 100000) {
+      newMultiplier = 4;
+    } else if (this.distance >= 50000) {
+      newMultiplier = 3;
+    } else if (this.distance >= 25000) {
+      newMultiplier = 2;
+    }
     useGameStore.setState({
       distance: this.distance,
       multiplier: newMultiplier,
