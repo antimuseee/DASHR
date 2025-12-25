@@ -131,19 +131,63 @@ export default function WalletUI() {
 
   return (
     <div className="topbar">
-      {/* Holder tier badge - moved to leftmost position */}
+      {/* Holder tier badge with refresh button positioned at upper right */}
       {showHolderBadge && (
-        <div 
-          className="holder-badge"
-          style={{ 
-            backgroundColor: tierInfo.color + '22',
-            borderColor: tierInfo.color,
-            color: tierInfo.color,
-          }}
-        >
-          <span className="tier-emoji">{tierInfo.emoji}</span>
-          <span className="tier-name">{tierInfo.name}</span>
-          <span className="tier-balance">{formatTokenBalance(tokenBalance)} {TOKEN_SYMBOL}</span>
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <div 
+            className="holder-badge"
+            style={{ 
+              backgroundColor: tierInfo.color + '22',
+              borderColor: tierInfo.color,
+              color: tierInfo.color,
+            }}
+          >
+            <span className="tier-emoji">{tierInfo.emoji}</span>
+            <span className="tier-name">{tierInfo.name}</span>
+            <span className="tier-balance">{formatTokenBalance(tokenBalance)} {TOKEN_SYMBOL}</span>
+          </div>
+          {/* Small refresh button positioned at upper right corner */}
+          {!TEST_MODE && connected && publicKey && (
+            <button
+              onClick={handleRefreshBalance}
+              disabled={isLoadingBalance}
+              style={{ 
+                position: 'absolute',
+                top: '-6px',
+                right: '-6px',
+                fontSize: '10px', 
+                padding: '4px 6px',
+                cursor: isLoadingBalance ? 'not-allowed' : 'pointer',
+                opacity: isLoadingBalance ? 0.6 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '3px',
+                background: 'linear-gradient(135deg, #9b5cff, #4ef0c5)',
+                border: 'none',
+                borderRadius: '8px',
+                color: '#0a0517',
+                fontWeight: 700,
+                transition: 'all 0.2s ease',
+                pointerEvents: 'auto',
+                minWidth: 'auto',
+                lineHeight: '1',
+              }}
+              onMouseEnter={(e) => {
+                if (!isLoadingBalance) {
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                  e.currentTarget.style.boxShadow = '0 0 10px rgba(155, 92, 255, 0.6)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+              title="Refresh token balance"
+            >
+              {isLoadingBalance ? '⏳' : '🔄'}
+            </button>
+          )}
         </div>
       )}
       
@@ -152,44 +196,6 @@ export default function WalletUI() {
         <div className="stat-pill">
           🧪 TEST MODE
         </div>
-      )}
-      
-      {/* Refresh balance button - always visible when connected */}
-      {!TEST_MODE && connected && publicKey && (
-        <button
-          onClick={handleRefreshBalance}
-          disabled={isLoadingBalance}
-          style={{ 
-            fontSize: '12px', 
-            padding: '8px 14px',
-            cursor: isLoadingBalance ? 'not-allowed' : 'pointer',
-            opacity: isLoadingBalance ? 0.6 : 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '6px',
-            background: 'linear-gradient(135deg, #9b5cff, #4ef0c5)',
-            border: 'none',
-            borderRadius: '12px',
-            color: '#0a0517',
-            fontWeight: 700,
-            transition: 'all 0.2s ease',
-            pointerEvents: 'auto',
-          }}
-          onMouseEnter={(e) => {
-            if (!isLoadingBalance) {
-              e.currentTarget.style.transform = 'scale(1.05)';
-              e.currentTarget.style.boxShadow = '0 0 15px rgba(155, 92, 255, 0.6)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
-          title="Refresh token balance"
-        >
-          {isLoadingBalance ? '⏳ Checking...' : '🔄 Refresh Balance'}
-        </button>
       )}
       
       {/* Status message from refresh */}
