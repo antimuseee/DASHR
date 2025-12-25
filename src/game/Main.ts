@@ -1515,7 +1515,7 @@ export default class MainScene extends Phaser.Scene {
     const points = 250000; // 250k base
     const state = useGameStore.getState();
     const multiplier = state.activeBoost === 'double' ? 2 : 1;
-    const totalPoints = points * multiplier * state.multiplier;
+    const totalPoints = Math.round(points * multiplier * state.multiplier);
     
     useGameStore.setState({
       score: state.score + totalPoints,

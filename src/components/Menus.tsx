@@ -51,7 +51,7 @@ function Leaderboard({ scores, currentScore, loading }: { scores: HighScoreEntry
               {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
             </span>
             <span className="name">{entry.name}</span>
-            <span className="score">{entry.score.toLocaleString()}</span>
+            <span className="score">{Math.round(entry.score).toLocaleString()}</span>
           </div>
         ))}
       </div>
@@ -192,7 +192,7 @@ function GameOver() {
         <div className="score-breakdown">
           <div className="score-row">
             <span className="score-label">🏃 Survived</span>
-            <span className="score-value">{distance.toLocaleString()}m → {distanceScore.toLocaleString()} pts</span>
+            <span className="score-value">{Math.round(distance).toLocaleString()}m → {Math.round(distanceScore).toLocaleString()} pts</span>
           </div>
           <div className="score-row">
             <span className="score-label">📊 Distance Multiplier</span>
@@ -200,12 +200,12 @@ function GameOver() {
           </div>
           <div className="score-row">
             <span className="score-label">💰 Bags</span>
-            <span className="score-value">{tokens.toLocaleString()} coins → {coinScore.toLocaleString()} pts</span>
+            <span className="score-value">{Math.round(tokens).toLocaleString()} coins → {Math.round(coinScore).toLocaleString()} pts</span>
           </div>
           {whaleTokens > 0 && (
             <div className="score-row whale-bonus">
               <span className="score-label">🐋 Whale Haul</span>
-              <span className="score-value">{whaleTokens} caught → {whaleScore.toLocaleString()} pts</span>
+              <span className="score-value">{whaleTokens} caught → {Math.round(whaleScore).toLocaleString()} pts</span>
             </div>
           )}
           <div className="score-row">
@@ -219,11 +219,11 @@ function GameOver() {
           <div className="score-divider"></div>
           <div className="score-row total">
             <span className="score-label">📈 TOTAL GAINS</span>
-            <span className="score-value">{score.toLocaleString()}</span>
+            <span className="score-value">{Math.round(score).toLocaleString()}</span>
           </div>
         </div>
         
-        <p className="best-score">🏆 Personal Best: {best.toLocaleString()}</p>
+        <p className="best-score">🏆 Personal Best: {Math.round(best).toLocaleString()}</p>
         
         {/* Highscore name entry */}
         {showNameEntry && !submitted && (
@@ -289,9 +289,9 @@ export default function Menus({ phase }: { phase: string }) {
   return (
     <>
       <div className="topbar" style={{ pointerEvents: 'none' }}>
-        <div className="stat-pill">Score: {score.toLocaleString()}</div>
-        <div className="stat-pill">Dist: {distance.toLocaleString()}m</div>
-        <div className="stat-pill">TT: {tokens.toLocaleString()}</div>
+        <div className="stat-pill">Score: {Math.round(score).toLocaleString()}</div>
+        <div className="stat-pill">Dist: {Math.round(distance).toLocaleString()}m</div>
+        <div className="stat-pill">TT: {Math.round(tokens).toLocaleString()}</div>
         <div className={`stat-pill combo-pill ${comboCount > 0 || comboProgress > 0 ? 'active' : 'inactive'} ${activeBoost === 'double' ? 'energized' : ''}`}>
           <div 
             className="combo-fill combo-timer-fill" 

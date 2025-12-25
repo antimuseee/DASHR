@@ -450,7 +450,7 @@ export const gameActions = {
   addDistanceScore: (distanceDelta: number) => {
     const state = useGameStore.getState();
     const boostMultiplier = state.activeBoost === 'double' ? 2 : 1;
-    const points = distanceDelta * state.multiplier * boostMultiplier * 0.5; // 0.5 points per meter (half of distance)
+    const points = Math.round(distanceDelta * state.multiplier * boostMultiplier * 0.5); // 0.5 points per meter (half of distance)
     
     useGameStore.setState({
       distanceScore: state.distanceScore + points,
