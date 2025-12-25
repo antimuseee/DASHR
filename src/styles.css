@@ -192,11 +192,43 @@ body {
   color: #cd7f32;
 }
 
-/* Cosmetics button (during gameplay) */
-.cosmetics-button {
+/* How to Play button (during gameplay) */
+.how-to-play-button {
   position: fixed;
   bottom: 75px;
   left: 20px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(155, 92, 255, 0.3);
+  border: 2px solid rgba(155, 92, 255, 0.6);
+  color: rgba(232, 229, 255, 0.9);
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 101;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.how-to-play-button:hover {
+  background: rgba(155, 92, 255, 0.5);
+  border-color: rgba(155, 92, 255, 0.9);
+  transform: scale(1.1);
+}
+
+.how-to-play-button:active {
+  transform: scale(0.95);
+}
+
+/* Cosmetics button (during gameplay) - positioned to the right of How to Play */
+.cosmetics-button {
+  position: fixed;
+  bottom: 75px;
+  left: 70px;
   width: 42px;
   height: 42px;
   border-radius: 50%;
@@ -919,68 +951,6 @@ body {
   max-width: 380px;
 }
 
-/* Controls help toggle */
-.controls-help {
-  position: fixed;
-  bottom: 75px;
-  left: 72px;
-  z-index: 100;
-}
-
-.controls-toggle {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: rgba(155, 92, 255, 0.3);
-  border: 2px solid rgba(155, 92, 255, 0.6);
-  color: rgba(232, 229, 255, 0.8);
-  font-size: 18px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.controls-toggle:hover {
-  background: rgba(155, 92, 255, 0.5);
-  border-color: rgba(155, 92, 255, 0.9);
-  transform: scale(1.1);
-}
-
-.controls-panel {
-  background: var(--panel);
-  border: 1px solid rgba(155, 92, 255, 0.4);
-  border-radius: 10px;
-  padding: 12px 16px;
-  cursor: pointer;
-  position: relative;
-  animation: fadeIn 0.2s ease;
-}
-
-.controls-content {
-  font-size: 13px;
-  line-height: 1.6;
-  color: rgba(232, 229, 255, 0.9);
-}
-
-.controls-content strong {
-  display: block;
-  margin-bottom: 6px;
-  color: var(--accent);
-  font-size: 14px;
-}
-
-.controls-close {
-  position: absolute;
-  top: 6px;
-  right: 10px;
-  color: rgba(232, 229, 255, 0.5);
-  font-size: 14px;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
 
 /* ============================================
    MOBILE-ONLY STYLES
@@ -1086,8 +1056,8 @@ body {
     font-size: 15px;
     min-height: 48px;
   }
-  /* Cosmetics button mobile */
-  .cosmetics-button {
+  /* How to Play and Cosmetics buttons mobile */
+  .how-to-play-button {
     width: 38px;
     height: 38px;
     font-size: 16px;
@@ -1095,10 +1065,12 @@ body {
     left: 15px;
   }
   
-  /* Controls help mobile - position to the right of cosmetics */
-  .controls-help {
-    left: 63px;
+  .cosmetics-button {
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
     bottom: 70px;
+    left: 63px;
   }
   
   /* Cosmetics menu mobile */

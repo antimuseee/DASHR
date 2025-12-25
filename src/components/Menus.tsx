@@ -120,30 +120,6 @@ function Leaderboard({ scores, currentScore, loading }: { scores: HighScoreEntry
   );
 }
 
-function ControlsHelp() {
-  const [isOpen, setIsOpen] = useState(false);
-  
-  return (
-    <div className="controls-help" style={{ pointerEvents: 'auto' }}>
-      {isOpen ? (
-        <div className="controls-panel" onClick={() => setIsOpen(false)}>
-          <div className="controls-content">
-            <strong>Controls</strong>
-            <div>Move: WASD / Arrows</div>
-            <div>Jump: Space / W / Up</div>
-            <div>Slide: S / Down</div>
-            <div>Boosts: 1 / 2 / 3</div>
-          </div>
-          <span className="controls-close">✕</span>
-        </div>
-      ) : (
-        <button className="controls-toggle" onClick={() => setIsOpen(true)}>
-          ?
-        </button>
-      )}
-    </div>
-  );
-}
 
 // Helper to update player cosmetics in the running game
 function updatePlayerCosmetics(skinId: SkinId, trailId: TrailId) {
@@ -531,21 +507,37 @@ export default function Menus({ phase, onShowTutorial }: { phase: string; onShow
   
   return (
     <>
-      {/* Cosmetics button - visible during gameplay */}
+      {/* How to Play and Cosmetics buttons - visible during gameplay */}
       {phase === 'running' && !showCosmetics && (
-        <button 
-          className="cosmetics-button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setShowCosmetics(true);
-            gameActions.pause();
-          }}
-          style={{ pointerEvents: 'auto' }}
-          title="Cosmetics"
-        >
-          🎨
-        </button>
+        <>
+          <button 
+            className="how-to-play-button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (onShowTutorial) {
+                onShowTutorial();
+              }
+            }}
+            style={{ pointerEvents: 'auto' }}
+            title="How to Play"
+          >
+            📖
+          </button>
+          <button 
+            className="cosmetics-button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowCosmetics(true);
+              gameActions.pause();
+            }}
+            style={{ pointerEvents: 'auto' }}
+            title="Cosmetics"
+          >
+            🎨
+          </button>
+        </>
       )}
       
       <div className="topbar" style={{ pointerEvents: 'none' }}>
@@ -670,7 +662,6 @@ export default function Menus({ phase, onShowTutorial }: { phase: string; onShow
       {phase === 'title' && <TitleMenu onShowTutorial={onShowTutorial} />}
       {phase === 'paused' && <PauseMenu />}
       {phase === 'gameover' && <GameOver />}
-      {phase === 'running' && device.isDesktop && <ControlsHelp />}
     </>
   );
 }
