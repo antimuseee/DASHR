@@ -191,38 +191,30 @@ function GameOver() {
         
         <div className="score-breakdown">
           <div className="score-row">
-            <span className="score-label">🏃 Distance</span>
-            <span className="score-value">{distance.toFixed(0)}m</span>
+            <span className="score-label">🏃 Survived</span>
+            <span className="score-value">{distance.toFixed(0)}m → {distanceScore.toFixed(0)} pts</span>
           </div>
           <div className="score-row">
-            <span className="score-label">📍 Distance Score</span>
-            <span className="score-value">{distanceScore.toFixed(0)}</span>
-          </div>
-          <div className="score-row">
-            <span className="score-label">💎 Collectibles</span>
-            <span className="score-value">{collectibleScore.toFixed(0)}</span>
-          </div>
-          <div className="score-row">
-            <span className="score-label">🪙 Tokens</span>
-            <span className="score-value">{tokens}</span>
+            <span className="score-label">💰 Bags</span>
+            <span className="score-value">{tokens} coins → {collectibleScore.toFixed(0)} pts</span>
           </div>
           {whaleTokens > 0 && (
             <div className="score-row whale-bonus">
-              <span className="score-label">🐋 Whale Bonus</span>
-              <span className="score-value">{whaleScore.toFixed(0)}</span>
+              <span className="score-label">🐋 Whale Haul</span>
+              <span className="score-value">{whaleScore.toFixed(0)} pts</span>
             </div>
           )}
           <div className="score-row">
-            <span className="score-label">🔥 Max Combo</span>
+            <span className="score-label">🔥 Peak Combo</span>
             <span className="score-value">x{maxCombo}</span>
           </div>
           <div className="score-row">
-            <span className="score-label">⚡ Boosts Used</span>
+            <span className="score-label">⚡ Boosts Burned</span>
             <span className="score-value">{boostsUsed}</span>
           </div>
           <div className="score-divider"></div>
           <div className="score-row total">
-            <span className="score-label">TOTAL SCORE</span>
+            <span className="score-label">📈 TOTAL GAINS</span>
             <span className="score-value">{score.toFixed(0)}</span>
           </div>
         </div>
