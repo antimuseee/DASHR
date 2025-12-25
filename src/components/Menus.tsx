@@ -295,13 +295,20 @@ export default function Menus({ phase }: { phase: string }) {
         <div className={`stat-pill combo-pill ${comboCount > 0 || comboProgress > 0 ? 'active' : 'inactive'} ${activeBoost === 'double' ? 'energized' : ''}`}>
           <div 
             className="combo-fill combo-timer-fill" 
-            style={{ width: comboTimer > 0 ? `${(comboTimer / 1.2) * 100}%` : '0%' }}
+            style={{ width: comboTimer > 0 ? `${(comboTimer / 0.8) * 100}%` : '0%' }}
           />
           <div 
             className="combo-fill combo-progress-fill" 
             style={{ width: `${(comboProgress / COMBO_CHARGES_NEEDED) * 100}%` }}
           />
-          <span className="combo-text">🔥 x{comboCount > 0 ? (activeBoost === 'double' ? comboCount * 2 : comboCount) : '-'} {comboProgress > 0 && comboCount < 10 ? `+${comboProgress}` : ''}</span>
+          <span className="combo-text">
+            🔥 {comboCount > 0 
+              ? `x${activeBoost === 'double' ? comboCount * 2 : comboCount}${comboProgress > 0 && comboCount < 10 ? ` +${comboProgress}` : ''}`
+              : comboProgress > 0 
+                ? `${comboProgress}/${COMBO_CHARGES_NEEDED}`
+                : 'x0'
+            }
+          </span>
         </div>
       </div>
       
