@@ -222,15 +222,15 @@ export const useGameStore = create<GameState>(() => initialState);
 
 // Collectible point values by tier
 // Scoring hierarchy: Whale >>> Collectibles > Distance
-// Whale should be worth more than an entire run's worth of collectibles
+// Whale is worth more than an entire run's worth of collectibles
 export const COLLECTIBLE_VALUES: Record<string, { points: number; tier: string }> = {
-  coin: { points: 5, tier: 'common' },
-  wif: { points: 15, tier: 'uncommon' },
-  bonk: { points: 15, tier: 'uncommon' },
-  rome: { points: 30, tier: 'rare' },
-  gem: { points: 75, tier: 'legendary' },
-  bubble: { points: 10, tier: 'common' }, // Whale trail bubble
-  whale: { points: 25000, tier: 'legendary' }, // THE ULTIMATE PRIZE - game changer!
+  coin: { points: 25, tier: 'common' },
+  wif: { points: 75, tier: 'uncommon' },
+  bonk: { points: 75, tier: 'uncommon' },
+  rome: { points: 150, tier: 'rare' },
+  gem: { points: 400, tier: 'legendary' },
+  bubble: { points: 50, tier: 'common' }, // Whale trail bubble
+  whale: { points: 2000000, tier: 'legendary' }, // 2 MILLION - THE ULTIMATE PRIZE!
 };
 
 // Boost durations in seconds
@@ -411,10 +411,10 @@ export const gameActions = {
     const isDoubleActive = state.activeBoost === 'double';
     const boostMultiplier = isDoubleActive ? 2 : 1;
     
-    // Combo bonus: each consecutive collect within window adds +10%
+    // Combo bonus: each consecutive collect within window adds +5%
     // When double boost active, combo value is doubled (7 becomes 14)
     const effectiveCombo = isDoubleActive ? state.comboCount * 2 : state.comboCount;
-    const comboMultiplier = 1 + (effectiveCombo * 0.1);
+    const comboMultiplier = 1 + (effectiveCombo * 0.05); // Reduced from 0.1 to keep whale dominant
     
     // Combo charging: need multiple collectibles to increase combo level
     const progressGain = isDoubleActive ? 2 : 1; // Double boost = 2x progress
