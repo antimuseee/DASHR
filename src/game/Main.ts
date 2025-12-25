@@ -1531,9 +1531,9 @@ export default class MainScene extends Phaser.Scene {
     
     // Show pickup feedback
     const boostNames: Record<string, string> = {
-      double: '⚡ 2X [1/Q]',
-      shield: '🛡️ SHIELD [2/E]',
-      magnet: '🧲 MAGNET [3/R]',
+      double: '⚡ 2X',
+      shield: '🛡️ SHIELD',
+      magnet: '🧲 MAGNET',
     };
     const boostColors: Record<string, number> = {
       double: 0xffd700,
