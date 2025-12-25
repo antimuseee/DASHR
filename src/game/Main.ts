@@ -703,7 +703,7 @@ export default class MainScene extends Phaser.Scene {
           this.nextWhaleEventDistance = this.distance + Phaser.Math.Between(300, 600); // First event soon after unlock
           
           // Announce whale events unlocked
-          const unlockText = this.add.text(this.centerX, this.scale.height / 2 - 80, '🐋 WHALE ZONE ENTERED 🐋', {
+          const unlockText = this.add.text(this.centerX, this.scale.height / 2 - 80, '🐋 WHALE WALLET TRACKER 🐋', {
             fontSize: '24px',
             fontFamily: 'Arial Black',
             color: '#00aaff',
