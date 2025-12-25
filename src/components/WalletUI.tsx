@@ -140,7 +140,7 @@ export default function WalletUI() {
               backgroundColor: tierInfo.color + '22',
               borderColor: tierInfo.color,
               color: tierInfo.color,
-              padding: '10px 20px',
+              padding: '14px 20px',
               fontSize: '14px',
             }}
           >
@@ -155,10 +155,10 @@ export default function WalletUI() {
               disabled={isLoadingBalance}
               style={{ 
                 position: 'absolute',
-                top: '-8px',
-                right: '-8px',
-                fontSize: '12px', 
-                padding: '4px 6px',
+                top: '-10px',
+                right: '-10px',
+                fontSize: '14px', 
+                padding: '6px 8px',
                 cursor: isLoadingBalance ? 'not-allowed' : 'pointer',
                 opacity: isLoadingBalance ? 0.6 : 1,
                 display: 'flex',
