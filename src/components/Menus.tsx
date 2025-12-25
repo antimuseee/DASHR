@@ -291,7 +291,7 @@ export default function Menus({ phase }: { phase: string }) {
       <div className="topbar" style={{ pointerEvents: 'none' }}>
         <div className="stat-pill">Score: {Math.round(score).toLocaleString()}</div>
         <div className="stat-pill">Dist: {Math.round(distance).toLocaleString()}m</div>
-        <div className="stat-pill">TT: {Math.round(tokens).toLocaleString()}</div>
+        <div className="stat-pill">Coins: {Math.round(tokens).toLocaleString()}</div>
         <div className={`stat-pill combo-pill ${comboCount > 0 || comboProgress > 0 ? 'active' : 'inactive'} ${activeBoost === 'double' ? 'energized' : ''}`}>
           <div 
             className="combo-fill combo-timer-fill" 
