@@ -9,7 +9,8 @@ import { useGameStore } from '../utils/store';
 import '@solana/wallet-adapter-react-ui/styles.css';
 import '../styles.css';
 
-const endpoint = clusterApiUrl('devnet');
+// Use mainnet for real token, or devnet for testing
+const endpoint = clusterApiUrl('mainnet-beta'); // Changed to mainnet for real token
 const wallets = [new PhantomWalletAdapter()];
 
 export default function App() {

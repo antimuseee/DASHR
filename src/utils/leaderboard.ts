@@ -1,6 +1,8 @@
 // JSONBin.io Leaderboard Service
 // Simple, free, persistent global leaderboard
 
+import { HolderTier } from './token';
+
 const JSONBIN_API_KEY = import.meta.env.VITE_JSONBIN_API_KEY;
 const BIN_ID = import.meta.env.VITE_JSONBIN_BIN_ID;
 
@@ -13,6 +15,7 @@ export interface LeaderboardEntry {
   score: number;
   distance: number;
   date: string;
+  tier?: HolderTier; // Optional: holder tier at time of score submission
 }
 
 interface LeaderboardData {
@@ -60,7 +63,8 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
 export async function addToLeaderboard(
   name: string,
   score: number,
-  distance: number
+  distance: number,
+  tier?: HolderTier
 ): Promise<LeaderboardEntry[]> {
   if (!isLeaderboardConfigured()) {
     return [];
@@ -76,6 +80,7 @@ export async function addToLeaderboard(
       score: Math.floor(score),
       distance: Math.floor(distance),
       date: new Date().toLocaleDateString(),
+      tier: tier || 'none',
     };
 
     // Add and sort

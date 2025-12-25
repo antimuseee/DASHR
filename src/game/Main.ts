@@ -4,6 +4,7 @@ import Spawner from './entities/Obstacles';
 import { useGameStore, gameActions } from '../utils/store';
 import { spawnSpark } from '../utils/particles';
 import { getDevice } from '../utils/device';
+import { getEquippedSkin, getEquippedTrail } from '../utils/cosmetics';
 
 interface ChunkConfig {
   weight: number;
@@ -97,19 +98,33 @@ export default class MainScene extends Phaser.Scene {
   }
 
   create() {
-    this.centerX = this.scale.width / 2;
-    this.groundY = this.scale.height - 120;
-    this.horizonY = Math.floor(this.scale.height * 0.28);
-    this.nearY = this.groundY - 30;
+    console.log('[Main Scene] create() called');
+    try {
+      this.centerX = this.scale.width / 2;
+      this.groundY = this.scale.height - 120;
+      this.horizonY = Math.floor(this.scale.height * 0.28);
+      this.nearY = this.groundY - 30;
 
-    // CYBERPUNK BACKGROUND
-    this.createBackground();
+      console.log('[Main Scene] Creating background...');
+      // CYBERPUNK BACKGROUND
+      this.createBackground();
 
-    // NEON GROUND with stronger perspective grid
-    this.createGround();
+      console.log('[Main Scene] Creating ground...');
+      // NEON GROUND with stronger perspective grid
+      this.createGround();
 
-    // Player
-    this.player = new Player(this, this.centerX, this.groundY - 35, this.laneWidth);
+      console.log('[Main Scene] Creating player...');
+      // Player
+      this.player = new Player(this, this.centerX, this.groundY - 35, this.laneWidth);
+      console.log('[Main Scene] Player created');
+      
+      // Force-apply currently equipped cosmetics (from holder tier)
+      // Use force=true to ensure they're applied even if constructor already set defaults
+      const equippedSkin = getEquippedSkin();
+      const equippedTrail = getEquippedTrail();
+      console.log(`[Game] Loading cosmetics from localStorage: Skin=${equippedSkin}, Trail=${equippedTrail}`);
+      this.player.updateCosmetics(equippedSkin, equippedTrail, true);
+      console.log(`[Game] Player cosmetics applied: Skin=${equippedSkin}, Trail=${equippedTrail}`);
 
     // Spawner
     this.spawner = new Spawner(this, this.centerX, this.laneWidth);
@@ -261,6 +276,12 @@ export default class MainScene extends Phaser.Scene {
     this.events.once('shutdown', () => {
       document.removeEventListener('keydown', this.keyHandler);
     });
+    
+    console.log('[Main Scene] create() completed successfully');
+    } catch (error) {
+      console.error('[Main Scene] Error in create():', error);
+      throw error; // Re-throw to see the full error
+    }
   }
 
   createBackground() {
@@ -322,6 +343,7 @@ export default class MainScene extends Phaser.Scene {
     fog.fillStyle(0xff00ff, 0.1);
     fog.fillRect(0, h * 0.3, w, h * 0.15);
     fog.setScrollFactor(0).setDepth(-85);
+    console.log('[Main Scene] Background created');
   }
 
   createGround() {
@@ -381,6 +403,7 @@ export default class MainScene extends Phaser.Scene {
     rails.lineBetween(leftBottom, this.groundY + 60, leftTop, this.horizonY);
     rails.lineBetween(rightBottom, this.groundY + 60, rightTop, this.horizonY);
     rails.setScrollFactor(0).setDepth(-8);
+    console.log('[Main Scene] Ground created');
   }
 
   handleResize(gameSize: Phaser.Structs.Size) {

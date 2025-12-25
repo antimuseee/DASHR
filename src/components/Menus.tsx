@@ -2,19 +2,68 @@
 import { useGameStore, checkHighscoreQualifiesAsync, addHighscoreAsync, getHighscoresAsync, HighScoreEntry, gameActions } from '../utils/store';
 import { getDevice } from '../utils/device';
 import { isLeaderboardConfigured } from '../utils/leaderboard';
+import { HOLDER_TIERS, HolderTier } from '../utils/token';
+import { 
+  SKINS, TRAILS, SkinId, TrailId, 
+  getUnlockedSkins, getUnlockedTrails, 
+  getEquippedSkin, getEquippedTrail, 
+  setEquippedSkin, setEquippedTrail,
+  meetsRequirement
+} from '../utils/cosmetics';
 
 function restartGame() {
+  console.log('[Menus] Play button clicked - restarting game');
+  
   const game = window.phaserGame;
   if (game) {
-    const mainScene = game.scene.getScene('Main');
+    console.log('[Menus] Phaser game found');
+    
+    // Get the scene manager
+    const sceneManager = game.scene;
+    console.log('[Menus] Scene manager keys:', sceneManager.getScenes(true).map((s: Phaser.Scene) => s.scene.key));
+    
+    const mainScene = sceneManager.getScene('Main');
+    
     if (mainScene) {
-      mainScene.scene.restart();
+      console.log('[Menus] Main scene found');
+      const isActive = mainScene.scene.isActive();
+      const isPaused = mainScene.scene.isPaused();
+      const isSleeping = mainScene.scene.isSleeping();
+      console.log('[Menus] Scene state - isActive:', isActive, 'isPaused:', isPaused, 'isSleeping:', isSleeping);
+      
+      // Stop the scene first to ensure clean state, then start it fresh
+      // This ensures create() is called
+      if (isActive || isPaused) {
+        console.log('[Menus] Scene is active/paused, stopping first...');
+        mainScene.scene.stop();
+      }
+      
+      // Small delay to ensure cleanup, then start fresh
+      setTimeout(() => {
+        console.log('[Menus] Starting scene fresh...');
+        sceneManager.start('Main');
+      }, 10);
+    } else {
+      // Scene doesn't exist - launch it
+      console.log('[Menus] Main scene not found, launching it');
+      sceneManager.launch('Main');
     }
+    
+    // Set game phase to running (scene will also call startRun() in create())
+    gameActions.startRun();
+    console.log('[Menus] Game phase set to running');
+  } else {
+    console.error('[Menus] Phaser game not found! window.phaserGame:', window.phaserGame);
   }
 }
 
 function backToTitle() {
   useGameStore.setState({ phase: 'title' });
+}
+
+function getTierClass(tier?: HolderTier): string {
+  if (!tier || tier === 'none') return '';
+  return `${tier}-tier`;
 }
 
 function Leaderboard({ scores, currentScore, loading }: { scores: HighScoreEntry[]; currentScore?: number; loading?: boolean }) {
@@ -42,18 +91,30 @@ function Leaderboard({ scores, currentScore, loading }: { scores: HighScoreEntry
     <div className="leaderboard">
       <h4>🏆 {isCloud ? 'GLOBAL' : 'LOCAL'} TOP 100</h4>
       <div className="leaderboard-list">
-        {scores.map((entry, i) => (
-          <div 
-            key={i} 
-            className={`leaderboard-row ${currentScore && entry.score === currentScore ? 'highlight' : ''} ${i < 3 ? 'top-three' : ''}`}
-          >
-            <span className="rank">
-              {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
-            </span>
-            <span className="name">{entry.name}</span>
-            <span className="score">{Math.round(entry.score).toLocaleString()}</span>
-          </div>
-        ))}
+        {scores.map((entry, i) => {
+          const tierInfo = entry.tier ? HOLDER_TIERS[entry.tier] : null;
+          const tierClass = getTierClass(entry.tier);
+          
+          return (
+            <div 
+              key={i} 
+              className={`leaderboard-row ${currentScore && entry.score === currentScore ? 'highlight' : ''} ${i < 3 ? 'top-three' : ''} ${tierClass}`}
+            >
+              <span className="rank">
+                {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
+              </span>
+              <span className="name">
+                {entry.name}
+                {tierInfo && tierInfo.tier !== 'none' && (
+                  <span className="leaderboard-tier" title={`${tierInfo.name} Holder`}>
+                    {tierInfo.emoji}
+                  </span>
+                )}
+              </span>
+              <span className="score">{Math.round(entry.score).toLocaleString()}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -84,9 +145,161 @@ function ControlsHelp() {
   );
 }
 
+// Helper to update player cosmetics in the running game
+function updatePlayerCosmetics(skinId: SkinId, trailId: TrailId) {
+  const game = window.phaserGame;
+  if (game) {
+    const mainScene = game.scene.getScene('Main') as any;
+    if (mainScene?.player?.updateCosmetics) {
+      mainScene.player.updateCosmetics(skinId, trailId);
+      console.log(`[Cosmetics] Updated player: Skin=${skinId}, Trail=${trailId}`);
+    }
+  }
+}
+
+function CosmeticsMenu({ onClose }: { onClose: () => void }) {
+  const { holderTier } = useGameStore();
+  const [selectedSkin, setSelectedSkin] = useState<SkinId>(getEquippedSkin());
+  const [selectedTrail, setSelectedTrail] = useState<TrailId>(getEquippedTrail());
+  
+  const allSkins = Object.values(SKINS);
+  const allTrails = Object.values(TRAILS);
+  
+  const handleSkinSelect = (skinId: SkinId) => {
+    if (meetsRequirement(holderTier, SKINS[skinId].requiredTier)) {
+      console.log(`[Cosmetics Menu] Selecting skin: ${skinId}`);
+      setSelectedSkin(skinId);
+      setEquippedSkin(skinId);
+      console.log(`[Cosmetics Menu] Saved to localStorage: ${localStorage.getItem('trench-equipped-skin')}`);
+      // Update player immediately
+      updatePlayerCosmetics(skinId, selectedTrail);
+    } else {
+      console.log(`[Cosmetics Menu] Skin ${skinId} locked - requires ${SKINS[skinId].requiredTier}`);
+    }
+  };
+  
+  const handleTrailSelect = (trailId: TrailId) => {
+    if (meetsRequirement(holderTier, TRAILS[trailId].requiredTier)) {
+      setSelectedTrail(trailId);
+      setEquippedTrail(trailId);
+      // Update player immediately
+      updatePlayerCosmetics(selectedSkin, trailId);
+    }
+  };
+  
+  const tierInfo = HOLDER_TIERS[holderTier];
+  
+  return (
+    <div className="center-bottom center-vertical menus">
+      <div className="menu-card cosmetics-card">
+        <h3>🎨 Cosmetics</h3>
+        
+        {/* Current tier display */}
+        <div className="tier-status" style={{ color: tierInfo.color }}>
+          {tierInfo.emoji} {tierInfo.name} Holder
+        </div>
+        
+        {/* Skins section */}
+        <div className="cosmetics-section">
+          <h4>Runner Skins</h4>
+          <div className="cosmetics-grid">
+            {allSkins.map((skin) => {
+              const isUnlocked = meetsRequirement(holderTier, skin.requiredTier);
+              const isEquipped = selectedSkin === skin.id;
+              const tierRequired = HOLDER_TIERS[skin.requiredTier];
+              
+              return (
+                <div
+                  key={skin.id}
+                  className={`cosmetic-item ${isUnlocked ? 'unlocked' : 'locked'} ${isEquipped ? 'equipped' : ''}`}
+                  onClick={() => isUnlocked && handleSkinSelect(skin.id)}
+                  style={{ 
+                    borderColor: isEquipped ? tierInfo.color : undefined,
+                    cursor: isUnlocked ? 'pointer' : 'not-allowed'
+                  }}
+                >
+                  <div 
+                    className="cosmetic-preview skin-preview"
+                    style={{ 
+                      backgroundColor: skin.id === 'default' 
+                        ? '#1a1a2e' // Default dark color
+                        : `#${skin.tint.toString(16).padStart(6, '0')}`,
+                      boxShadow: skin.id !== 'default' ? `0 0 8px ${`#${skin.tint.toString(16).padStart(6, '0')}`}` : 'none'
+                    }}
+                  >
+                    {skin.id === 'default' && <span style={{ fontSize: '12px', opacity: 0.7 }}>⚪</span>}
+                  </div>
+                  <div className="cosmetic-name">{skin.name}</div>
+                  {!isUnlocked && (
+                    <div className="cosmetic-lock">
+                      🔒 {tierRequired.emoji}
+                    </div>
+                  )}
+                  {isEquipped && <div className="equipped-badge">✓</div>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        
+        {/* Trails section */}
+        <div className="cosmetics-section">
+          <h4>Trail Effects</h4>
+          <div className="cosmetics-grid">
+            {allTrails.map((trail) => {
+              const isUnlocked = meetsRequirement(holderTier, trail.requiredTier);
+              const isEquipped = selectedTrail === trail.id;
+              const tierRequired = HOLDER_TIERS[trail.requiredTier];
+              
+              return (
+                <div
+                  key={trail.id}
+                  className={`cosmetic-item ${isUnlocked ? 'unlocked' : 'locked'} ${isEquipped ? 'equipped' : ''}`}
+                  onClick={() => isUnlocked && handleTrailSelect(trail.id)}
+                  style={{ 
+                    borderColor: isEquipped ? tierInfo.color : undefined,
+                    cursor: isUnlocked ? 'pointer' : 'not-allowed'
+                  }}
+                >
+                  <div className="cosmetic-preview trail-preview">
+                    {trail.colors.length > 0 ? (
+                      <div 
+                        className="trail-dots"
+                        style={{ 
+                          background: `linear-gradient(90deg, ${trail.colors.map(c => `#${c.toString(16).padStart(6, '0')}`).join(', ')})` 
+                        }}
+                      />
+                    ) : (
+                      <span style={{ opacity: 0.5 }}>None</span>
+                    )}
+                  </div>
+                  <div className="cosmetic-name">{trail.name}</div>
+                  {!isUnlocked && (
+                    <div className="cosmetic-lock">
+                      🔒 {tierRequired.emoji}
+                    </div>
+                  )}
+                  {isEquipped && <div className="equipped-badge">✓</div>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        
+        <p className="cosmetics-hint">
+          Hold more tokens to unlock exclusive cosmetics!
+        </p>
+        
+        <button className="btn" onClick={onClose}>Done</button>
+      </div>
+    </div>
+  );
+}
+
 function TitleMenu() {
   const [scores, setScores] = useState<HighScoreEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCosmetics, setShowCosmetics] = useState(false);
   const device = getDevice();
   
   useEffect(() => {
@@ -96,6 +309,10 @@ function TitleMenu() {
       .catch((e) => console.error('Failed to load scores:', e))
       .finally(() => setLoading(false));
   }, []);
+  
+  if (showCosmetics) {
+    return <CosmeticsMenu onClose={() => setShowCosmetics(false)} />;
+  }
   
   return (
     <div className="center-bottom center-vertical menus">
@@ -110,7 +327,7 @@ function TitleMenu() {
           <p>Swipe to move, tap to jump. Collect boosts!</p>
         )}
         <button className="btn" onClick={restartGame}>Play</button>
-        <button className="btn secondary" onClick={() => alert('Shop coming soon!')}>Shop</button>
+        <button className="btn secondary" onClick={() => setShowCosmetics(true)}>🎨 Cosmetics</button>
         <Leaderboard scores={scores} loading={loading} />
       </div>
     </div>
@@ -168,7 +385,9 @@ function GameOver() {
     if (playerName.trim().length > 0 && !submitting) {
       setSubmitting(true);
       try {
-        const newScores = await addHighscoreAsync(playerName.trim(), score, distance);
+        // Get current holder tier to save with the score
+        const holderTier = gameActions.getHolderTier();
+        const newScores = await addHighscoreAsync(playerName.trim(), score, distance, holderTier);
         setScores(newScores);
         setShowNameEntry(false);
         setSubmitted(true);
@@ -289,9 +508,43 @@ import { SHIELD_DURATION, MAGNET_DURATION, CHARGES_NEEDED, COMBO_CHARGES_NEEDED 
 
 export default function Menus({ phase }: { phase: string }) {
   const { score, distance, multiplier, tokens, activeBoost, boostTimer, hasShield, shieldTimer, hasMagnet, magnetTimer, comboCount, comboProgress, comboTimer, boostInventory, magnetCharges, doubleCharges, shieldCharges } = useGameStore();
+  const [showCosmetics, setShowCosmetics] = useState(false);
   const device = getDevice();
+  
+  // Show cosmetics menu overlay if open (check this first, before other menus)
+  if (showCosmetics) {
+    return (
+      <>
+        <CosmeticsMenu onClose={() => {
+          setShowCosmetics(false);
+          // Resume game after closing cosmetics if it was running
+          if (phase === 'paused') {
+            gameActions.resume();
+          }
+        }} />
+      </>
+    );
+  }
+  
   return (
     <>
+      {/* Cosmetics button - visible during gameplay */}
+      {phase === 'running' && !showCosmetics && (
+        <button 
+          className="cosmetics-button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setShowCosmetics(true);
+            gameActions.pause();
+          }}
+          style={{ pointerEvents: 'auto' }}
+          title="Cosmetics"
+        >
+          🎨
+        </button>
+      )}
+      
       <div className="topbar" style={{ pointerEvents: 'none' }}>
         <div className="stat-pill">Score: {Math.round(score).toLocaleString()}</div>
         <div className="stat-pill">Dist: {Math.round(distance).toLocaleString()}m</div>

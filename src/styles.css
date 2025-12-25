@@ -79,6 +79,9 @@ body {
   border-radius: 12px;
   cursor: pointer;
   width: 100%;
+  pointer-events: auto;
+  position: relative;
+  z-index: 100;
 }
 
 .btn.secondary {
@@ -120,6 +123,234 @@ body {
   padding: 4px 8px;
   border-radius: 8px;
   font-size: 12px;
+}
+
+/* Holder tier badge */
+.holder-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--panel);
+  padding: 6px 12px;
+  border-radius: 12px;
+  border: 2px solid;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+  animation: holder-glow 2s ease-in-out infinite alternate;
+}
+
+.holder-badge .tier-emoji {
+  font-size: 16px;
+}
+
+.holder-badge .tier-name {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 12px;
+}
+
+.holder-badge .tier-balance {
+  font-size: 11px;
+  opacity: 0.9;
+}
+
+@keyframes holder-glow {
+  from { box-shadow: 0 0 5px currentColor; }
+  to { box-shadow: 0 0 15px currentColor; }
+}
+
+/* Leaderboard tier badges */
+.leaderboard-tier {
+  margin-left: 4px;
+  font-size: 14px;
+}
+
+.leaderboard-row.diamond-tier {
+  background: linear-gradient(90deg, rgba(0, 255, 255, 0.15), rgba(0, 200, 255, 0.1));
+  border: 1px solid rgba(0, 255, 255, 0.3);
+}
+
+.leaderboard-row.diamond-tier .name {
+  color: #00ffff;
+  text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+}
+
+.leaderboard-row.gold-tier {
+  background: linear-gradient(90deg, rgba(255, 215, 0, 0.1), rgba(255, 180, 0, 0.05));
+}
+
+.leaderboard-row.gold-tier .name {
+  color: #ffd700;
+}
+
+.leaderboard-row.silver-tier .name {
+  color: #c0c0c0;
+}
+
+.leaderboard-row.bronze-tier .name {
+  color: #cd7f32;
+}
+
+/* Cosmetics button (during gameplay) */
+.cosmetics-button {
+  position: fixed;
+  bottom: 75px;
+  left: 20px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(155, 92, 255, 0.3);
+  border: 2px solid rgba(155, 92, 255, 0.6);
+  color: rgba(232, 229, 255, 0.9);
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 101;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.cosmetics-button:hover {
+  background: rgba(155, 92, 255, 0.5);
+  border-color: rgba(155, 92, 255, 0.9);
+  transform: scale(1.1);
+}
+
+.cosmetics-button:active {
+  transform: scale(0.95);
+}
+
+/* Cosmetics Menu */
+.cosmetics-card {
+  min-width: 340px;
+  max-width: 400px;
+}
+
+.tier-status {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 12px;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.cosmetics-section {
+  margin: 16px 0;
+}
+
+.cosmetics-section h4 {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.cosmetics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.cosmetic-item {
+  position: relative;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(155, 92, 255, 0.3);
+  border-radius: 8px;
+  padding: 8px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.cosmetic-item.unlocked:hover {
+  background: rgba(155, 92, 255, 0.2);
+  border-color: var(--accent);
+  transform: scale(1.05);
+}
+
+.cosmetic-item.locked {
+  opacity: 0.5;
+}
+
+.cosmetic-item.equipped {
+  border-width: 3px;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.cosmetic-preview {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.skin-preview {
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+}
+
+.trail-preview {
+  background: rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+}
+
+.trail-dots {
+  width: 90%;
+  height: 12px;
+  border-radius: 6px;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.cosmetic-name {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cosmetic-lock {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.equipped-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-size: 12px;
+  color: var(--accent-2);
+  font-weight: bold;
+  text-shadow: 0 0 4px var(--accent-2);
+}
+
+.cosmetics-hint {
+  font-size: 11px;
+  color: rgba(232, 229, 255, 0.6);
+  margin: 12px 0;
+  text-align: center;
 }
 
 /* Combo indicator with fill effect */
@@ -692,7 +923,7 @@ body {
 .controls-help {
   position: fixed;
   bottom: 75px;
-  left: 20px;
+  left: 72px;
   z-index: 100;
 }
 
@@ -857,6 +1088,42 @@ body {
   }
 }
 
+  /* Cosmetics button mobile */
+  .cosmetics-button {
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+    bottom: 70px;
+    left: 15px;
+  }
+  
+  /* Controls help mobile - position to the right of cosmetics */
+  .controls-help {
+    left: 63px;
+    bottom: 70px;
+  }
+  
+  /* Cosmetics menu mobile */
+  .cosmetics-card {
+    min-width: unset;
+    max-width: 95vw;
+  }
+  
+  .cosmetics-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  
+  .cosmetic-preview {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .cosmetic-name {
+    font-size: 9px;
+  }
+}
+
 /* Extra small phones */
 @media screen and (max-width: 380px) {
   .menu-card {
@@ -879,5 +1146,9 @@ body {
   
   .score-row {
     font-size: 11px;
+  }
+  
+  .cosmetics-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

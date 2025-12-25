@@ -78,8 +78,8 @@ export default class Preload extends Phaser.Scene {
   createTextures() {
     const g = this.add.graphics();
 
-    // PLAYER - Back view degen with visible head, cap, hoodie
-    for (let i = 0; i < 5; i++) {
+    // Helper to create player frame with optional body tint
+    const createPlayerFrame = (frameIndex: number, bodyTint?: number) => {
       g.clear();
       
       // HEAD - visible from back with cap
@@ -94,24 +94,34 @@ export default class Preload extends Phaser.Scene {
       g.fillStyle(0xd4a574, 1);
       g.fillRect(14, 18, 12, 6);
       
-      // Body/hoodie
-      g.fillStyle(0x1a1a2e, 1);
+      // Body/hoodie - use tint if provided, otherwise default dark
+      const bodyColor = bodyTint || 0x1a1a2e;
+      // For tinted skins, make hood slightly lighter by adding to RGB values
+      let hoodColor = 0x2d2d44;
+      if (bodyTint) {
+        const r = (bodyTint >> 16) & 0xff;
+        const g = (bodyTint >> 8) & 0xff;
+        const b = bodyTint & 0xff;
+        hoodColor = ((Math.min(255, r + 30) << 16) | (Math.min(255, g + 30) << 8) | Math.min(255, b + 30));
+      }
+      
+      g.fillStyle(bodyColor, 1);
       g.fillRoundedRect(5, 22, 30, 30, 4);
       
-      g.fillStyle(0x2d2d44, 1);
+      g.fillStyle(hoodColor, 1);
       g.fillRoundedRect(8, 20, 24, 8, 3);
       
       // Solana logo on back - exact dimensions
       this.drawSolanaLogo(g, 20, 36, 1);
       
-      // Arms
-      g.fillStyle(0x1a1a2e, 1);
-      g.fillRect(0 + (i % 2) * 3, 26, 6, 20);
-      g.fillRect(34 - (i % 2) * 3, 26, 6, 20);
+      // Arms - use body tint
+      g.fillStyle(bodyColor, 1);
+      g.fillRect(0 + (frameIndex % 2) * 3, 26, 6, 20);
+      g.fillRect(34 - (frameIndex % 2) * 3, 26, 6, 20);
       
       g.fillStyle(0xd4a574, 1);
-      g.fillRect(0 + (i % 2) * 3, 44, 6, 5);
-      g.fillRect(34 - (i % 2) * 3, 44, 6, 5);
+      g.fillRect(0 + (frameIndex % 2) * 3, 44, 6, 5);
+      g.fillRect(34 - (frameIndex % 2) * 3, 44, 6, 5);
       
       // Jeans
       g.fillStyle(0x2a4066, 1);
@@ -120,17 +130,63 @@ export default class Preload extends Phaser.Scene {
       
       // Sneakers
       g.fillStyle(0x333333, 1);
-      g.fillRect(6 + (i % 2) * 2, 66, 12, 6);
-      g.fillRect(22 - (i % 2) * 2, 66, 12, 6);
+      g.fillRect(6 + (frameIndex % 2) * 2, 66, 12, 6);
+      g.fillRect(22 - (frameIndex % 2) * 2, 66, 12, 6);
       
       g.fillStyle(0xff00ff, 0.9);
-      g.fillRect(6 + (i % 2) * 2, 70, 12, 3);
-      g.fillRect(22 - (i % 2) * 2, 70, 12, 3);
-      
+      g.fillRect(6 + (frameIndex % 2) * 2, 70, 12, 3);
+      g.fillRect(22 - (frameIndex % 2) * 2, 70, 12, 3);
+    };
+
+    // PLAYER - Default (no tint)
+    for (let i = 0; i < 5; i++) {
+      createPlayerFrame(i);
       g.generateTexture(`player-run-${i}`, 40, 75);
     }
+    
+    // PLAYER - Bronze skin (bronze/copper body)
+    for (let i = 0; i < 5; i++) {
+      createPlayerFrame(i, 0xcd7f32); // Bronze
+      g.generateTexture(`player-run-${i}-bronze`, 40, 75);
+    }
+    
+    // PLAYER - Silver skin (darker metallic gray body)
+    for (let i = 0; i < 5; i++) {
+      createPlayerFrame(i, 0x888888); // Darker metallic gray
+      g.generateTexture(`player-run-${i}-silver`, 40, 75);
+    }
+    
+    // PLAYER - Chrome skin (bright blue-tinted chrome body)
+    for (let i = 0; i < 5; i++) {
+      createPlayerFrame(i, 0xb0d0ff); // Bright blue-tinted chrome
+      g.generateTexture(`player-run-${i}-chrome`, 40, 75);
+    }
+    
+    // PLAYER - Neon skin (bright green body)
+    for (let i = 0; i < 5; i++) {
+      createPlayerFrame(i, 0x00ff00); // Bright green
+      g.generateTexture(`player-run-${i}-neon`, 40, 75);
+    }
+    
+    // PLAYER - Diamond skin (bright cyan body)
+    for (let i = 0; i < 5; i++) {
+      createPlayerFrame(i, 0x00ffff); // Bright cyan
+      g.generateTexture(`player-run-${i}-diamond`, 40, 75);
+    }
+    
+    // PLAYER - Gold skin (golden body)
+    for (let i = 0; i < 5; i++) {
+      createPlayerFrame(i, 0xffd700); // Gold
+      g.generateTexture(`player-run-${i}-gold`, 40, 75);
+    }
+    
+    // PLAYER - Holographic skin (magenta/pink body)
+    for (let i = 0; i < 5; i++) {
+      createPlayerFrame(i, 0xff00ff); // Magenta
+      g.generateTexture(`player-run-${i}-holographic`, 40, 75);
+    }
 
-    // Slide texture
+    // Slide texture (default)
     g.clear();
     g.fillStyle(0x1a1a2e, 1);
     g.fillRoundedRect(0, 5, 50, 25, 6);
@@ -138,6 +194,69 @@ export default class Preload extends Phaser.Scene {
     g.fillStyle(0x9b5cff, 1);
     g.fillRoundedRect(35, 2, 15, 10, 3);
     g.generateTexture('player-slide', 55, 32);
+    
+    // Slide texture (bronze - bronze body)
+    g.clear();
+    g.fillStyle(0xcd7f32, 1); // Bronze
+    g.fillRoundedRect(0, 5, 50, 25, 6);
+    this.drawSolanaLogo(g, 25, 17, 0.7);
+    g.fillStyle(0x9b5cff, 1);
+    g.fillRoundedRect(35, 2, 15, 10, 3);
+    g.generateTexture('player-slide-bronze', 55, 32);
+    
+    // Slide texture (silver - darker metallic gray body)
+    g.clear();
+    g.fillStyle(0x888888, 1); // Darker metallic gray
+    g.fillRoundedRect(0, 5, 50, 25, 6);
+    this.drawSolanaLogo(g, 25, 17, 0.7);
+    g.fillStyle(0x9b5cff, 1);
+    g.fillRoundedRect(35, 2, 15, 10, 3);
+    g.generateTexture('player-slide-silver', 55, 32);
+    
+    // Slide texture (chrome - bright blue-tinted chrome body)
+    g.clear();
+    g.fillStyle(0xb0d0ff, 1); // Bright blue-tinted chrome
+    g.fillRoundedRect(0, 5, 50, 25, 6);
+    this.drawSolanaLogo(g, 25, 17, 0.7);
+    g.fillStyle(0x9b5cff, 1);
+    g.fillRoundedRect(35, 2, 15, 10, 3);
+    g.generateTexture('player-slide-chrome', 55, 32);
+    
+    // Slide texture (neon - bright green body)
+    g.clear();
+    g.fillStyle(0x00ff00, 1); // Bright green
+    g.fillRoundedRect(0, 5, 50, 25, 6);
+    this.drawSolanaLogo(g, 25, 17, 0.7);
+    g.fillStyle(0x9b5cff, 1);
+    g.fillRoundedRect(35, 2, 15, 10, 3);
+    g.generateTexture('player-slide-neon', 55, 32);
+    
+    // Slide texture (diamond - bright cyan body)
+    g.clear();
+    g.fillStyle(0x00ffff, 1); // Bright cyan
+    g.fillRoundedRect(0, 5, 50, 25, 6);
+    this.drawSolanaLogo(g, 25, 17, 0.7);
+    g.fillStyle(0x9b5cff, 1);
+    g.fillRoundedRect(35, 2, 15, 10, 3);
+    g.generateTexture('player-slide-diamond', 55, 32);
+    
+    // Slide texture (gold - golden body)
+    g.clear();
+    g.fillStyle(0xffd700, 1); // Gold
+    g.fillRoundedRect(0, 5, 50, 25, 6);
+    this.drawSolanaLogo(g, 25, 17, 0.7);
+    g.fillStyle(0x9b5cff, 1);
+    g.fillRoundedRect(35, 2, 15, 10, 3);
+    g.generateTexture('player-slide-gold', 55, 32);
+    
+    // Slide texture (holographic - magenta body)
+    g.clear();
+    g.fillStyle(0xff00ff, 1); // Magenta
+    g.fillRoundedRect(0, 5, 50, 25, 6);
+    this.drawSolanaLogo(g, 25, 17, 0.7);
+    g.fillStyle(0x9b5cff, 1);
+    g.fillRoundedRect(35, 2, 15, 10, 3);
+    g.generateTexture('player-slide-holographic', 55, 32);
 
     // COLLECTIBLES
     g.clear();
@@ -299,10 +418,45 @@ export default class Preload extends Phaser.Scene {
     g.fillTriangle(20, 50, 10, 35, 30, 35);
     g.generateTexture('obstacle-pit', 40, 60);
 
+    // Default white particle
     g.clear();
     g.fillStyle(0xffffff, 1);
     g.fillCircle(3, 3, 3);
     g.generateTexture('particle', 6, 6);
+    
+    // Trail-specific colored particles (for proper color display)
+    // Neon trail particles (green)
+    g.clear();
+    g.fillStyle(0x00ff88, 1); // Primary neon green
+    g.fillCircle(3, 3, 3);
+    g.generateTexture('particle-neon', 6, 6);
+    
+    // Fire trail particles (orange/red)
+    g.clear();
+    g.fillStyle(0xff6600, 1); // Primary fire orange
+    g.fillCircle(3, 3, 3);
+    g.generateTexture('particle-fire', 6, 6);
+    
+    // Rainbow trail particles (use first color - red)
+    g.clear();
+    g.fillStyle(0xff0000, 1); // Primary rainbow red
+    g.fillCircle(3, 3, 3);
+    g.generateTexture('particle-rainbow', 6, 6);
+    
+    // Diamond trail particles (cyan)
+    g.clear();
+    g.fillStyle(0x00ffff, 1); // Primary diamond cyan
+    g.fillCircle(3, 3, 3);
+    g.generateTexture('particle-diamond', 6, 6);
+    
+    // Rainbow trail particles - create one for each rainbow color
+    const rainbowColors = [0xff0000, 0xff7700, 0xffff00, 0x00ff00, 0x0077ff, 0x8800ff];
+    rainbowColors.forEach((color, i) => {
+      g.clear();
+      g.fillStyle(color, 1);
+      g.fillCircle(3, 3, 3);
+      g.generateTexture(`particle-rainbow-${i}`, 6, 6);
+    });
 
     // WHALE TOKEN - Rare reward, blue whale shape (collectible)
     g.clear();

@@ -6,6 +6,7 @@ import {
   addToLeaderboard,
   checkQualifies,
 } from './leaderboard';
+import { HolderTier, getTierFromBalance, getTokenBalance, HOLDER_TIERS, TOKEN_SYMBOL } from './token';
 
 type GamePhase = 'title' | 'running' | 'paused' | 'gameover';
 type BoostType = 'double' | 'shield' | null;
@@ -22,6 +23,7 @@ export interface HighScoreEntry {
   score: number;
   distance: number;
   date: string;
+  tier?: HolderTier; // Holder tier at time of submission
 }
 
 const HIGHSCORE_KEY = 'trench-highscores';
@@ -52,13 +54,14 @@ function saveLocalHighscores(scores: HighScoreEntry[]) {
 }
 
 // Add to local highscores
-function addLocalHighscore(name: string, score: number, distance: number): HighScoreEntry[] {
+function addLocalHighscore(name: string, score: number, distance: number, tier?: HolderTier): HighScoreEntry[] {
   const highscores = loadLocalHighscores();
   const newEntry: HighScoreEntry = {
     name: name.toUpperCase().slice(0, 10),
     score: Math.floor(score),
     distance: Math.floor(distance),
     date: new Date().toLocaleDateString(),
+    tier: tier || 'none',
   };
   
   highscores.push(newEntry);
@@ -96,15 +99,16 @@ export function checkHighscoreQualifies(score: number): boolean {
 export async function addHighscoreAsync(
   name: string,
   score: number,
-  distance: number
+  distance: number,
+  tier?: HolderTier
 ): Promise<HighScoreEntry[]> {
   // Always save locally first
-  addLocalHighscore(name, score, distance);
+  addLocalHighscore(name, score, distance, tier);
 
   // Try to save to cloud
   if (isLeaderboardConfigured()) {
     try {
-      const cloudScores = await addToLeaderboard(name, score, distance);
+      const cloudScores = await addToLeaderboard(name, score, distance, tier);
       if (cloudScores.length > 0) {
         return cloudScores;
       }
@@ -118,14 +122,14 @@ export async function addHighscoreAsync(
 }
 
 // Synchronous version for backward compatibility
-export function addHighscore(name: string, score: number, distance: number): HighScoreEntry[] {
+export function addHighscore(name: string, score: number, distance: number, tier?: HolderTier): HighScoreEntry[] {
   // Fire and forget cloud save
   if (isLeaderboardConfigured()) {
-    addToLeaderboard(name, score, distance).catch((e) =>
+    addToLeaderboard(name, score, distance, tier).catch((e) =>
       console.error('Cloud save failed:', e)
     );
   }
-  return addLocalHighscore(name, score, distance);
+  return addLocalHighscore(name, score, distance, tier);
 }
 
 // Get current highscores (async for cloud support)
@@ -180,6 +184,10 @@ interface GameState {
   // Platform detection
   device: DeviceInfo;
   platformSettings: PlatformSettings;
+  // Holder system
+  holderTier: HolderTier;
+  tokenBalance: number;
+  walletConnected: boolean;
 }
 
 export const COMBO_CHARGES_NEEDED = 5; // Coins needed to increase combo by 1 (harder to reach max)
@@ -207,7 +215,7 @@ const initialState: GameState = {
   boostInventory: { double: 0, shield: 0, magnet: 0 },
   // Scoring breakdown
   distanceScore: 0,
-  collectibleScore: 0,
+  coinScore: 0,
   whaleScore: 0,
   comboCount: 0,
   comboProgress: 0,
@@ -218,6 +226,10 @@ const initialState: GameState = {
   // Platform detection
   device: getDevice(),
   platformSettings: getSettings(),
+  // Holder system
+  holderTier: 'none',
+  tokenBalance: 0,
+  walletConnected: false,
 };
 
 export const useGameStore = create<GameState>(() => initialState);
@@ -466,4 +478,30 @@ export const gameActions = {
     });
   },
   backToTitle: () => useGameStore.setState(initialState),
+  
+  // Holder system actions
+  setWalletConnected: (connected: boolean) => {
+    useGameStore.setState({ walletConnected: connected });
+    if (!connected) {
+      useGameStore.setState({ holderTier: 'none', tokenBalance: 0 });
+    }
+  },
+  
+  updateTokenBalance: async (walletAddress: string | null) => {
+    if (!walletAddress) {
+      useGameStore.setState({ tokenBalance: 0, holderTier: 'none' });
+      return;
+    }
+    
+    const balance = await getTokenBalance(walletAddress);
+    const tier = getTierFromBalance(balance);
+    
+    console.log(`[Holder] Balance: ${balance} ${TOKEN_SYMBOL} → Tier: ${tier}`);
+    useGameStore.setState({ tokenBalance: balance, holderTier: tier });
+  },
+  
+  // Get current holder tier (for use when submitting scores)
+  getHolderTier: (): HolderTier => {
+    return useGameStore.getState().holderTier;
+  },
 };
