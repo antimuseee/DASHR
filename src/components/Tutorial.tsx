@@ -32,7 +32,7 @@ const tutorialSteps: TutorialStep[] = [
   },
   {
     title: "Avoid Obstacles",
-    content: "🚫 RUG PULL - Jump over or slide under these scam obstacles\n⬛ PITS - Gaps in the floor. Jump to avoid falling!",
+    content: "🚫 RUG PULL PITS - Jump over these scam obstacles to avoid falling!",
     icon: "⚠️"
   },
   {
