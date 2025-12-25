@@ -1535,7 +1535,7 @@ export default class MainScene extends Phaser.Scene {
     }
     
     // Show big score popup
-    this.showBoostPopup(x, y - 30, `🐋 +${Math.round(totalPoints)}!`, 0x00aaff);
+    this.showBoostPopup(x, y - 30, `🐋 +${Math.round(totalPoints).toLocaleString()}!`, 0x00aaff);
   }
 
   collectBoost(type: string, x: number, y: number) {
@@ -1581,9 +1581,10 @@ export default class MainScene extends Phaser.Scene {
   }
 
   showScorePopup(x: number, y: number, points: number, combo?: number) {
+    const formattedPoints = Math.round(points).toLocaleString();
     const text = combo && combo > 1 
-      ? `+${points} x${combo}` 
-      : `+${points}`;
+      ? `+${formattedPoints} x${combo}` 
+      : `+${formattedPoints}`;
     
     const color = combo && combo > 3 ? '#ff00ff' : combo && combo > 1 ? '#00ffff' : '#ffd700';
     

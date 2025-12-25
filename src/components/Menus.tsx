@@ -192,7 +192,7 @@ function GameOver() {
         <div className="score-breakdown">
           <div className="score-row">
             <span className="score-label">🏃 Survived</span>
-            <span className="score-value">{distance.toFixed(0)}m → {distanceScore.toFixed(0)} pts</span>
+            <span className="score-value">{distance.toLocaleString()}m → {distanceScore.toLocaleString()} pts</span>
           </div>
           <div className="score-row">
             <span className="score-label">📊 Distance Multiplier</span>
@@ -200,12 +200,12 @@ function GameOver() {
           </div>
           <div className="score-row">
             <span className="score-label">💰 Bags</span>
-            <span className="score-value">{tokens} coins → {coinScore.toFixed(0)} pts</span>
+            <span className="score-value">{tokens.toLocaleString()} coins → {coinScore.toLocaleString()} pts</span>
           </div>
           {whaleTokens > 0 && (
             <div className="score-row whale-bonus">
               <span className="score-label">🐋 Whale Haul</span>
-              <span className="score-value">{whaleTokens} caught → {whaleScore.toFixed(0)} pts</span>
+              <span className="score-value">{whaleTokens} caught → {whaleScore.toLocaleString()} pts</span>
             </div>
           )}
           <div className="score-row">
@@ -219,11 +219,11 @@ function GameOver() {
           <div className="score-divider"></div>
           <div className="score-row total">
             <span className="score-label">📈 TOTAL GAINS</span>
-            <span className="score-value">{score.toFixed(0)}</span>
+            <span className="score-value">{score.toLocaleString()}</span>
           </div>
         </div>
         
-        <p className="best-score">🏆 Personal Best: {best.toFixed(0)}</p>
+        <p className="best-score">🏆 Personal Best: {best.toLocaleString()}</p>
         
         {/* Highscore name entry */}
         {showNameEntry && !submitted && (
@@ -289,9 +289,9 @@ export default function Menus({ phase }: { phase: string }) {
   return (
     <>
       <div className="topbar" style={{ pointerEvents: 'none' }}>
-        <div className="stat-pill">Score: {score.toFixed(0)}</div>
-        <div className="stat-pill">Dist: {distance.toFixed(0)}m</div>
-        <div className="stat-pill">TT: {tokens.toFixed(0)}</div>
+        <div className="stat-pill">Score: {score.toLocaleString()}</div>
+        <div className="stat-pill">Dist: {distance.toLocaleString()}m</div>
+        <div className="stat-pill">TT: {tokens.toLocaleString()}</div>
         <div className={`stat-pill combo-pill ${comboCount > 0 || comboProgress > 0 ? 'active' : 'inactive'} ${activeBoost === 'double' ? 'energized' : ''}`}>
           <div 
             className="combo-fill combo-timer-fill" 
