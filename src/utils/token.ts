@@ -1,7 +1,7 @@
 // Token Configuration
 // Set TEST_MODE to false to use real token balance fetching
-import { Connection, PublicKey } from '@solana/web3.js';
-import { getAccount, getAssociatedTokenAddress, getMint } from '@solana/spl-token';
+import { Connection, PublicKey, TokenAccountsFilter } from '@solana/web3.js';
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 // ============ CONFIGURATION ============
 export const TEST_MODE = false; // Set to false for production with real token
@@ -98,70 +98,51 @@ export async function getTokenBalance(walletAddress: string | null): Promise<num
     return MOCK_BALANCE;
   }
   
-  // Real token balance fetching using Solana SPL token program
+  // Real token balance fetching - works with all token types including pump.fun
   try {
     console.log(`[Token] Fetching balance for wallet: ${walletAddress.slice(0, 8)}...`);
-    // Try Helius first (reliable), then fallbacks
-    const RPC_ENDPOINTS = [
-      'https://mainnet.helius-rpc.com/?api-key=1b53e1d5-75e3-43bf-a559-52dc278ca7bf',
-      'https://api.mainnet-beta.solana.com',
-    ];
     
-    let connection: Connection | null = null;
-    let lastError: any = null;
+    // Use Helius RPC
+    const rpcUrl = 'https://mainnet.helius-rpc.com/?api-key=1b53e1d5-75e3-43bf-a559-52dc278ca7bf';
+    const connection = new Connection(rpcUrl, 'confirmed');
     
-    for (const rpc of RPC_ENDPOINTS) {
-      try {
-        console.log(`[Token] Trying RPC: ${rpc}`);
-        const testConnection = new Connection(rpc, 'confirmed');
-        // Test the connection with a simple call
-        await testConnection.getSlot();
-        connection = testConnection;
-        console.log(`[Token] Connected to RPC: ${rpc}`);
-        break;
-      } catch (err) {
-        console.log(`[Token] RPC failed: ${rpc}`);
-        lastError = err;
-      }
-    }
-    
-    if (!connection) {
-      throw lastError || new Error('All RPCs failed');
-    }
     const walletPubkey = new PublicKey(walletAddress);
     const mintPubkey = new PublicKey(TOKEN_MINT);
     
-    // First, get the mint info to determine decimals
-    let decimals = 6; // Default fallback
-    try {
-      const mintInfo = await getMint(connection, mintPubkey);
-      decimals = mintInfo.decimals;
-      console.log(`[Token] Mint decimals: ${decimals}`);
-    } catch (mintError) {
-      console.warn(`[Token] Could not fetch mint info, using default decimals: ${decimals}`, mintError);
+    // Use getTokenAccountsByOwner - works with ALL token types (standard SPL & pump.fun)
+    // This finds any token account for this mint owned by the wallet
+    const filter: TokenAccountsFilter = { mint: mintPubkey };
+    
+    console.log(`[Token] Searching for token accounts with mint: ${TOKEN_MINT}`);
+    
+    const tokenAccounts = await connection.getTokenAccountsByOwner(walletPubkey, filter);
+    
+    console.log(`[Token] Found ${tokenAccounts.value.length} token account(s)`);
+    
+    if (tokenAccounts.value.length === 0) {
+      console.log(`[Token] No token accounts found for ${walletAddress.slice(0, 8)}... (balance: 0)`);
+      return 0;
     }
     
-    // Get the associated token account address
-    const tokenAccount = await getAssociatedTokenAddress(mintPubkey, walletPubkey);
-    console.log(`[Token] Token account: ${tokenAccount.toBase58()}`);
+    // Sum up balance from all token accounts (usually just 1)
+    let totalBalance = 0;
+    const decimals = 6; // pump.fun tokens use 6 decimals
     
-    try {
-      // Fetch the token account
-      const accountInfo = await getAccount(connection, tokenAccount);
-      const rawBalance = Number(accountInfo.amount);
-      const balance = rawBalance / Math.pow(10, decimals);
-      console.log(`[Token] Raw balance: ${rawBalance}, Decimals: ${decimals}, Final balance: ${balance} ${TOKEN_SYMBOL}`);
-      console.log(`[Token] Tier: ${getTierFromBalance(balance)}`);
-      return balance;
-    } catch (error: any) {
-      // Token account doesn't exist (user doesn't hold any tokens)
-      if (error.message?.includes('could not find account') || error.message?.includes('InvalidAccountData')) {
-        console.log(`[Token] No token account found for ${walletAddress.slice(0, 8)}... (balance: 0)`);
-        return 0;
-      }
-      console.error(`[Token] Error fetching account:`, error);
-      throw error;
+    for (const account of tokenAccounts.value) {
+      // Parse the account data to get the balance
+      // Token account data structure: mint (32) + owner (32) + amount (8) + ...
+      const data = account.account.data;
+      // Amount is at bytes 64-72 (after mint and owner)
+      const rawAmount = data.readBigUInt64LE(64);
+      const balance = Number(rawAmount) / Math.pow(10, decimals);
+      console.log(`[Token] Account ${account.pubkey.toBase58().slice(0, 8)}...: ${balance} ${TOKEN_SYMBOL}`);
+      totalBalance += balance;
     }
+    
+    console.log(`[Token] Total balance: ${totalBalance} ${TOKEN_SYMBOL}`);
+    console.log(`[Token] Tier: ${getTierFromBalance(totalBalance)}`);
+    return totalBalance;
+    
   } catch (error) {
     console.error('[Token] Error fetching token balance:', error);
     return 0;
