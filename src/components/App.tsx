@@ -9,8 +9,8 @@ import { useGameStore } from '../utils/store';
 import '@solana/wallet-adapter-react-ui/styles.css';
 import '../styles.css';
 
-// Use a public RPC for wallet connection
-const endpoint = 'https://solana-mainnet.rpc.extrnode.com';
+// Use Helius RPC for wallet connection (reliable)
+const endpoint = 'https://mainnet.helius-rpc.com/?api-key=1b53e1d5-75e3-43bf-a559-52dc278ca7bf';
 
 // Create wallet adapter with error handling
 const phantomAdapter = new PhantomWalletAdapter();

@@ -101,10 +101,9 @@ export async function getTokenBalance(walletAddress: string | null): Promise<num
   // Real token balance fetching using Solana SPL token program
   try {
     console.log(`[Token] Fetching balance for wallet: ${walletAddress.slice(0, 8)}...`);
-    // Try multiple RPCs in order until one works
+    // Try Helius first (reliable), then fallbacks
     const RPC_ENDPOINTS = [
-      'https://solana-mainnet.rpc.extrnode.com',
-      'https://rpc.ankr.com/solana',
+      'https://mainnet.helius-rpc.com/?api-key=1b53e1d5-75e3-43bf-a559-52dc278ca7bf',
       'https://api.mainnet-beta.solana.com',
     ];
     
