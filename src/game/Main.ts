@@ -1515,7 +1515,7 @@ export default class MainScene extends Phaser.Scene {
     const points = 250000; // 250k base
     const state = useGameStore.getState();
     const multiplier = state.activeBoost === 'double' ? 2 : 1;
-    const totalPoints = Math.round(points * multiplier * state.multiplier);
+    const totalPoints = Math.round(points * multiplier); // Distance multiplier only affects distance, not whale
     
     useGameStore.setState({
       score: state.score + totalPoints,

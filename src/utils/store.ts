@@ -431,7 +431,7 @@ export const gameActions = {
     newComboCount = Math.min(newComboCount, 10); // Cap at 10x combo
     const newMaxCombo = Math.max(state.maxCombo, newComboCount);
     
-    const points = Math.round(value.points * comboMultiplier * boostMultiplier * state.multiplier);
+    const points = Math.round(value.points * comboMultiplier * boostMultiplier); // Distance multiplier only affects distance, not coins
     
     useGameStore.setState({
       coinScore: state.coinScore + points,
