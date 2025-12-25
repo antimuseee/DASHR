@@ -17,10 +17,21 @@ async function fetchBalance(pk?: PublicKey) {
 }
 
 export default function WalletUI() {
-  const { publicKey, connected } = useWallet();
+  const { publicKey, connected, connecting, disconnecting, wallet } = useWallet();
   const [solBalance, setSolBalance] = useState<number | null>(null);
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const { holderTier, tokenBalance } = useGameStore();
+  
+  // Debug wallet connection state
+  useEffect(() => {
+    console.log('[WalletUI] Connection state:', { 
+      connected, 
+      connecting, 
+      disconnecting,
+      wallet: wallet?.adapter?.name,
+      publicKey: publicKey?.toBase58()?.slice(0, 8) 
+    });
+  }, [connected, connecting, disconnecting, publicKey, wallet]);
   
   const handleRefreshBalance = async () => {
     if (!publicKey || !connected) return;
@@ -112,38 +123,40 @@ export default function WalletUI() {
           <span className="tier-emoji">{tierInfo.emoji}</span>
           <span className="tier-name">{tierInfo.name}</span>
           <span className="tier-balance">{formatTokenBalance(tokenBalance)} {TOKEN_SYMBOL}</span>
-          
-          {/* Refresh balance button inside badge (toward center) */}
-          {!TEST_MODE && connected && publicKey && (
-            <button
-              onClick={handleRefreshBalance}
-              disabled={isLoadingBalance}
-              style={{ 
-                fontSize: '14px', 
-                padding: '4px 8px',
-                marginLeft: '4px',
-                opacity: isLoadingBalance ? 0.6 : 1,
-                background: 'rgba(255, 255, 255, 0.1)',
-                border: `1px solid ${tierInfo.color}66`,
-                borderRadius: '6px',
-                cursor: isLoadingBalance ? 'not-allowed' : 'pointer',
-                color: tierInfo.color,
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                if (!isLoadingBalance) {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-              }}
-              title="Refresh token balance"
-            >
-              {isLoadingBalance ? '⏳' : '🔄'}
-            </button>
-          )}
         </div>
+      )}
+      
+      {/* Refresh balance button - always visible when connected (toward center) */}
+      {!TEST_MODE && connected && publicKey && (
+        <button
+          onClick={handleRefreshBalance}
+          disabled={isLoadingBalance}
+          className="stat-pill"
+          style={{ 
+            fontSize: '16px', 
+            padding: '8px 12px',
+            cursor: isLoadingBalance ? 'not-allowed' : 'pointer',
+            opacity: isLoadingBalance ? 0.6 : 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minWidth: '40px',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            if (!isLoadingBalance) {
+              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.boxShadow = '0 0 15px rgba(155, 92, 255, 0.6)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.boxShadow = '0 0 10px rgba(79, 9, 173, 0.5)';
+          }}
+          title="Refresh token balance"
+        >
+          {isLoadingBalance ? '⏳' : '🔄'}
+        </button>
       )}
       
       {/* Debug info - show current tier and balance */}

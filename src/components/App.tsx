@@ -11,7 +11,13 @@ import '../styles.css';
 
 // Use mainnet for real token, or devnet for testing
 const endpoint = clusterApiUrl('mainnet-beta'); // Changed to mainnet for real token
-const wallets = [new PhantomWalletAdapter()];
+
+// Create wallet adapter with error handling
+const phantomAdapter = new PhantomWalletAdapter();
+phantomAdapter.on('error', (error) => {
+  console.error('[Wallet] Phantom error:', error);
+});
+const wallets = [phantomAdapter];
 
 export default function App() {
   const phase = useGameStore((s) => s.phase);
