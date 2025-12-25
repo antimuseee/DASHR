@@ -196,7 +196,7 @@ function GameOver() {
           </div>
           <div className="score-row">
             <span className="score-label">📊 Distance Multiplier</span>
-            <span className="score-value">×{multiplier.toFixed(1)}</span>
+            <span className="score-value">×{Math.round(multiplier)}</span>
           </div>
           <div className="score-row">
             <span className="score-label">💰 Bags</span>
@@ -317,7 +317,7 @@ export default function Menus({ phase }: { phase: string }) {
         <div className="boost-indicators">
           {activeBoost === 'double' && (
             <div className="boost-pill boost-double">
-              ⚡ 2X ({boostTimer.toFixed(1)}s)
+              ⚡ 2X ({Math.round(boostTimer)}s)
             </div>
           )}
           {hasShield && (
@@ -329,7 +329,7 @@ export default function Menus({ phase }: { phase: string }) {
                   style={{ width: `${(shieldTimer / SHIELD_DURATION) * 100}%` }}
                 />
               </div>
-              <span className="shield-time">{shieldTimer.toFixed(1)}s</span>
+              <span className="shield-time">{Math.round(shieldTimer)}s</span>
             </div>
           )}
           {hasMagnet && (
@@ -341,7 +341,7 @@ export default function Menus({ phase }: { phase: string }) {
                   style={{ width: `${(magnetTimer / MAGNET_DURATION) * 100}%` }}
                 />
               </div>
-              <span className="magnet-time">{magnetTimer.toFixed(1)}s</span>
+              <span className="magnet-time">{Math.round(magnetTimer)}s</span>
             </div>
           )}
         </div>
