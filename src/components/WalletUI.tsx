@@ -189,13 +189,6 @@ export default function WalletUI() {
         </button>
       )}
       
-      {/* Debug info - show current tier and balance */}
-      {!TEST_MODE && connected && (
-        <div className="stat-pill" style={{ fontSize: '11px', opacity: 0.7 }}>
-          Tier: {holderTier} | Balance: {formatTokenBalance(tokenBalance)}
-        </div>
-      )}
-      
       {/* Status message from refresh */}
       {statusMessage && (
         <div className="stat-pill" style={{ 
