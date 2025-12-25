@@ -169,10 +169,10 @@ interface GameState {
   boostInventory: BoostInventory;
   // Scoring breakdown
   distanceScore: number;
-  collectibleScore: number;
+  coinScore: number;
   whaleScore: number;
   comboCount: number;
-  comboProgress: number; // 0-2 progress toward next combo level (need 3 to level up)
+  comboProgress: number; // 0-4 progress toward next combo level (need 5 to level up)
   comboTimer: number;
   maxCombo: number;
   boostsUsed: number;
@@ -182,7 +182,7 @@ interface GameState {
   platformSettings: PlatformSettings;
 }
 
-export const COMBO_CHARGES_NEEDED = 3; // Collectibles needed to increase combo by 1
+export const COMBO_CHARGES_NEEDED = 5; // Coins needed to increase combo by 1 (harder to reach max)
 
 export const CHARGES_NEEDED = 3; // Pickups needed for 1 usable boost/shield/magnet
 
@@ -222,8 +222,8 @@ const initialState: GameState = {
 
 export const useGameStore = create<GameState>(() => initialState);
 
-// Collectible point values by tier
-// Scoring: Collectibles matter! Whale is the cherry on top
+// Coin point values by tier
+// Scoring: Coins matter! Whale is the cherry on top
 export const COLLECTIBLE_VALUES: Record<string, { points: number; tier: string }> = {
   coin: { points: 250, tier: 'common' },
   wif: { points: 750, tier: 'uncommon' },
@@ -259,7 +259,7 @@ export const gameActions = {
       shieldCharges: 0,
       boostInventory: { double: 0, shield: 0, magnet: 0 },
       distanceScore: 0,
-      collectibleScore: 0,
+      coinScore: 0,
       whaleScore: 0,
       comboCount: 0,
       comboProgress: 0,
@@ -404,7 +404,7 @@ export const gameActions = {
     }
   },
   
-  // Add collectible score with combo system
+  // Add coin score with combo system
   addCollectibleScore: (type: string) => {
     const state = useGameStore.getState();
     const value = COLLECTIBLE_VALUES[type] || { points: 10, tier: 'common' };
@@ -418,7 +418,7 @@ export const gameActions = {
     const effectiveCombo = isDoubleActive ? state.comboCount * 2 : state.comboCount;
     const comboMultiplier = 1 + (effectiveCombo * 0.05); // Reduced from 0.1 to keep whale dominant
     
-    // Combo charging: need multiple collectibles to increase combo level
+    // Combo charging: need multiple coins to increase combo level
     const progressGain = isDoubleActive ? 2 : 1; // Double boost = 2x progress
     let newComboProgress = state.comboProgress + progressGain;
     let newComboCount = state.comboCount;
@@ -434,12 +434,12 @@ export const gameActions = {
     const points = Math.round(value.points * comboMultiplier * boostMultiplier * state.multiplier);
     
     useGameStore.setState({
-      collectibleScore: state.collectibleScore + points,
+      coinScore: state.coinScore + points,
       score: state.score + points,
       tokens: state.tokens + 1,
       comboCount: newComboCount,
       comboProgress: newComboProgress,
-      comboTimer: 1.2, // 1.2 second combo window (tighter timing)
+      comboTimer: 0.8, // 0.8 second combo window (tighter timing - harder to maintain)
       maxCombo: newMaxCombo,
     });
     

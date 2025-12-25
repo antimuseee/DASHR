@@ -455,7 +455,7 @@ export default class MainScene extends Phaser.Scene {
     this.spawnByDistance();
     
     
-    // Magnet effect - attract collectibles
+    // Magnet effect - attract coins
     this.updateMagnetEffect(dt);
 
     this.spawner.updatePerspective(this.speed, delta, {
@@ -489,7 +489,7 @@ export default class MainScene extends Phaser.Scene {
       if (!sprite.active) return;
       
       const key = sprite.texture.key;
-      // Only attract collectibles (items), not obstacles or boosts
+      // Only attract coins (items), not obstacles or boosts
       if (!key.startsWith('item-')) return;
       
       const z = (sprite.getData('z') as number) ?? 99999;
@@ -559,7 +559,7 @@ export default class MainScene extends Phaser.Scene {
         });
       }
 
-      // Spawn collectibles
+      // Spawn coins
       for (let i = 0; i < chunk.collectibles; i++) {
         const lane = Phaser.Math.Between(0, 2);
         this.spawner.spawn('collectible', lane, zBase + 120 + i * 140);
@@ -1070,7 +1070,7 @@ export default class MainScene extends Phaser.Scene {
       this.whaleTrailStartTime = this.time.now;
       this.whaleTrailBubbles = [];
       
-      // Clear ALL existing collectibles and boosts from the track - only pits remain
+      // Clear ALL existing coins and boosts from the track - only pits remain
       this.clearTrackForWhaleTrail();
       
       // Generate a bubble trail path that starts near player and goes far
@@ -1215,7 +1215,7 @@ export default class MainScene extends Phaser.Scene {
   }
   
   clearTrackForWhaleTrail() {
-    // Remove ALL collectibles and boosts from the track - only keep pits (obstacle-block)
+    // Remove ALL coins and boosts from the track - only keep pits (obstacle-block)
     const toDestroy: Phaser.Physics.Arcade.Sprite[] = [];
     
     this.spawner.group.getChildren().forEach((child) => {
@@ -1418,7 +1418,7 @@ export default class MainScene extends Phaser.Scene {
       const key = sprite.texture.key;
 
       if (key.startsWith('item-')) {
-        // Collectibles: trigger burst when closer to the player (lower z = closer)
+        // Coins: trigger burst when closer to the player (lower z = closer)
         if (z > 60) return;
         
         // Check if this is a whale trail bubble
@@ -1511,7 +1511,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   collectWhaleToken(x: number, y: number) {
-    // Whale token is THE BIG PRIZE - separate from regular collectibles!
+    // Whale token is THE BIG PRIZE - separate from regular coins!
     const points = 250000; // 250k base
     const state = useGameStore.getState();
     const multiplier = state.activeBoost === 'double' ? 2 : 1;
