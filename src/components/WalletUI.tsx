@@ -6,8 +6,8 @@ import { useGameStore, gameActions } from '../utils/store';
 import { TOKEN_SYMBOL, HOLDER_TIERS, formatTokenBalance, isHolder, TEST_MODE, MOCK_BALANCE, getTierFromBalance } from '../utils/token';
 import { autoEquipForTier } from '../utils/cosmetics';
 
-// Use a public RPC that allows browser requests (Solana's public RPC blocks them)
-const endpoint = 'https://rpc.ankr.com/solana'; // Ankr's free public mainnet RPC
+// Use Helius free RPC (more reliable for browser requests)
+const endpoint = 'https://mainnet.helius-rpc.com/?api-key=1d8740dc-e5f4-421c-b823-e1bad1889eff';
 const connection = new Connection(endpoint, 'processed');
 
 async function fetchBalance(pk?: PublicKey) {
