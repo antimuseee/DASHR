@@ -19,7 +19,20 @@ async function fetchBalance(pk?: PublicKey) {
 export default function WalletUI() {
   const { publicKey, connected } = useWallet();
   const [solBalance, setSolBalance] = useState<number | null>(null);
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const { holderTier, tokenBalance } = useGameStore();
+  
+  const handleRefreshBalance = async () => {
+    if (!publicKey || !connected) return;
+    setIsLoadingBalance(true);
+    try {
+      await gameActions.updateTokenBalance(publicKey.toBase58());
+    } catch (error) {
+      console.error('[WalletUI] Error refreshing balance:', error);
+    } finally {
+      setIsLoadingBalance(false);
+    }
+  };
 
   // In TEST_MODE, auto-set the mock balance on load (no wallet needed)
   useEffect(() => {
@@ -56,7 +69,13 @@ export default function WalletUI() {
     if (!TEST_MODE) {
       gameActions.setWalletConnected(connected);
       if (connected && publicKey) {
-        gameActions.updateTokenBalance(publicKey.toBase58());
+        console.log('[WalletUI] Wallet connected, fetching token balance...');
+        gameActions.updateTokenBalance(publicKey.toBase58()).catch(error => {
+          console.error('[WalletUI] Failed to fetch token balance:', error);
+        });
+      } else if (!connected) {
+        // Reset when disconnected
+        useGameStore.setState({ tokenBalance: 0, holderTier: 'none' });
       }
     }
   }, [connected, publicKey]);
@@ -93,6 +112,31 @@ export default function WalletUI() {
           <span className="tier-emoji">{tierInfo.emoji}</span>
           <span className="tier-name">{tierInfo.name}</span>
           <span className="tier-balance">{formatTokenBalance(tokenBalance)} {TOKEN_SYMBOL}</span>
+        </div>
+      )}
+      
+      {/* Refresh balance button (only show when connected and not in test mode) */}
+      {!TEST_MODE && connected && publicKey && (
+        <button
+          onClick={handleRefreshBalance}
+          disabled={isLoadingBalance}
+          className="btn secondary"
+          style={{ 
+            fontSize: '12px', 
+            padding: '4px 8px',
+            marginLeft: '8px',
+            opacity: isLoadingBalance ? 0.6 : 1
+          }}
+          title="Refresh token balance"
+        >
+          {isLoadingBalance ? '⏳' : '🔄'}
+        </button>
+      )}
+      
+      {/* Debug info - show current tier and balance */}
+      {!TEST_MODE && connected && (
+        <div className="stat-pill" style={{ fontSize: '11px', opacity: 0.7 }}>
+          Tier: {holderTier} | Balance: {formatTokenBalance(tokenBalance)}
         </div>
       )}
       

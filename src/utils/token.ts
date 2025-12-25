@@ -1,7 +1,7 @@
 // Token Configuration
 // Set TEST_MODE to false to use real token balance fetching
 import { Connection, PublicKey } from '@solana/web3.js';
-import { getAccount, getAssociatedTokenAddress } from '@solana/spl-token';
+import { getAccount, getAssociatedTokenAddress, getMint } from '@solana/spl-token';
 
 // ============ CONFIGURATION ============
 export const TEST_MODE = false; // Set to false for production with real token
@@ -100,29 +100,41 @@ export async function getTokenBalance(walletAddress: string | null): Promise<num
   
   // Real token balance fetching using Solana SPL token program
   try {
+    console.log(`[Token] Fetching balance for wallet: ${walletAddress.slice(0, 8)}...`);
     // Use mainnet for real token
     const connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
     const walletPubkey = new PublicKey(walletAddress);
     const mintPubkey = new PublicKey(TOKEN_MINT);
     
+    // First, get the mint info to determine decimals
+    let decimals = 6; // Default fallback
+    try {
+      const mintInfo = await getMint(connection, mintPubkey);
+      decimals = mintInfo.decimals;
+      console.log(`[Token] Mint decimals: ${decimals}`);
+    } catch (mintError) {
+      console.warn(`[Token] Could not fetch mint info, using default decimals: ${decimals}`, mintError);
+    }
+    
     // Get the associated token account address
     const tokenAccount = await getAssociatedTokenAddress(mintPubkey, walletPubkey);
+    console.log(`[Token] Token account: ${tokenAccount.toBase58()}`);
     
     try {
       // Fetch the token account
       const accountInfo = await getAccount(connection, tokenAccount);
-      // Convert from token decimals (usually 6-9 for most tokens, using 6 as default)
-      // For pump.fun tokens, they typically use 6 decimals
-      const decimals = 6; // You may need to adjust this based on your token
-      const balance = Number(accountInfo.amount) / Math.pow(10, decimals);
-      console.log(`[Token] Fetched balance: ${balance} ${TOKEN_SYMBOL} for ${walletAddress.slice(0, 8)}...`);
+      const rawBalance = Number(accountInfo.amount);
+      const balance = rawBalance / Math.pow(10, decimals);
+      console.log(`[Token] Raw balance: ${rawBalance}, Decimals: ${decimals}, Final balance: ${balance} ${TOKEN_SYMBOL}`);
+      console.log(`[Token] Tier: ${getTierFromBalance(balance)}`);
       return balance;
     } catch (error: any) {
       // Token account doesn't exist (user doesn't hold any tokens)
-      if (error.message?.includes('could not find account')) {
+      if (error.message?.includes('could not find account') || error.message?.includes('InvalidAccountData')) {
         console.log(`[Token] No token account found for ${walletAddress.slice(0, 8)}... (balance: 0)`);
         return 0;
       }
+      console.error(`[Token] Error fetching account:`, error);
       throw error;
     }
   } catch (error) {
