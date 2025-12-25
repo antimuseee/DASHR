@@ -133,18 +133,20 @@ export default function WalletUI() {
     <div className="topbar">
       {/* Holder tier badge with refresh button positioned at upper right */}
       {showHolderBadge && (
-        <div style={{ position: 'relative', display: 'inline-block' }}>
+        <div style={{ position: 'relative' }}>
           <div 
             className="holder-badge"
             style={{ 
               backgroundColor: tierInfo.color + '22',
               borderColor: tierInfo.color,
               color: tierInfo.color,
+              padding: '10px 20px',
+              fontSize: '14px',
             }}
           >
-            <span className="tier-emoji">{tierInfo.emoji}</span>
-            <span className="tier-name">{tierInfo.name}</span>
-            <span className="tier-balance">{formatTokenBalance(tokenBalance)} {TOKEN_SYMBOL}</span>
+            <span className="tier-emoji" style={{ fontSize: '20px' }}>{tierInfo.emoji}</span>
+            <span className="tier-name" style={{ fontSize: '14px', fontWeight: 700 }}>{tierInfo.name}</span>
+            <span className="tier-balance" style={{ fontSize: '13px' }}>{formatTokenBalance(tokenBalance)} {TOKEN_SYMBOL}</span>
           </div>
           {/* Small refresh button positioned at upper right corner */}
           {!TEST_MODE && connected && publicKey && (
@@ -153,16 +155,15 @@ export default function WalletUI() {
               disabled={isLoadingBalance}
               style={{ 
                 position: 'absolute',
-                top: '-6px',
-                right: '-6px',
-                fontSize: '10px', 
+                top: '-8px',
+                right: '-8px',
+                fontSize: '12px', 
                 padding: '4px 6px',
                 cursor: isLoadingBalance ? 'not-allowed' : 'pointer',
                 opacity: isLoadingBalance ? 0.6 : 1,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '3px',
                 background: 'linear-gradient(135deg, #9b5cff, #4ef0c5)',
                 border: 'none',
                 borderRadius: '8px',
@@ -170,7 +171,6 @@ export default function WalletUI() {
                 fontWeight: 700,
                 transition: 'all 0.2s ease',
                 pointerEvents: 'auto',
-                minWidth: 'auto',
                 lineHeight: '1',
               }}
               onMouseEnter={(e) => {
