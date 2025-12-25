@@ -1497,15 +1497,15 @@ export default class MainScene extends Phaser.Scene {
   }
 
   collectWhaleToken(x: number, y: number) {
-    // Whale token is THE ULTIMATE PRIZE - 2 MILLION points!
-    const points = 2000000;
+    // Whale token is THE BIG PRIZE - separate from regular collectibles!
+    const points = 500000; // 500k base
     const state = useGameStore.getState();
     const multiplier = state.activeBoost === 'double' ? 2 : 1;
     const totalPoints = points * multiplier * state.multiplier;
     
     useGameStore.setState({
       score: state.score + totalPoints,
-      collectibleScore: state.collectibleScore + totalPoints,
+      whaleScore: state.whaleScore + totalPoints, // Separate whale score!
       tokens: state.tokens + 1,
       whaleTokens: state.whaleTokens + 1,
     });

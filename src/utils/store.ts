@@ -170,6 +170,7 @@ interface GameState {
   // Scoring breakdown
   distanceScore: number;
   collectibleScore: number;
+  whaleScore: number;
   comboCount: number;
   comboProgress: number; // 0-2 progress toward next combo level (need 3 to level up)
   comboTimer: number;
@@ -207,6 +208,7 @@ const initialState: GameState = {
   // Scoring breakdown
   distanceScore: 0,
   collectibleScore: 0,
+  whaleScore: 0,
   comboCount: 0,
   comboProgress: 0,
   comboTimer: 0,
@@ -221,16 +223,15 @@ const initialState: GameState = {
 export const useGameStore = create<GameState>(() => initialState);
 
 // Collectible point values by tier
-// Scoring hierarchy: Whale >>> Collectibles > Distance
-// Whale is worth more than an entire run's worth of collectibles
+// Scoring: Collectibles matter! Whale is the cherry on top
 export const COLLECTIBLE_VALUES: Record<string, { points: number; tier: string }> = {
-  coin: { points: 25, tier: 'common' },
-  wif: { points: 75, tier: 'uncommon' },
-  bonk: { points: 75, tier: 'uncommon' },
-  rome: { points: 150, tier: 'rare' },
-  gem: { points: 400, tier: 'legendary' },
-  bubble: { points: 50, tier: 'common' }, // Whale trail bubble
-  whale: { points: 2000000, tier: 'legendary' }, // 2 MILLION - THE ULTIMATE PRIZE!
+  coin: { points: 500, tier: 'common' },
+  wif: { points: 1500, tier: 'uncommon' },
+  bonk: { points: 1500, tier: 'uncommon' },
+  rome: { points: 3000, tier: 'rare' },
+  gem: { points: 7500, tier: 'legendary' },
+  bubble: { points: 750, tier: 'common' }, // Whale trail bubble
+  whale: { points: 500000, tier: 'legendary' }, // 500k - bonus prize!
 };
 
 // Boost durations in seconds
@@ -259,6 +260,7 @@ export const gameActions = {
       boostInventory: { double: 0, shield: 0, magnet: 0 },
       distanceScore: 0,
       collectibleScore: 0,
+      whaleScore: 0,
       comboCount: 0,
       comboProgress: 0,
       comboTimer: 0,
@@ -444,11 +446,11 @@ export const gameActions = {
     return { points, combo: newComboCount, tier: value.tier };
   },
   
-  // Add distance-based score (minimal - collectibles and whales are what matter)
+  // Add distance-based score
   addDistanceScore: (distanceDelta: number) => {
     const state = useGameStore.getState();
     const boostMultiplier = state.activeBoost === 'double' ? 2 : 1;
-    const points = distanceDelta * state.multiplier * boostMultiplier * 0.02; // 0.02 points per meter (tiny survival bonus)
+    const points = distanceDelta * state.multiplier * boostMultiplier * 0.15; // 0.15 points per meter
     
     useGameStore.setState({
       distanceScore: state.distanceScore + points,
