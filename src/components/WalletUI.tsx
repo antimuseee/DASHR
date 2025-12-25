@@ -112,25 +112,38 @@ export default function WalletUI() {
           <span className="tier-emoji">{tierInfo.emoji}</span>
           <span className="tier-name">{tierInfo.name}</span>
           <span className="tier-balance">{formatTokenBalance(tokenBalance)} {TOKEN_SYMBOL}</span>
+          
+          {/* Refresh balance button inside badge (toward center) */}
+          {!TEST_MODE && connected && publicKey && (
+            <button
+              onClick={handleRefreshBalance}
+              disabled={isLoadingBalance}
+              style={{ 
+                fontSize: '14px', 
+                padding: '4px 8px',
+                marginLeft: '4px',
+                opacity: isLoadingBalance ? 0.6 : 1,
+                background: 'rgba(255, 255, 255, 0.1)',
+                border: `1px solid ${tierInfo.color}66`,
+                borderRadius: '6px',
+                cursor: isLoadingBalance ? 'not-allowed' : 'pointer',
+                color: tierInfo.color,
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (!isLoadingBalance) {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+              }}
+              title="Refresh token balance"
+            >
+              {isLoadingBalance ? '⏳' : '🔄'}
+            </button>
+          )}
         </div>
-      )}
-      
-      {/* Refresh balance button (only show when connected and not in test mode) */}
-      {!TEST_MODE && connected && publicKey && (
-        <button
-          onClick={handleRefreshBalance}
-          disabled={isLoadingBalance}
-          className="btn secondary"
-          style={{ 
-            fontSize: '12px', 
-            padding: '4px 8px',
-            marginLeft: '8px',
-            opacity: isLoadingBalance ? 0.6 : 1
-          }}
-          title="Refresh token balance"
-        >
-          {isLoadingBalance ? '⏳' : '🔄'}
-        </button>
       )}
       
       {/* Debug info - show current tier and balance */}
