@@ -1137,6 +1137,7 @@ body {
 
 .tutorial-overlay.tutorial-exit {
   animation: tutorial-fade-out 0.3s ease forwards;
+  pointer-events: none;
 }
 
 @keyframes tutorial-fade-in {
@@ -1170,6 +1171,8 @@ body {
     0 20px 60px rgba(0, 0, 0, 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   animation: tutorial-slide-up 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: auto;
+  z-index: 10000;
 }
 
 @keyframes tutorial-slide-up {
@@ -1195,6 +1198,8 @@ body {
   border-radius: 20px;
   cursor: pointer;
   transition: all 0.2s ease;
+  pointer-events: auto;
+  z-index: 10001;
 }
 
 .tutorial-skip:hover {
@@ -1283,6 +1288,7 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
   border: none;
+  pointer-events: auto;
 }
 
 .tutorial-btn-primary {

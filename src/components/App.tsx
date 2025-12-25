@@ -31,6 +31,7 @@ export default function App() {
   const [forceShowTutorial, setForceShowTutorial] = useState(false);
   
   const handleTutorialComplete = useCallback(() => {
+    console.log('[App] Tutorial complete - hiding tutorial');
     setShowTutorial(false);
     setForceShowTutorial(false);
   }, []);

@@ -78,9 +78,6 @@ export default function Tutorial({ onComplete, forceShow }: TutorialProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [isExiting, setIsExiting] = useState(false);
   
-  // Always visible when component is rendered - parent controls when to show
-  const isVisible = true;
-  
   console.log('[Tutorial] Rendering, forceShow:', forceShow, 'step:', currentStep);
 
   const handleNext = () => {
@@ -102,15 +99,22 @@ export default function Tutorial({ onComplete, forceShow }: TutorialProps) {
   };
 
   const handleComplete = () => {
+    console.log('[Tutorial] Completing - marking as seen and calling onComplete');
     setIsExiting(true);
     markTutorialAsSeen();
+    // Small delay for exit animation, then notify parent to unmount
     setTimeout(() => {
-      setIsVisible(false);
+      console.log('[Tutorial] Calling onComplete callback');
       onComplete();
     }, 300);
   };
-
-  if (!isVisible) return null;
+  
+  // Cleanup effect to ensure component is properly removed
+  useEffect(() => {
+    return () => {
+      console.log('[Tutorial] Component unmounting');
+    };
+  }, []);
 
   const step = tutorialSteps[currentStep];
   const isLastStep = currentStep === tutorialSteps.length - 1;
