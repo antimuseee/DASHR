@@ -22,7 +22,7 @@ const tutorialSteps: TutorialStep[] = [
   },
   {
     title: "Collect Coins",
-    content: "Grab gold coins to increase your score. Chain collections to build your combo multiplier for massive points!",
+    content: "Grab coins to increase your score. Collect them quickly in succession to build your combo multiplier for massive point gains!",
     icon: "🪙"
   },
   {
