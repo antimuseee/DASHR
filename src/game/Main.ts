@@ -431,8 +431,8 @@ export default class MainScene extends Phaser.Scene {
     // Distance-based scoring
     gameActions.addDistanceScore(distanceDelta);
 
-    // Update multiplier based on distance (caps at 5x)
-    const newMultiplier = Math.min(5, 1 + this.distance / 2000);
+    // Update multiplier based on distance (caps at 5x) - requires long survival!
+    const newMultiplier = Math.min(5, 1 + this.distance / 10000);
     useGameStore.setState({
       distance: this.distance,
       multiplier: newMultiplier,
