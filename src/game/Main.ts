@@ -305,8 +305,9 @@ export default class MainScene extends Phaser.Scene {
     }
     city.setScrollFactor(0).setDepth(-90);
 
-    // Floating neon signs
-    const signs = ['PUMP', 'MOON', 'HODL', 'APE'];
+    // Floating neon signs - reduced/static in low performance mode
+    const device = getDevice();
+    const signs = device.isLowPerformance ? ['PUMP', 'MOON'] : ['PUMP', 'MOON', 'HODL', 'APE'];
     signs.forEach((text, i) => {
       const sign = this.add.text(50 + (i * w) / 4, 80 + Math.random() * 100, text, {
         fontSize: '24px',
@@ -315,16 +316,18 @@ export default class MainScene extends Phaser.Scene {
         stroke: '#000000',
         strokeThickness: 4,
       });
-      sign.setScrollFactor(0).setDepth(-80).setAlpha(0.7);
+      sign.setScrollFactor(0).setDepth(-80).setAlpha(0.5);
 
-      // Glow effect via tween
-      this.tweens.add({
-        targets: sign,
-        alpha: 0.4,
-        duration: 1000 + Math.random() * 1000,
-        yoyo: true,
-        repeat: -1,
-      });
+      // Skip glow animation in low performance mode (tweens are expensive)
+      if (!device.isLowPerformance) {
+        this.tweens.add({
+          targets: sign,
+          alpha: 0.4,
+          duration: 1000 + Math.random() * 1000,
+          yoyo: true,
+          repeat: -1,
+        });
+      }
     });
 
     // Purple/pink fog at horizon
@@ -424,13 +427,21 @@ export default class MainScene extends Phaser.Scene {
   update(_: number, delta: number) {
     if (!this.runActive) return;
 
-    const dt = delta / 1000;
+    const device = getDevice();
+    
+    // CRITICAL: Cap delta time to prevent physics appearing sluggish in WebViews
+    // When FPS drops, delta becomes large which makes objects move in big jumps
+    // By capping it, we ensure smooth consistent movement even at low FPS
+    // This means game runs at "game time" not "real time" in low-perf scenarios
+    const maxDelta = device.isLowPerformance ? 50 : 33; // 20 FPS min for WebView, 30 FPS min for normal
+    const cappedDelta = Math.min(delta, maxDelta);
+    
+    const dt = cappedDelta / 1000;
     const distanceDelta = (this.speed * dt);
     this.distance += distanceDelta;
     
-    // Speed ramp-up: slower on mobile for more forgiving early game
-    const device = getDevice();
-    const speedIncrease = device.isMobile ? 1.5 : 3; // Mobile ramps up 50% slower
+    // Speed ramp-up: even slower in WebViews for playability
+    const speedIncrease = device.isLowPerformance ? 1.0 : device.isMobile ? 1.5 : 3;
     this.speed += speedIncrease * dt;
 
     // Update boost timers
@@ -472,7 +483,8 @@ export default class MainScene extends Phaser.Scene {
     // Magnet effect - attract coins
     this.updateMagnetEffect(dt);
 
-    this.spawner.updatePerspective(this.speed, delta, {
+    // Use capped delta for spawner too (consistent movement speed)
+    this.spawner.updatePerspective(this.speed, cappedDelta, {
       centerX: this.centerX,
       laneWidth: this.laneWidth,
       horizonY: this.horizonY,
@@ -550,10 +562,20 @@ export default class MainScene extends Phaser.Scene {
       // Spawn very close to the horizon so they immediately start moving toward the player.
       const zBase = this.zFar * Phaser.Math.FloatBetween(0.94, 0.99);
 
-      // Mobile early-game adjustment: skip some pit spawns to reduce density
+      // Mobile/WebView early-game adjustment: skip some pit spawns to reduce density
       // Higher skip chance early, gradually decreases as player progresses
+      // WebViews get even more reduction to help with performance
       let skipChance = 0;
-      if (device.isMobile) {
+      if (device.isLowPerformance) {
+        // WebViews: more aggressive skip to reduce entity count
+        if (this.distance < 1000) {
+          skipChance = 0.6; // 60% skip in first 1000m
+        } else if (this.distance < 3000) {
+          skipChance = 0.4; // 40% skip from 1000-3000m
+        } else {
+          skipChance = 0.25; // 25% skip after 3000m (permanent slight reduction)
+        }
+      } else if (device.isMobile) {
         if (this.distance < 500) {
           skipChance = 0.5; // 50% skip in first 500m
         } else if (this.distance < 1500) {
@@ -579,10 +601,22 @@ export default class MainScene extends Phaser.Scene {
         this.spawner.spawn('collectible', lane, zBase + 120 + i * 140);
       }
 
-      // Mobile: larger gaps between spawns early game for more reaction time
+      // Mobile/WebView: larger gaps between spawns for reaction time and performance
       let minGap = 200;
       let maxGap = 300;
-      if (device.isMobile) {
+      if (device.isLowPerformance) {
+        // WebViews: even larger gaps to reduce active entities
+        if (this.distance < 1500) {
+          minGap = 400;
+          maxGap = 550;
+        } else if (this.distance < 4000) {
+          minGap = 350;
+          maxGap = 480;
+        } else {
+          minGap = 300;
+          maxGap = 420;
+        }
+      } else if (device.isMobile) {
         if (this.distance < 1000) {
           // Very early game on mobile: 320-450m gaps
           minGap = 320;
@@ -769,11 +803,22 @@ export default class MainScene extends Phaser.Scene {
   updateTradingChart(dt: number) {
     if (!this.chartGraphics) return;
     
+    // Skip chart updates entirely in low performance mode (expensive redraw)
+    const device = getDevice();
+    if (device.isLowPerformance) {
+      // Only update very occasionally in WebViews
+      this.chartUpdateTimer += dt;
+      if (this.chartUpdateTimer < 1.0) return; // Update once per second max
+      this.chartUpdateTimer = 0;
+    }
+    
     const state = useGameStore.getState();
     const currentScore = state.score;
     
     // Update chart frequency: faster if we have pending points to show (like a spike)
-    const updateFreq = this.pendingChartPoints.length > 0 ? 0.05 : 0.2;
+    // Slower in low performance mode
+    const baseFreq = device.isLowPerformance ? 0.5 : 0.2;
+    const updateFreq = this.pendingChartPoints.length > 0 ? 0.1 : baseFreq;
     
     this.chartUpdateTimer += dt;
     if (this.chartUpdateTimer >= updateFreq) {

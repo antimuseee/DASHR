@@ -8,6 +8,9 @@ export interface DeviceInfo {
   screenWidth: number;
   screenHeight: number;
   pixelRatio: number;
+  isWebView: boolean;      // In-app browser (Phantom, MetaMask, etc.)
+  isPhantom: boolean;      // Specifically Phantom wallet browser
+  isLowPerformance: boolean; // WebView or other low-perf environment
 }
 
 export function detectDevice(): DeviceInfo {
@@ -36,6 +39,41 @@ export function detectDevice(): DeviceInfo {
   const isTablet = isTabletUA || (hasTouch && !smallScreen && Math.min(screenWidth, screenHeight) < 1024);
   const isDesktop = !isMobile && !isTablet;
   
+  // WebView/In-app browser detection
+  // Phantom and other wallet apps use WebViews which have lower performance
+  const isPhantom = !!(window as any).phantom?.solana || 
+    ua.includes('phantom') || 
+    // Phantom WebView often has specific patterns
+    (ua.includes('safari') && !ua.includes('chrome') && (window as any).solana?.isPhantom);
+  
+  // General WebView detection patterns
+  const webViewPatterns = [
+    'wv',           // Android WebView
+    'webview',      // Generic
+    'fbav',         // Facebook
+    'fban',         // Facebook
+    'instagram',    // Instagram
+    'twitter',      // Twitter
+    'line',         // Line
+    'metamask',     // MetaMask
+    'trustwallet',  // Trust Wallet
+    'coinbase',     // Coinbase Wallet
+  ];
+  
+  const isWebView = isPhantom || 
+    webViewPatterns.some(pattern => ua.includes(pattern)) ||
+    // iOS WebView detection (standalone mode or missing Safari version)
+    (ua.includes('iphone') && !ua.includes('safari')) ||
+    // Check for injected wallet provider (often means we're in wallet app)
+    (isMobile && !!(window as any).solana);
+  
+  // Low performance mode for WebViews on mobile (they're significantly slower)
+  const isLowPerformance = isWebView && isMobile;
+  
+  if (isWebView) {
+    console.log('[Device] WebView detected:', { isPhantom, ua: ua.substring(0, 100) });
+  }
+  
   return {
     isMobile,
     isTablet,
@@ -44,6 +82,9 @@ export function detectDevice(): DeviceInfo {
     screenWidth,
     screenHeight,
     pixelRatio: window.devicePixelRatio || 1,
+    isWebView,
+    isPhantom,
+    isLowPerformance,
   };
 }
 
