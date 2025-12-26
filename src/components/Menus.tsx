@@ -296,7 +296,7 @@ function TitleMenu({ onShowTutorial }: { onShowTutorial?: () => void }) {
         <h2>Trench Runner: Degen Dash</h2>
         {device.isDesktop ? (
           <>
-            <p>Arrow keys or WASD to move. Space/Up to jump, Down to slide.</p>
+            <p>Arrow keys or WASD to move. Space/Up to jump.</p>
             <p className="boost-hint">Collect boosts and press 1/2/3 to activate!</p>
           </>
         ) : (
@@ -319,7 +319,7 @@ function PauseMenu() {
     <div className="center-bottom menus">
       <div className="menu-card">
         <h3>Paused</h3>
-        {device.isDesktop && <p>Arrow keys or WASD. Space/Up = jump, Down = slide.</p>}
+        {device.isDesktop && <p>Arrow keys or WASD. Space/Up = jump.</p>}
         <button className="btn" onClick={restartGame}>Resume</button>
         <button className="btn secondary" onClick={restartGame}>Restart</button>
       </div>
