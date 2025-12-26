@@ -485,7 +485,6 @@ body {
   flex-direction: row;
   gap: 8px;
   z-index: 100;
-  will-change: opacity; /* Hint browser to optimize for opacity changes */
 }
 
 .boost-pill {
@@ -496,7 +495,6 @@ body {
   backdrop-filter: blur(8px);
   animation: boost-glow 0.5s ease-in-out infinite alternate;
   white-space: nowrap;
-  will-change: opacity; /* Hint browser to optimize for opacity changes */
 }
 
 .boost-double {

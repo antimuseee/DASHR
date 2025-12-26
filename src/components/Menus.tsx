@@ -626,45 +626,38 @@ export default function Menus({ phase, onShowTutorial }: { phase: string; onShow
         </div>
       </div>
       
-      {/* Active boost indicators - always rendered during running phase to avoid first-render lag */}
-      {/* Using opacity only (no display/position changes) to avoid layout recalculation */}
-      {phase === 'running' && (
-        <div className="boost-indicators" style={{ 
-          opacity: (activeBoost || hasShield || hasMagnet) ? 1 : 0,
-          pointerEvents: (activeBoost || hasShield || hasMagnet) ? 'auto' : 'none'
-        }}>
-          <div 
-            className="boost-pill boost-double" 
-            style={{ opacity: activeBoost === 'double' ? 1 : 0 }}
-          >
-            ⚡ 2X ({Math.round(boostTimer)}s)
-          </div>
-          <div 
-            className="boost-pill boost-shield shield-with-bar"
-            style={{ opacity: hasShield ? 1 : 0 }}
-          >
-            <span className="shield-label">🛡️ SHIELD</span>
-            <div className="shield-bar-container">
-              <div 
-                className="shield-bar-fill" 
-                style={{ width: `${(shieldTimer / SHIELD_DURATION) * 100}%` }}
-              />
+      {/* Active boost indicators */}
+      {phase === 'running' && (activeBoost || hasShield || hasMagnet) && (
+        <div className="boost-indicators">
+          {activeBoost === 'double' && (
+            <div className="boost-pill boost-double">
+              ⚡ 2X ({Math.round(boostTimer)}s)
             </div>
-            <span className="shield-time">{Math.round(shieldTimer)}s</span>
-          </div>
-          <div 
-            className="boost-pill boost-magnet magnet-with-bar"
-            style={{ opacity: hasMagnet ? 1 : 0 }}
-          >
-            <span className="magnet-label">🧲 MAGNET</span>
-            <div className="magnet-bar-container">
-              <div 
-                className="magnet-bar-fill" 
-                style={{ width: `${(magnetTimer / MAGNET_DURATION) * 100}%` }}
-              />
+          )}
+          {hasShield && (
+            <div className="boost-pill boost-shield shield-with-bar">
+              <span className="shield-label">🛡️ SHIELD</span>
+              <div className="shield-bar-container">
+                <div 
+                  className="shield-bar-fill" 
+                  style={{ width: `${(shieldTimer / SHIELD_DURATION) * 100}%` }}
+                />
+              </div>
+              <span className="shield-time">{Math.round(shieldTimer)}s</span>
             </div>
-            <span className="magnet-time">{Math.round(magnetTimer)}s</span>
-          </div>
+          )}
+          {hasMagnet && (
+            <div className="boost-pill boost-magnet magnet-with-bar">
+              <span className="magnet-label">🧲 MAGNET</span>
+              <div className="magnet-bar-container">
+                <div 
+                  className="magnet-bar-fill" 
+                  style={{ width: `${(magnetTimer / MAGNET_DURATION) * 100}%` }}
+                />
+              </div>
+              <span className="magnet-time">{Math.round(magnetTimer)}s</span>
+            </div>
+          )}
         </div>
       )}
       
