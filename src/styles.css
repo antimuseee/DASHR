@@ -1126,17 +1126,17 @@ body {
   }
   /* How to Play and Cosmetics buttons mobile - moved higher to avoid overlap with left lane */
   .how-to-play-button {
-    width: 38px;
-    height: 38px;
-    font-size: 16px;
+    width: 50px;
+    height: 50px;
+    font-size: 22px;
     bottom: 200px;
     left: 15px;
   }
   
   .cosmetics-button {
-    width: 38px;
-    height: 38px;
-    font-size: 16px;
+    width: 50px;
+    height: 50px;
+    font-size: 22px;
     bottom: 150px;
     left: 15px;
   }
