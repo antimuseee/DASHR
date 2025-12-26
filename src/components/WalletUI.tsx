@@ -5,6 +5,7 @@ import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { useGameStore, gameActions } from '../utils/store';
 import { TOKEN_SYMBOL, HOLDER_TIERS, formatTokenBalance, isHolder, TEST_MODE, MOCK_BALANCE, getTierFromBalance } from '../utils/token';
 import { autoEquipForTier } from '../utils/cosmetics';
+import { getDevice } from '../utils/device';
 
 // Use Helius RPC for wallet connection (reliable)
 // Get API key from environment variable (set in Vercel)
@@ -18,6 +19,61 @@ async function fetchBalance(pk?: PublicKey) {
   if (!pk) return 0;
   const lamports = await connection.getBalance(pk);
   return lamports / LAMPORTS_PER_SOL;
+}
+
+// Cache keys for localStorage - persist tier info so returning users don't need to re-verify
+const CACHE_KEYS = {
+  walletAddress: 'trench-wallet-address',
+  tokenBalance: 'trench-token-balance',
+  holderTier: 'trench-holder-tier',
+  lastVerified: 'trench-last-verified',
+};
+
+// Load cached tier data (for returning users)
+function loadCachedTier(): { address: string; balance: number; tier: string; timestamp: number } | null {
+  try {
+    const address = localStorage.getItem(CACHE_KEYS.walletAddress);
+    const balance = localStorage.getItem(CACHE_KEYS.tokenBalance);
+    const tier = localStorage.getItem(CACHE_KEYS.holderTier);
+    const timestamp = localStorage.getItem(CACHE_KEYS.lastVerified);
+    
+    if (address && balance && tier && timestamp) {
+      return {
+        address,
+        balance: parseFloat(balance),
+        tier,
+        timestamp: parseInt(timestamp),
+      };
+    }
+  } catch (e) {
+    console.error('[WalletUI] Error loading cached tier:', e);
+  }
+  return null;
+}
+
+// Save tier data to cache
+function saveCachedTier(address: string, balance: number, tier: string) {
+  try {
+    localStorage.setItem(CACHE_KEYS.walletAddress, address);
+    localStorage.setItem(CACHE_KEYS.tokenBalance, balance.toString());
+    localStorage.setItem(CACHE_KEYS.holderTier, tier);
+    localStorage.setItem(CACHE_KEYS.lastVerified, Date.now().toString());
+    console.log('[WalletUI] Cached tier data for returning user');
+  } catch (e) {
+    console.error('[WalletUI] Error caching tier:', e);
+  }
+}
+
+// Clear cached tier data
+function clearCachedTier() {
+  try {
+    localStorage.removeItem(CACHE_KEYS.walletAddress);
+    localStorage.removeItem(CACHE_KEYS.tokenBalance);
+    localStorage.removeItem(CACHE_KEYS.holderTier);
+    localStorage.removeItem(CACHE_KEYS.lastVerified);
+  } catch (e) {
+    console.error('[WalletUI] Error clearing cache:', e);
+  }
 }
 
 export default function WalletUI() {
@@ -54,12 +110,17 @@ export default function WalletUI() {
     setStatusMessage('⏳ Fetching balance...');
     
     try {
+      const walletAddress = publicKey.toBase58();
       console.log('[WalletUI] Calling updateTokenBalance...');
-      await gameActions.updateTokenBalance(publicKey.toBase58());
+      await gameActions.updateTokenBalance(walletAddress);
       const newBalance = useGameStore.getState().tokenBalance;
       const newTier = useGameStore.getState().holderTier;
+      
+      // Cache the refreshed data
+      saveCachedTier(walletAddress, newBalance, newTier);
+      
       setStatusMessage(`✅ Balance: ${newBalance} | Tier: ${newTier}`);
-      console.log('[WalletUI] Balance updated:', { newBalance, newTier });
+      console.log('[WalletUI] Balance updated and cached:', { newBalance, newTier });
     } catch (error: any) {
       console.error('[WalletUI] Error refreshing balance:', error);
       setStatusMessage(`❌ Error: ${error.message || 'Unknown error'}`);
@@ -70,7 +131,7 @@ export default function WalletUI() {
     }
   };
 
-  // In TEST_MODE, auto-set the mock balance on load (no wallet needed)
+  // On mount: Load cached tier for returning users (no wallet needed to show tier)
   useEffect(() => {
     if (TEST_MODE) {
       const mockTier = getTierFromBalance(MOCK_BALANCE);
@@ -84,35 +145,85 @@ export default function WalletUI() {
       // Auto-equip best cosmetics for the tier
       const equipped = autoEquipForTier(mockTier);
       console.log(`[TEST MODE] Auto-equipped: Skin=${equipped.skin}, Trail=${equipped.trail}`);
+    } else {
+      // Load cached tier data for returning users
+      // This lets users keep their tier even without wallet connected (reduces load)
+      const cached = loadCachedTier();
+      if (cached && cached.tier !== 'none') {
+        // Cache is valid for 24 hours before requiring re-verification
+        const cacheAge = Date.now() - cached.timestamp;
+        const cacheValid = cacheAge < 24 * 60 * 60 * 1000; // 24 hours
+        
+        if (cacheValid) {
+          console.log(`[WalletUI] Loaded cached tier: ${cached.tier} (${cached.balance} tokens)`);
+          useGameStore.setState({
+            tokenBalance: cached.balance,
+            holderTier: cached.tier as any,
+          });
+          // Auto-equip cosmetics for cached tier
+          const equipped = autoEquipForTier(cached.tier as any);
+          console.log(`[WalletUI] Auto-equipped from cache: Skin=${equipped.skin}, Trail=${equipped.trail}`);
+        } else {
+          console.log('[WalletUI] Cached tier expired, will refresh on wallet connect');
+        }
+      }
     }
   }, []);
 
-  // Update SOL balance when wallet connects (real wallet)
+  // Update SOL balance when wallet connects (one-time fetch, not polling)
   useEffect(() => {
     let alive = true;
     if (!publicKey) {
       setSolBalance(null);
       return;
     }
+    // Single fetch, no polling - we only need this for display
     fetchBalance(publicKey).then((b) => alive && setSolBalance(b));
     return () => {
       alive = false;
     };
   }, [publicKey]);
 
-  // Update token balance when real wallet connects (production mode)
+  // Update token balance when wallet connects (one-time verification, then cache)
   useEffect(() => {
-    if (!TEST_MODE) {
-      gameActions.setWalletConnected(connected);
-      if (connected && publicKey) {
-        console.log('[WalletUI] Wallet connected, fetching token balance...');
-        gameActions.updateTokenBalance(publicKey.toBase58()).catch(error => {
-          console.error('[WalletUI] Failed to fetch token balance:', error);
+    if (TEST_MODE) return;
+    
+    gameActions.setWalletConnected(connected);
+    
+    if (connected && publicKey) {
+      const walletAddress = publicKey.toBase58();
+      const cached = loadCachedTier();
+      
+      // Check if we have a valid cache for THIS wallet
+      const cacheValid = cached && 
+        cached.address === walletAddress && 
+        (Date.now() - cached.timestamp) < 24 * 60 * 60 * 1000;
+      
+      if (cacheValid) {
+        // Use cached data - no RPC call needed!
+        console.log('[WalletUI] Using cached tier data (same wallet, cache valid)');
+        useGameStore.setState({
+          tokenBalance: cached.balance,
+          holderTier: cached.tier as any,
         });
-      } else if (!connected) {
-        // Reset when disconnected
-        useGameStore.setState({ tokenBalance: 0, holderTier: 'none' });
+      } else {
+        // Fresh wallet or cache expired - fetch once and cache
+        console.log('[WalletUI] Fetching token balance (first connect or cache expired)...');
+        gameActions.updateTokenBalance(walletAddress)
+          .then(() => {
+            // Cache the result for future sessions
+            const state = useGameStore.getState();
+            saveCachedTier(walletAddress, state.tokenBalance, state.holderTier);
+          })
+          .catch(error => {
+            console.error('[WalletUI] Failed to fetch token balance:', error);
+          });
       }
+    } else if (!connected) {
+      // Wallet disconnected - keep cached tier data for cosmetics
+      // but mark as not connected in store
+      // Don't clear cache - user can reconnect same wallet
+      useGameStore.setState({ walletConnected: false });
     }
   }, [connected, publicKey]);
 

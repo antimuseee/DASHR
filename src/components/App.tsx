@@ -7,6 +7,7 @@ import GameCanvas from './GameCanvas';
 import WalletUI from './WalletUI';
 import Menus from './Menus';
 import Tutorial, { hasTutorialBeenSeen } from './Tutorial';
+import WebViewBanner from './WebViewBanner';
 import { useGameStore } from '../utils/store';
 import '@solana/wallet-adapter-react-ui/styles.css';
 import '../styles.css';
@@ -47,6 +48,8 @@ export default function App() {
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
           <div className="app-shell">
+            {/* Banner for mobile users in Phantom's WebView - suggests opening in browser */}
+            <WebViewBanner />
             <GameCanvas />
             <div className="hud">
               <WalletUI />

@@ -8,6 +8,8 @@ export interface DeviceInfo {
   screenWidth: number;
   screenHeight: number;
   pixelRatio: number;
+  isPhantomWebView: boolean;  // Inside Phantom's in-app browser
+  isAnyWebView: boolean;      // Any in-app browser (Phantom, MetaMask, etc.)
 }
 
 export function detectDevice(): DeviceInfo {
@@ -36,6 +38,27 @@ export function detectDevice(): DeviceInfo {
   const isTablet = isTabletUA || (hasTouch && !smallScreen && Math.min(screenWidth, screenHeight) < 1024);
   const isDesktop = !isMobile && !isTablet;
   
+  // Phantom WebView detection (mobile only)
+  // If we're on mobile and Phantom's provider is injected, we're in Phantom's browser
+  const isPhantomWebView = isMobile && (
+    !!(window as any).phantom?.solana?.isPhantom ||
+    !!(window as any).solana?.isPhantom ||
+    ua.includes('phantom')
+  );
+  
+  // General WebView detection (other wallet apps)
+  const webViewPatterns = ['wv', 'webview', 'fbav', 'fban', 'instagram', 'twitter', 'metamask', 'trustwallet', 'coinbase'];
+  const isAnyWebView = isPhantomWebView || 
+    webViewPatterns.some(pattern => ua.includes(pattern)) ||
+    (isMobile && ua.includes('iphone') && !ua.includes('safari')) || // iOS WebView
+    (isMobile && !!(window as any).solana); // Any injected wallet on mobile = WebView
+  
+  if (isPhantomWebView) {
+    console.log('[Device] Phantom WebView detected - suggest opening in browser for better performance');
+  } else if (isAnyWebView) {
+    console.log('[Device] WebView detected:', ua.substring(0, 100));
+  }
+  
   return {
     isMobile,
     isTablet,
@@ -44,6 +67,8 @@ export function detectDevice(): DeviceInfo {
     screenWidth,
     screenHeight,
     pixelRatio: window.devicePixelRatio || 1,
+    isPhantomWebView,
+    isAnyWebView,
   };
 }
 
