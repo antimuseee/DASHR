@@ -1033,6 +1033,12 @@ body {
     padding: 3px 6px;
   }
   
+  /* Hide SOL balance on mobile to make wallet box same height as tier box */
+  /* To restore: remove this rule */
+  .wallet-card .sol-balance-badge {
+    display: none;
+  }
+  
   /* Move boost indicators down on mobile to avoid overlapping wallet elements */
   .boost-indicators {
     top: 95px !important;

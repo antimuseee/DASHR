@@ -221,8 +221,9 @@ export default function WalletUI() {
             Testing with {formatTokenBalance(MOCK_BALANCE)} {TOKEN_SYMBOL}
           </span>
         )}
+        {/* SOL balance - hidden on mobile via CSS class .sol-balance-badge */}
         {publicKey && solBalance !== null && (
-          <span className="badge">{Math.round(solBalance).toLocaleString()} SOL</span>
+          <span className="badge sol-balance-badge">{Math.round(solBalance).toLocaleString()} SOL</span>
         )}
       </div>
     </div>
