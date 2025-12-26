@@ -935,15 +935,11 @@ body {
 }
 
 .or-divider {
-  color: rgba(232, 229, 255, 0.8);
+  color: rgba(232, 229, 255, 0.5);
   font-size: 12px;
   font-weight: 600;
   text-align: center;
-  margin: 8px 0;
-  padding: 6px 12px;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 6px;
-  letter-spacing: 1px;
+  margin: 4px 0;
 }
 
 .x-logo {
@@ -953,7 +949,7 @@ body {
   color: #ffffff;
   font-size: 15px;
   vertical-align: middle;
-  background: rgba(29, 161, 242, 0.3);
+  background: rgba(155, 92, 255, 0.4);
   padding: 2px 4px;
   border-radius: 3px;
   margin: 0 2px;
