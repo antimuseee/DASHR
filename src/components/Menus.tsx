@@ -491,7 +491,7 @@ function GameOver() {
                 className="name-input"
                 disabled={twitterHandle.trim().length > 0}
               />
-                <div className="or-divider">or <span className="x-logo">𝕏</span> handle</div>
+                <div className="or-divider">— OR <span className="x-logo">𝕏</span> HANDLE —</div>
               <input
                 type="text"
                 value={twitterHandle}

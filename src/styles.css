@@ -918,33 +918,45 @@ body {
   color: #1da1f2;
   letter-spacing: 1px;
   margin: 8px 0;
+  box-shadow: 0 0 8px rgba(29, 161, 242, 0.3);
+  text-shadow: 0 0 4px rgba(29, 161, 242, 0.5);
 }
 
 .twitter-input:focus {
   outline: none;
   border-color: #1da1f2;
-  box-shadow: 0 0 15px rgba(29, 161, 242, 0.4);
+  box-shadow: 0 0 15px rgba(29, 161, 242, 0.5);
+  text-shadow: 0 0 6px rgba(29, 161, 242, 0.7);
 }
 
 .twitter-input::placeholder {
   color: rgba(29, 161, 242, 0.5);
+  text-shadow: none;
 }
 
 .or-divider {
-  color: rgba(232, 229, 255, 0.5);
+  color: rgba(232, 229, 255, 0.8);
   font-size: 12px;
   font-weight: 600;
   text-align: center;
-  margin: 4px 0;
+  margin: 8px 0;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 6px;
+  letter-spacing: 1px;
 }
 
 .x-logo {
   display: inline-block;
   font-family: system-ui, -apple-system, sans-serif;
   font-weight: 900;
-  color: #000000;
-  font-size: 14px;
+  color: #ffffff;
+  font-size: 15px;
   vertical-align: middle;
+  background: rgba(29, 161, 242, 0.3);
+  padding: 2px 4px;
+  border-radius: 3px;
+  margin: 0 2px;
 }
 
 .twitter-link-name {
@@ -953,11 +965,13 @@ body {
   text-decoration: none;
   transition: opacity 0.2s;
   pointer-events: auto;
+  text-shadow: 0 0 4px rgba(29, 161, 242, 0.5);
 }
 
 .twitter-link-name:hover {
-  opacity: 0.8;
+  opacity: 0.9;
   text-decoration: underline;
+  text-shadow: 0 0 6px rgba(29, 161, 242, 0.7);
 }
 
 .entry-buttons {
