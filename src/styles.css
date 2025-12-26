@@ -979,14 +979,17 @@ body {
   
   /* Make holder badge horizontally compact on mobile but keep vertical height */
   .holder-badge {
-    padding: 14px 12px !important;
+    padding: 10px 12px !important;
     font-size: 12px !important;
     gap: 4px !important;
     min-width: 160px;
     max-width: 170px;
+    min-height: 70px;
     flex-shrink: 0;
     flex-wrap: wrap;
     justify-content: center;
+    align-content: center;
+    box-sizing: border-box;
   }
   
   .holder-badge .tier-emoji {
@@ -1003,24 +1006,36 @@ body {
     text-align: center;
   }
   
-  /* Give wallet card same width as holder badge for symmetry */
+  /* Give wallet card same size as holder badge for symmetry */
   .wallet-card {
     flex-shrink: 0;
     min-width: 160px;
     max-width: 170px;
+    min-height: 70px;
     flex-direction: column;
-    align-items: stretch;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 10px !important;
+    box-sizing: border-box;
   }
   
   /* Align the wallet button and SOL badge properly on mobile */
   .wallet-card .wallet-adapter-button {
     width: 100%;
     justify-content: center;
+    padding: 6px 8px !important;
+    font-size: 12px !important;
   }
   
   .wallet-card .badge {
     text-align: center;
-    width: 100%;
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+  
+  /* Move boost indicators down on mobile to avoid overlapping wallet elements */
+  .boost-indicators {
+    top: 95px !important;
   }
   
   /* Inventory already on right side, just adjust for safe area on mobile */
