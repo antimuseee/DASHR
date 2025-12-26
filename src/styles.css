@@ -1171,10 +1171,10 @@ body {
     height: 55px;
   }
   
-  /* Larger stat pills for readability */
+  /* Keep stat pills smaller on mobile (same size as initial load) */
   .stat-pill {
-    padding: 6px 12px;
-    font-size: 13px;
+    padding: 5px 8px;
+    font-size: 11px;
   }
   
   /* Center vertical adjustment for mobile */
