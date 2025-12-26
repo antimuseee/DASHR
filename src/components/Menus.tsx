@@ -627,20 +627,21 @@ export default function Menus({ phase, onShowTutorial }: { phase: string; onShow
       </div>
       
       {/* Active boost indicators - always rendered during running phase to avoid first-render lag */}
+      {/* Using opacity only (no display/position changes) to avoid layout recalculation */}
       {phase === 'running' && (
         <div className="boost-indicators" style={{ 
-          visibility: (activeBoost || hasShield || hasMagnet) ? 'visible' : 'hidden',
+          opacity: (activeBoost || hasShield || hasMagnet) ? 1 : 0,
           pointerEvents: (activeBoost || hasShield || hasMagnet) ? 'auto' : 'none'
         }}>
           <div 
             className="boost-pill boost-double" 
-            style={{ display: activeBoost === 'double' ? 'block' : 'none' }}
+            style={{ opacity: activeBoost === 'double' ? 1 : 0 }}
           >
             ⚡ 2X ({Math.round(boostTimer)}s)
           </div>
           <div 
             className="boost-pill boost-shield shield-with-bar"
-            style={{ display: hasShield ? 'flex' : 'none' }}
+            style={{ opacity: hasShield ? 1 : 0 }}
           >
             <span className="shield-label">🛡️ SHIELD</span>
             <div className="shield-bar-container">
@@ -653,7 +654,7 @@ export default function Menus({ phase, onShowTutorial }: { phase: string; onShow
           </div>
           <div 
             className="boost-pill boost-magnet magnet-with-bar"
-            style={{ display: hasMagnet ? 'flex' : 'none' }}
+            style={{ opacity: hasMagnet ? 1 : 0 }}
           >
             <span className="magnet-label">🧲 MAGNET</span>
             <div className="magnet-bar-container">
