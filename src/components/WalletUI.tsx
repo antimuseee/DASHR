@@ -185,6 +185,7 @@ export default function WalletUI() {
   }, [publicKey]);
 
   // Update token balance when wallet connects (one-time verification, then cache)
+  // This also handles the redirect back from Phantom app on mobile
   useEffect(() => {
     if (TEST_MODE) return;
     
@@ -214,10 +215,27 @@ export default function WalletUI() {
             // Cache the result for future sessions
             const state = useGameStore.getState();
             saveCachedTier(walletAddress, state.tokenBalance, state.holderTier);
+            console.log('[WalletUI] Wallet connected and tier verified:', {
+              address: walletAddress.slice(0, 8) + '...',
+              tier: state.holderTier,
+              balance: state.tokenBalance,
+            });
           })
           .catch(error => {
             console.error('[WalletUI] Failed to fetch token balance:', error);
           });
+      }
+      
+      // On mobile, if we just returned from Phantom app redirect, ensure UI updates
+      // The wallet adapter should have already handled the redirect, but we ensure state is synced
+      const device = getDevice();
+      if (device.isMobile) {
+        console.log('[WalletUI] Mobile wallet connected - ensuring redirect completed');
+        // Small delay to ensure redirect params are processed
+        setTimeout(() => {
+          // Force a state update to ensure UI reflects connection
+          useGameStore.setState({ walletConnected: true });
+        }, 100);
       }
     } else if (!connected) {
       // Wallet disconnected - keep cached tier data for cosmetics

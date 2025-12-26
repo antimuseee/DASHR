@@ -1,4 +1,4 @@
-﻿import { useState, useCallback } from 'react';
+﻿import { useState, useCallback, useEffect } from 'react';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
@@ -19,17 +19,45 @@ const endpoint = heliusApiKey
   ? `https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`
   : 'https://api.mainnet-beta.solana.com'; // Fallback to public RPC if env var not set
 
-// Create wallet adapter with error handling
+// Create wallet adapter - it will automatically handle mobile deep linking
+// On mobile: Click connect → Opens Phantom app → User approves → Redirects back to browser
 const phantomAdapter = new PhantomWalletAdapter();
+
 phantomAdapter.on('error', (error) => {
   console.error('[Wallet] Phantom error:', error);
 });
+
+// Listen for connection events
+phantomAdapter.on('connect', (publicKey) => {
+  console.log('[Wallet] Connected:', publicKey.toBase58());
+  // On mobile, after user approves in Phantom app, they'll be redirected back here
+  // The adapter automatically handles the redirect via deep linking
+});
+
+phantomAdapter.on('disconnect', () => {
+  console.log('[Wallet] Disconnected');
+});
+
 const wallets = [phantomAdapter];
 
 export default function App() {
   const phase = useGameStore((s) => s.phase);
   const [showTutorial, setShowTutorial] = useState(!hasTutorialBeenSeen());
   const [forceShowTutorial, setForceShowTutorial] = useState(false);
+  
+  // Handle redirect back from Phantom app on mobile
+  // Check if we're returning from a wallet connection redirect
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const phantomRedirect = urlParams.get('phantom_redirect');
+    
+    if (phantomRedirect === 'true') {
+      console.log('[App] Returned from Phantom app redirect - wallet should be connected');
+      // Clean up URL params after processing
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
+  }, []);
   
   const handleTutorialComplete = useCallback(() => {
     console.log('[App] Tutorial complete - hiding tutorial');
@@ -48,8 +76,6 @@ export default function App() {
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
           <div className="app-shell">
-            {/* Banner for mobile users in Phantom's WebView - suggests opening in browser */}
-            <WebViewBanner />
             <GameCanvas />
             <div className="hud">
               <WalletUI />
