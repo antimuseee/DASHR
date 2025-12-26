@@ -1006,12 +1006,12 @@ body {
     text-align: center;
   }
   
-  /* Give wallet card same size as holder badge for symmetry */
+  /* Give wallet card slightly larger size than holder badge on mobile */
   .wallet-card {
     flex-shrink: 0;
-    min-width: 160px;
-    max-width: 170px;
-    min-height: 70px;
+    min-width: 175px;
+    max-width: 185px;
+    min-height: 75px;
     flex-direction: column;
     align-items: center;
     justify-content: center;
