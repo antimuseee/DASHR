@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import Player from './entities/Player';
 import Spawner from './entities/Obstacles';
 import { useGameStore, gameActions } from '../utils/store';
-import { spawnSpark } from '../utils/particles';
+import { spawnSpark, initSparkEmitters, destroySparkEmitters } from '../utils/particles';
 import { getDevice } from '../utils/device';
 import { getEquippedSkin, getEquippedTrail } from '../utils/cosmetics';
 
@@ -255,39 +255,9 @@ export default class MainScene extends Phaser.Scene {
       this.handleResize({ width: this.scale.width, height: this.scale.height } as Phaser.Structs.Size);
     });
     
-    // Pre-warm particle system on mobile to prevent slowdown on first boost activation
-    // Create multiple warmup emitters with different configs to fully initialize the particle system
-    if (device.isMobile) {
-      // Warm up with same config as spawnSpark uses (6 particles, proper speed/scale)
-      const warmupEmitter1 = this.add.particles(-100, -100, 'particle', {
-        lifespan: 400,
-        speed: { min: 80, max: 160 },
-        scale: { start: 1, end: 0 },
-        tint: 0xffd700,
-        quantity: 6,
-      });
-      // Warm up with different colors (boost colors)
-      const warmupEmitter2 = this.add.particles(-100, -100, 'particle', {
-        lifespan: 400,
-        speed: { min: 80, max: 160 },
-        scale: { start: 1, end: 0 },
-        tint: 0x00ffff,
-        quantity: 6,
-      });
-      const warmupEmitter3 = this.add.particles(-100, -100, 'particle', {
-        lifespan: 400,
-        speed: { min: 80, max: 160 },
-        scale: { start: 1, end: 0 },
-        tint: 0xff00ff,
-        quantity: 6,
-      });
-      // Clean up after a short delay
-      this.time.delayedCall(500, () => {
-        warmupEmitter1.destroy();
-        warmupEmitter2.destroy();
-        warmupEmitter3.destroy();
-      });
-    }
+    // Initialize spark emitter pool to prevent lag when activating boosts
+    // This creates reusable emitters for all boost colors at scene start
+    initSparkEmitters(this);
     
     // Create trading chart graphics
     this.chartGraphics = this.add.graphics();
@@ -298,6 +268,7 @@ export default class MainScene extends Phaser.Scene {
     
     this.events.once('shutdown', () => {
       document.removeEventListener('keydown', this.keyHandler);
+      destroySparkEmitters(this);
     });
     
     console.log('[Main Scene] create() completed successfully');
