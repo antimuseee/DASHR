@@ -1124,12 +1124,12 @@ body {
     font-size: 15px;
     min-height: 48px;
   }
-  /* How to Play and Cosmetics buttons mobile */
+  /* How to Play and Cosmetics buttons mobile - moved higher to avoid overlap with left lane */
   .how-to-play-button {
     width: 38px;
     height: 38px;
     font-size: 16px;
-    bottom: 105px;
+    bottom: 200px;
     left: 15px;
   }
   
@@ -1137,7 +1137,7 @@ body {
     width: 38px;
     height: 38px;
     font-size: 16px;
-    bottom: 105px;
+    bottom: 200px;
     left: 63px;
   }
   
