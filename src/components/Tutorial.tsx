@@ -17,7 +17,7 @@ const tutorialSteps: TutorialStep[] = [
   },
   {
     title: "Controls",
-    content: "Desktop: Arrow keys or WASD to switch lanes. Space/Up/W to jump.\n\nMobile: Swipe left/right to change lanes, swipe up to jump.",
+    content: "Desktop: Arrow keys or A/D to switch lanes. Space/Up/W to jump.\n\nMobile: Swipe left/right to change lanes, swipe up to jump.",
     icon: "🎮"
   },
   {
