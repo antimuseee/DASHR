@@ -713,6 +713,12 @@ body {
   font-size: 18px;
   z-index: 1;
   filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.8));
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Android Emoji', emoji;
+  font-style: normal;
+  font-variant: normal;
+  font-weight: normal;
+  line-height: 1;
+  display: inline-block;
 }
 
 .inventory-slot .boost-count {
@@ -1174,8 +1180,9 @@ body {
   /* Ensure boost icons look the same as desktop (explicit sizing and rendering) */
   .inventory-slot .boost-icon {
     font-size: 18px !important; /* Match desktop exactly */
-    line-height: 1; /* Prevent line-height affecting emoji appearance */
-    display: inline-block; /* Ensure consistent rendering */
+    font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Android Emoji', emoji !important;
+    line-height: 1 !important;
+    display: inline-block !important;
   }
   
   /* Keep stat pills smaller on mobile (same size as initial load) */
