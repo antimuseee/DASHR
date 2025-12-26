@@ -1459,7 +1459,8 @@ export default class MainScene extends Phaser.Scene {
           return;
         }
         
-        this.collectItem(key.replace('item-', ''), sprite.x, sprite.y);
+        // Spawn effect at player's head position, not coin position
+        this.collectItem(key.replace('item-', ''), this.player.x, this.player.y - 30);
         sprite.destroy();
         return;
       }
@@ -1467,7 +1468,8 @@ export default class MainScene extends Phaser.Scene {
       if (key.startsWith('boost-')) {
         // Boosts: trigger when close
         if (z > 60) return;
-        this.collectBoost(key.replace('boost-', ''), sprite.x, sprite.y);
+        // Spawn effect at player's head position, not boost position
+        this.collectBoost(key.replace('boost-', ''), this.player.x, this.player.y - 30);
         sprite.destroy();
         return;
       }
