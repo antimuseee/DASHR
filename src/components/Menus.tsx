@@ -38,11 +38,23 @@ function restartGame() {
         mainScene.scene.stop();
       }
       
-      // Small delay to ensure cleanup, then start fresh
+      // Longer delay on mobile to ensure proper cleanup before restart
+      // Mobile devices need more time to release resources
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const restartDelay = isMobile ? 100 : 50;
+      
       setTimeout(() => {
         console.log('[Menus] Starting scene fresh...');
-        sceneManager.start('Main');
-      }, 10);
+        // Double-check scene isn't somehow still active
+        const currentScene = sceneManager.getScene('Main');
+        if (currentScene && currentScene.scene.isActive()) {
+          console.log('[Menus] Scene still active, stopping again...');
+          currentScene.scene.stop();
+          setTimeout(() => sceneManager.start('Main'), 50);
+        } else {
+          sceneManager.start('Main');
+        }
+      }, restartDelay);
     } else {
       // Scene doesn't exist - launch it
       console.log('[Menus] Main scene not found, launching it');
