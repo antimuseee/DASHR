@@ -803,10 +803,10 @@ export default class MainScene extends Phaser.Scene {
       }
       
       this.lastChartScore = currentScore;
+      
+      // Only redraw chart when data changes (not every frame) - saves ~60 redraws/sec
+      this.drawTradingChart();
     }
-    
-    // Redraw chart every frame for smooth appearance
-    this.drawTradingChart();
   }
 
   drawTradingChart() {
