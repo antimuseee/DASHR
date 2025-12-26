@@ -1042,7 +1042,6 @@ body {
   }
   
   /* Make holder badge horizontally compact on mobile but keep vertical height */
-  /* Also disable expensive effects to prevent lag */
   .holder-badge {
     padding: 10px 12px !important;
     font-size: 12px !important;
@@ -1055,9 +1054,6 @@ body {
     justify-content: center;
     align-content: center;
     box-sizing: border-box;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    animation: none !important;
   }
   
   .holder-badge .tier-emoji {
@@ -1110,29 +1106,6 @@ body {
   /* Move boost indicators down on mobile to avoid overlapping wallet elements */
   .boost-indicators {
     top: 95px !important;
-  }
-  
-  /* Disable expensive effects on mobile to prevent lag on first boost activation */
-  .boost-pill {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    /* Disable glow animation that causes layout thrashing */
-    animation: none !important;
-  }
-  
-  .inventory-slot {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-  
-  /* Disable expensive energized animations on mobile */
-  .combo-pill.energized {
-    animation: none !important;
-  }
-  
-  .combo-pill.energized .combo-fill {
-    animation: none !important;
-    background-size: 100% 100% !important;
   }
   
   /* Inventory already on right side, just adjust for safe area on mobile */
