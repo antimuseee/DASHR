@@ -1442,7 +1442,10 @@ export default class MainScene extends Phaser.Scene {
 
       if (key.startsWith('item-')) {
         // Coins: trigger burst when closer to the player (lower z = closer)
-        if (z > 60) return;
+        // On mobile, wait until coin is closer (z <= 30) to match effect position above head
+        const deviceForCoin = getDevice();
+        const coinCollectZ = deviceForCoin.isMobile ? 30 : 60;
+        if (z > coinCollectZ) return;
         
         // Check if this is a whale trail bubble
         if (sprite.getData('isWhaleTrail')) {
@@ -1470,9 +1473,12 @@ export default class MainScene extends Phaser.Scene {
 
       if (key.startsWith('boost-')) {
         // Boosts: trigger when close
-        if (z > 60) return;
+        // On mobile, wait until boost is closer to match effect position above head
+        const deviceForBoost = getDevice();
+        const boostCollectZ = deviceForBoost.isMobile ? 30 : 60;
+        if (z > boostCollectZ) return;
         // On mobile, spawn effect above player's head. On desktop, use boost position.
-        const device = getDevice();
+        const device = deviceForBoost;
         const effectX = device.isMobile ? this.player.x : sprite.x;
         const effectY = device.isMobile ? this.player.y - 55 : sprite.y;
         this.collectBoost(key.replace('boost-', ''), effectX, effectY);
