@@ -383,12 +383,12 @@ export default class MainScene extends Phaser.Scene {
 
     grid.setScrollFactor(0).setDepth(-5);
 
-    // Glowing edge line
+    // Glowing edge line - positioned at second pink grid line as visual jump reference
     const edgeLine = this.add.graphics();
     edgeLine.lineStyle(4, 0x00ffff, 0.8);
-    edgeLine.lineBetween(0, this.groundY - 2, w, this.groundY - 2);
+    edgeLine.lineBetween(0, this.groundY + 15, w, this.groundY + 15);
     edgeLine.lineStyle(8, 0x00ffff, 0.2);
-    edgeLine.lineBetween(0, this.groundY - 2, w, this.groundY - 2);
+    edgeLine.lineBetween(0, this.groundY + 15, w, this.groundY + 15);
     edgeLine.setScrollFactor(0).setDepth(5);
 
     // Side rails glow (slightly converging)
