@@ -1108,6 +1108,12 @@ body {
     top: 95px !important;
   }
   
+  /* Disable expensive backdrop-filter blur on mobile to prevent lag on first boost activation */
+  .boost-pill {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  
   /* Inventory already on right side, just adjust for safe area on mobile */
   .boost-inventory {
     right: max(10px, env(safe-area-inset-right));
