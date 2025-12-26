@@ -6,7 +6,6 @@ import { useGameStore, gameActions } from '../utils/store';
 import { TOKEN_SYMBOL, HOLDER_TIERS, formatTokenBalance, isHolder, TEST_MODE, MOCK_BALANCE, getTierFromBalance } from '../utils/token';
 import { autoEquipForTier } from '../utils/cosmetics';
 import { getDevice } from '../utils/device';
-import { shouldUseMobileDeepLink, connectPhantomMobile, isReturningFromPhantom, processPhantomRedirect } from '../utils/phantomMobile';
 
 // Use Helius RPC for wallet connection (reliable)
 // Get API key from environment variable (set in Vercel)
@@ -78,39 +77,12 @@ function clearCachedTier() {
 }
 
 export default function WalletUI() {
-  const { publicKey, connected, connecting, disconnecting, wallet, connect, disconnect } = useWallet();
+  const { publicKey, connected, connecting, disconnecting, wallet } = useWallet();
   const [solBalance, setSolBalance] = useState<number | null>(null);
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const { holderTier, tokenBalance } = useGameStore();
-  const [useMobileFlow, setUseMobileFlow] = useState(false);
-  
-  // Check if we should use mobile deep link flow
-  useEffect(() => {
-    const shouldUseMobile = shouldUseMobileDeepLink();
-    setUseMobileFlow(shouldUseMobile);
-    if (shouldUseMobile) {
-      console.log('[WalletUI] Using mobile deep link flow for wallet connection');
-    }
-  }, []);
-  
-  // Handle return from Phantom mobile redirect
-  useEffect(() => {
-    if (useMobileFlow && isReturningFromPhantom()) {
-      console.log('[WalletUI] Processing return from Phantom mobile...');
-      const redirectData = processPhantomRedirect();
-      
-      if (redirectData) {
-        // Trigger wallet connection after redirect
-        console.log('[WalletUI] Redirect processed, triggering wallet connect...');
-        // The wallet adapter should pick up the connection from the redirect
-        if (!connected && wallet) {
-          connect().catch(err => {
-            console.error('[WalletUI] Error connecting after redirect:', err);
-          });
-        }
-      }
-    }
-  }, [useMobileFlow, connected, wallet, connect]);
+  const [showMobileVerifiedBanner, setShowMobileVerifiedBanner] = useState(false);
+  const [copied, setCopied] = useState(false);
   
   // Debug wallet connection state
   useEffect(() => {
@@ -119,19 +91,31 @@ export default function WalletUI() {
       connecting, 
       disconnecting,
       wallet: wallet?.adapter?.name,
-      publicKey: publicKey?.toBase58()?.slice(0, 8),
-      useMobileFlow 
+      publicKey: publicKey?.toBase58()?.slice(0, 8) 
     });
-  }, [connected, connecting, disconnecting, publicKey, wallet, useMobileFlow]);
+  }, [connected, connecting, disconnecting, publicKey, wallet]);
   
   const [statusMessage, setStatusMessage] = useState<string>('');
   
-  // Custom mobile wallet connect handler
-  const handleMobileConnect = () => {
-    console.log('[WalletUI] Mobile connect clicked - opening Phantom...');
-    connectPhantomMobile();
+  // Copy game link to clipboard (for mobile users to switch to browser)
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.origin);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      // Fallback
+      const textArea = document.createElement('textarea');
+      textArea.value = window.location.origin;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
-  
+
   const handleRefreshBalance = async () => {
     console.log('[WalletUI] Refresh button clicked!');
     console.log('[WalletUI] publicKey:', publicKey?.toBase58());
@@ -263,16 +247,14 @@ export default function WalletUI() {
           });
       }
       
-      // On mobile, if we just returned from Phantom app redirect, ensure UI updates
-      // The wallet adapter should have already handled the redirect, but we ensure state is synced
+      // On mobile in Phantom's WebView, show banner to switch to regular browser
       const device = getDevice();
-      if (device.isMobile) {
-        console.log('[WalletUI] Mobile wallet connected - ensuring redirect completed');
-        // Small delay to ensure redirect params are processed
+      if (device.isMobile && device.isPhantomWebView) {
+        console.log('[WalletUI] Mobile wallet connected in Phantom WebView - showing browser switch banner');
+        // Show the "switch to browser" banner after tier is verified
         setTimeout(() => {
-          // Force a state update to ensure UI reflects connection
-          useGameStore.setState({ walletConnected: true });
-        }, 100);
+          setShowMobileVerifiedBanner(true);
+        }, 500);
       }
     } else if (!connected) {
       // Wallet disconnected - keep cached tier data for cosmetics
@@ -290,13 +272,82 @@ export default function WalletUI() {
   }, [publicKey]);
 
   const tierInfo = HOLDER_TIERS[holderTier];
-  // In TEST_MODE, show badge if mock balance qualifies. In production, need real wallet.
+  // Show badge if:
+  // - TEST_MODE with mock balance
+  // - Connected wallet with tokens
+  // - OR cached tier (allows playing in browser without active connection)
+  const hasCachedTier = !TEST_MODE && !connected && holderTier !== 'none' && isHolder(tokenBalance);
   const showHolderBadge = TEST_MODE 
     ? isHolder(tokenBalance) 
-    : (connected && isHolder(tokenBalance));
+    : (connected && isHolder(tokenBalance)) || hasCachedTier;
 
   return (
     <div className="topbar">
+      {/* Mobile Phantom WebView: Show banner to switch to regular browser for better performance */}
+      {showMobileVerifiedBanner && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 10000,
+          background: 'linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 100%)',
+          borderBottom: '3px solid #4ef0c5',
+          padding: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+          boxShadow: '0 4px 20px rgba(78, 240, 197, 0.3)',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ color: '#fff', fontSize: '14px', lineHeight: '1.4' }}>
+              <span style={{ fontSize: '18px' }}>✅</span>{' '}
+              <strong style={{ color: '#4ef0c5' }}>Tier Verified!</strong>
+              <br />
+              <span style={{ color: '#ccc', fontSize: '12px' }}>
+                For smoother gameplay, open the game in Safari or Chrome:
+              </span>
+            </div>
+            <button
+              onClick={() => setShowMobileVerifiedBanner(false)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#888',
+                fontSize: '24px',
+                cursor: 'pointer',
+                padding: '0',
+                lineHeight: '1',
+              }}
+            >
+              ×
+            </button>
+          </div>
+          
+          <button
+            onClick={handleCopyLink}
+            style={{
+              background: copied 
+                ? 'linear-gradient(135deg, #4ef0c5, #00ff88)' 
+                : 'linear-gradient(135deg, #9b5cff, #4ef0c5)',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '12px 16px',
+              color: '#0a0517',
+              fontWeight: 700,
+              fontSize: '14px',
+              cursor: 'pointer',
+            }}
+          >
+            {copied ? '✅ Link Copied! Paste in Safari/Chrome' : '📋 Copy Game Link'}
+          </button>
+          
+          <div style={{ color: '#888', fontSize: '11px', textAlign: 'center' }}>
+            Your {holderTier} tier is saved for 24 hours. You can play here too, but your browser runs faster!
+          </div>
+        </div>
+      )}
+      
       {/* Holder tier badge with refresh button positioned at upper right */}
       {showHolderBadge && (
         <div style={{ position: 'relative' }}>
@@ -381,66 +432,7 @@ export default function WalletUI() {
       )}
       
       <div className="wallet-card">
-        {!TEST_MODE && !useMobileFlow && <WalletMultiButton className="btn secondary" />}
-        {!TEST_MODE && useMobileFlow && (
-          <>
-            {!connected && !connecting && (
-              <button
-                className="btn secondary"
-                onClick={handleMobileConnect}
-                style={{
-                  background: 'linear-gradient(135deg, #9b5cff, #4ef0c5)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '10px 20px',
-                  color: '#0a0517',
-                  fontWeight: 700,
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                }}
-              >
-                Connect Phantom
-              </button>
-            )}
-            {connecting && (
-              <button
-                className="btn secondary"
-                disabled
-                style={{
-                  background: 'rgba(155, 92, 255, 0.5)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '10px 20px',
-                  color: '#fff',
-                  fontWeight: 700,
-                  fontSize: '14px',
-                  cursor: 'not-allowed',
-                  opacity: 0.6,
-                }}
-              >
-                Connecting...
-              </button>
-            )}
-            {connected && publicKey && (
-              <button
-                className="btn secondary"
-                onClick={() => disconnect()}
-                style={{
-                  background: 'linear-gradient(135deg, #4ef0c5, #9b5cff)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '10px 20px',
-                  color: '#0a0517',
-                  fontWeight: 700,
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                }}
-              >
-                {shortAddr}
-              </button>
-            )}
-          </>
-        )}
+        {!TEST_MODE && <WalletMultiButton className="btn secondary" />}
         {TEST_MODE && !publicKey && (
           <span className="badge" style={{ background: 'rgba(255,215,0,0.2)', color: '#ffd700' }}>
             Testing with {formatTokenBalance(MOCK_BALANCE)} {TOKEN_SYMBOL}

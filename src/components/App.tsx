@@ -7,7 +7,6 @@ import GameCanvas from './GameCanvas';
 import WalletUI from './WalletUI';
 import Menus from './Menus';
 import Tutorial, { hasTutorialBeenSeen } from './Tutorial';
-import WebViewBanner from './WebViewBanner';
 import { useGameStore } from '../utils/store';
 import '@solana/wallet-adapter-react-ui/styles.css';
 import '../styles.css';
@@ -73,7 +72,7 @@ export default function App() {
   
   return (
     <ConnectionProvider endpoint={endpoint} config={{ commitment: 'processed' }}>
-      <WalletProvider wallets={wallets} autoConnect>
+      <WalletProvider wallets={wallets} autoConnect={false}>
         <WalletModalProvider>
           <div className="app-shell">
             <GameCanvas />
