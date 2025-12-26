@@ -491,7 +491,7 @@ function GameOver() {
                 className="name-input"
                 disabled={twitterHandle.trim().length > 0}
               />
-              <div className="or-divider">— OR —</div>
+              <div className="or-divider">or twitter handle</div>
               <input
                 type="text"
                 value={twitterHandle}
@@ -507,7 +507,7 @@ function GameOver() {
                   e.stopPropagation();
                   e.nativeEvent.stopImmediatePropagation();
                 }}
-                placeholder="@twitter"
+                placeholder="@username"
                 maxLength={20}
                 className="twitter-input"
                 disabled={playerName.trim().length > 0}
