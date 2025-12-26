@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import Player from './entities/Player';
 import Spawner from './entities/Obstacles';
 import { useGameStore, gameActions } from '../utils/store';
-import { spawnSpark, initSparkEmitters, destroySparkEmitters } from '../utils/particles';
+import { spawnSpark } from '../utils/particles';
 import { getDevice } from '../utils/device';
 import { getEquippedSkin, getEquippedTrail } from '../utils/cosmetics';
 
@@ -255,9 +255,26 @@ export default class MainScene extends Phaser.Scene {
       this.handleResize({ width: this.scale.width, height: this.scale.height } as Phaser.Structs.Size);
     });
     
-    // Initialize spark emitter pool to prevent lag spikes when activating boosts
-    // Pre-allocates reusable emitters for better performance on both desktop and mobile
-    initSparkEmitters(this);
+    // Pre-warm text rendering on mobile to prevent lag on first boost activation
+    // Creates and immediately destroys text with emojis to cache the rendering
+    if (device.isMobile) {
+      const warmupTexts = [
+        '⚡ COMBOS DOUBLED!',
+        '🛡️ SHIELD ON!',
+        '🧲 MAGNET ON!',
+      ];
+      warmupTexts.forEach(text => {
+        const warmup = this.add.text(-1000, -1000, text, {
+          fontSize: '20px',
+          fontFamily: 'Arial Black',
+          color: '#ffffff',
+          stroke: '#000000',
+          strokeThickness: 4,
+        });
+        this.time.delayedCall(50, () => warmup.destroy());
+      });
+    }
+    
     
     // Create trading chart graphics
     this.chartGraphics = this.add.graphics();
@@ -268,7 +285,6 @@ export default class MainScene extends Phaser.Scene {
     
     this.events.once('shutdown', () => {
       document.removeEventListener('keydown', this.keyHandler);
-      destroySparkEmitters(this);
     });
     
     console.log('[Main Scene] create() completed successfully');
