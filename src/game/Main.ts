@@ -208,9 +208,8 @@ export default class MainScene extends Phaser.Scene {
     this.speed = 250;
     this.distance = 0;
     
-    // Mobile: first obstacles spawn further away for easier start
-    const device = getDevice();
-    this.nextSpawnDistance = device.isMobile ? 250 : 100;
+    // Same initial spawn distance on all platforms for competitive fairness
+    this.nextSpawnDistance = 100;
     this.nextBoostDistance = 600 + Math.random() * 400; // First boost after 600-1000m
     this.runActive = true;
     this.scorePopups = [];
@@ -431,10 +430,8 @@ export default class MainScene extends Phaser.Scene {
     const distanceDelta = (this.speed * dt);
     this.distance += distanceDelta;
     
-    // Speed ramp-up: slower on mobile/WebViews for playability
-    const device = getDevice();
-    const speedIncrease = device.isLowPerformance ? 1.0 : device.isMobile ? 1.5 : 3;
-    this.speed += speedIncrease * dt;
+    // Speed ramp-up: same on all platforms for competitive fairness
+    this.speed += 3 * dt;
 
     // Update boost timers
     gameActions.updateBoostTimer(dt);
@@ -545,46 +542,18 @@ export default class MainScene extends Phaser.Scene {
       return;
     }
     
-    const device = getDevice();
-    
     while (this.distance >= this.nextSpawnDistance) {
       const chunk = pickChunk();
 
       // Spawn very close to the horizon so they immediately start moving toward the player.
       const zBase = this.zFar * Phaser.Math.FloatBetween(0.94, 0.99);
 
-      // Mobile/WebView early-game adjustment: skip some pit spawns to reduce density
-      // Higher skip chance early, gradually decreases as player progresses
-      // WebViews get even more reduction to help with performance
-      let skipChance = 0;
-      if (device.isLowPerformance) {
-        // WebViews: more aggressive skip to reduce entity count
-        if (this.distance < 1000) {
-          skipChance = 0.6; // 60% skip in first 1000m
-        } else if (this.distance < 3000) {
-          skipChance = 0.4; // 40% skip from 1000-3000m
-        } else {
-          skipChance = 0.25; // 25% skip after 3000m (permanent slight reduction)
-        }
-      } else if (device.isMobile) {
-        if (this.distance < 500) {
-          skipChance = 0.5; // 50% skip in first 500m
-        } else if (this.distance < 1500) {
-          skipChance = 0.35; // 35% skip from 500-1500m
-        } else if (this.distance < 3000) {
-          skipChance = 0.2; // 20% skip from 1500-3000m
-        }
-      }
-      const shouldSkipPit = skipChance > 0 && Math.random() < skipChance;
-
-      // Spawn obstacles (pits)
-      if (!shouldSkipPit) {
-        chunk.obstacles.forEach((o) => {
-          o.lanes.forEach((lane) => {
-            this.spawner.spawn(o.type, lane, zBase);
-          });
+      // Spawn obstacles (pits) - same on all platforms for competitive fairness
+      chunk.obstacles.forEach((o) => {
+        o.lanes.forEach((lane) => {
+          this.spawner.spawn(o.type, lane, zBase);
         });
-      }
+      });
 
       // Spawn coins
       for (let i = 0; i < chunk.collectibles; i++) {
@@ -592,33 +561,8 @@ export default class MainScene extends Phaser.Scene {
         this.spawner.spawn('collectible', lane, zBase + 120 + i * 140);
       }
 
-      // Mobile/WebView: larger gaps between spawns for reaction time and performance
-      let minGap = 200;
-      let maxGap = 300;
-      if (device.isLowPerformance) {
-        // WebViews: even larger gaps to reduce active entities
-        if (this.distance < 1500) {
-          minGap = 400;
-          maxGap = 550;
-        } else if (this.distance < 4000) {
-          minGap = 350;
-          maxGap = 480;
-        } else {
-          minGap = 300;
-          maxGap = 420;
-        }
-      } else if (device.isMobile) {
-        if (this.distance < 1000) {
-          // Very early game on mobile: 320-450m gaps
-          minGap = 320;
-          maxGap = 450;
-        } else if (this.distance < 2500) {
-          // Mid-early game: 260-380m gaps
-          minGap = 260;
-          maxGap = 380;
-        }
-      }
-      this.nextSpawnDistance += Phaser.Math.Between(minGap, maxGap);
+      // Same spawn gaps on all platforms for competitive fairness
+      this.nextSpawnDistance += Phaser.Math.Between(200, 300);
     }
 
     // Spawn boosts occasionally
@@ -794,20 +738,12 @@ export default class MainScene extends Phaser.Scene {
   updateTradingChart(dt: number) {
     if (!this.chartGraphics) return;
     
-    // Skip chart updates entirely in low performance mode (expensive redraw)
     const device = getDevice();
-    if (device.isLowPerformance) {
-      // Only update very occasionally in WebViews
-      this.chartUpdateTimer += dt;
-      if (this.chartUpdateTimer < 1.0) return; // Update once per second max
-      this.chartUpdateTimer = 0;
-    }
-    
     const state = useGameStore.getState();
     const currentScore = state.score;
     
-    // Update chart frequency: faster if we have pending points to show (like a spike)
-    // Slower in low performance mode
+    // Update frequency: slower in low performance mode to reduce redraws
+    // But still functional - just updates less often
     const baseFreq = device.isLowPerformance ? 0.5 : 0.2;
     const updateFreq = this.pendingChartPoints.length > 0 ? 0.1 : baseFreq;
     
