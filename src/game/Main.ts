@@ -256,14 +256,37 @@ export default class MainScene extends Phaser.Scene {
     });
     
     // Pre-warm particle system on mobile to prevent slowdown on first boost activation
+    // Create multiple warmup emitters with different configs to fully initialize the particle system
     if (device.isMobile) {
-      const warmupEmitter = this.add.particles(-100, -100, 'particle', {
-        lifespan: 50,
-        speed: 1,
-        scale: { start: 0.01, end: 0 },
-        quantity: 1,
+      // Warm up with same config as spawnSpark uses (6 particles, proper speed/scale)
+      const warmupEmitter1 = this.add.particles(-100, -100, 'particle', {
+        lifespan: 400,
+        speed: { min: 80, max: 160 },
+        scale: { start: 1, end: 0 },
+        tint: 0xffd700,
+        quantity: 6,
       });
-      this.time.delayedCall(100, () => warmupEmitter.destroy());
+      // Warm up with different colors (boost colors)
+      const warmupEmitter2 = this.add.particles(-100, -100, 'particle', {
+        lifespan: 400,
+        speed: { min: 80, max: 160 },
+        scale: { start: 1, end: 0 },
+        tint: 0x00ffff,
+        quantity: 6,
+      });
+      const warmupEmitter3 = this.add.particles(-100, -100, 'particle', {
+        lifespan: 400,
+        speed: { min: 80, max: 160 },
+        scale: { start: 1, end: 0 },
+        tint: 0xff00ff,
+        quantity: 6,
+      });
+      // Clean up after a short delay
+      this.time.delayedCall(500, () => {
+        warmupEmitter1.destroy();
+        warmupEmitter2.destroy();
+        warmupEmitter3.destroy();
+      });
     }
     
     // Create trading chart graphics
