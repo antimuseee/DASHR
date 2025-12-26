@@ -24,6 +24,7 @@ export interface HighScoreEntry {
   distance: number;
   date: string;
   tier?: HolderTier; // Holder tier at time of submission
+  twitter?: string; // Optional Twitter handle (without @)
 }
 
 const HIGHSCORE_KEY = 'trench-highscores';
@@ -54,7 +55,7 @@ function saveLocalHighscores(scores: HighScoreEntry[]) {
 }
 
 // Add to local highscores
-function addLocalHighscore(name: string, score: number, distance: number, tier?: HolderTier): HighScoreEntry[] {
+function addLocalHighscore(name: string, score: number, distance: number, tier?: HolderTier, twitter?: string): HighScoreEntry[] {
   const highscores = loadLocalHighscores();
   const newEntry: HighScoreEntry = {
     name: name.toUpperCase().slice(0, 10),
@@ -62,6 +63,7 @@ function addLocalHighscore(name: string, score: number, distance: number, tier?:
     distance: Math.floor(distance),
     date: new Date().toLocaleDateString(),
     tier: tier || 'none',
+    twitter: twitter ? twitter.replace('@', '').trim() : undefined,
   };
   
   highscores.push(newEntry);
@@ -100,15 +102,16 @@ export async function addHighscoreAsync(
   name: string,
   score: number,
   distance: number,
-  tier?: HolderTier
+  tier?: HolderTier,
+  twitter?: string
 ): Promise<HighScoreEntry[]> {
   // Always save locally first
-  addLocalHighscore(name, score, distance, tier);
+  addLocalHighscore(name, score, distance, tier, twitter);
 
   // Try to save to cloud
   if (isLeaderboardConfigured()) {
     try {
-      const cloudScores = await addToLeaderboard(name, score, distance, tier);
+      const cloudScores = await addToLeaderboard(name, score, distance, tier, twitter);
       if (cloudScores.length > 0) {
         return cloudScores;
       }
@@ -122,14 +125,14 @@ export async function addHighscoreAsync(
 }
 
 // Synchronous version for backward compatibility
-export function addHighscore(name: string, score: number, distance: number, tier?: HolderTier): HighScoreEntry[] {
+export function addHighscore(name: string, score: number, distance: number, tier?: HolderTier, twitter?: string): HighScoreEntry[] {
   // Fire and forget cloud save
   if (isLeaderboardConfigured()) {
-    addToLeaderboard(name, score, distance, tier).catch((e) =>
+    addToLeaderboard(name, score, distance, tier, twitter).catch((e) =>
       console.error('Cloud save failed:', e)
     );
   }
-  return addLocalHighscore(name, score, distance, tier);
+  return addLocalHighscore(name, score, distance, tier, twitter);
 }
 
 // Get current highscores (async for cloud support)

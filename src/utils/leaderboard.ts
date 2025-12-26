@@ -16,6 +16,7 @@ export interface LeaderboardEntry {
   distance: number;
   date: string;
   tier?: HolderTier; // Optional: holder tier at time of score submission
+  twitter?: string; // Optional: Twitter handle (without @)
 }
 
 interface LeaderboardData {
@@ -64,7 +65,8 @@ export async function addToLeaderboard(
   name: string,
   score: number,
   distance: number,
-  tier?: HolderTier
+  tier?: HolderTier,
+  twitter?: string
 ): Promise<LeaderboardEntry[]> {
   if (!isLeaderboardConfigured()) {
     return [];
@@ -81,6 +83,7 @@ export async function addToLeaderboard(
       distance: Math.floor(distance),
       date: new Date().toLocaleDateString(),
       tier: tier || 'none',
+      twitter: twitter ? twitter.replace('@', '').trim() : undefined,
     };
 
     // Add and sort

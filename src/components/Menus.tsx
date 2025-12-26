@@ -122,6 +122,18 @@ function Leaderboard({ scores, currentScore, loading }: { scores: HighScoreEntry
                     {tierInfo.emoji}
                   </span>
                 )}
+                {entry.twitter && (
+                  <a 
+                    href={`https://twitter.com/${entry.twitter}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="twitter-link"
+                    onClick={(e) => e.stopPropagation()}
+                    title={`@${entry.twitter}`}
+                  >
+                    @{entry.twitter}
+                  </a>
+                )}
               </span>
               <span className="score">{Math.round(entry.score).toLocaleString()}</span>
             </div>
@@ -343,6 +355,7 @@ function GameOver() {
   const { score, distance, tokens, best, multiplier, distanceScore, coinScore, whaleScore, maxCombo, boostsUsed, whaleTokens } = useGameStore();
   const [showNameEntry, setShowNameEntry] = useState(false);
   const [playerName, setPlayerName] = useState('');
+  const [twitterHandle, setTwitterHandle] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [scores, setScores] = useState<HighScoreEntry[]>([]);
@@ -353,6 +366,7 @@ function GameOver() {
     setLoading(true);
     setSubmitted(false);
     setPlayerName('');
+    setTwitterHandle('');
     
     // Check if score qualifies and load scores
     Promise.all([
@@ -378,7 +392,9 @@ function GameOver() {
       try {
         // Get current holder tier to save with the score
         const holderTier = gameActions.getHolderTier();
-        const newScores = await addHighscoreAsync(playerName.trim(), score, distance, holderTier);
+        // Include twitter handle if provided (optional)
+        const twitter = twitterHandle.trim() || undefined;
+        const newScores = await addHighscoreAsync(playerName.trim(), score, distance, holderTier, twitter);
         setScores(newScores);
         setShowNameEntry(false);
         setSubmitted(true);
@@ -461,6 +477,22 @@ function GameOver() {
                 maxLength={10}
                 autoFocus
                 className="name-input"
+              />
+              <input
+                type="text"
+                value={twitterHandle}
+                onChange={(e) => setTwitterHandle(e.target.value.replace(/\s/g, ''))}
+                onKeyDown={(e) => {
+                  e.stopPropagation();
+                  e.nativeEvent.stopImmediatePropagation();
+                }}
+                onKeyUp={(e) => {
+                  e.stopPropagation();
+                  e.nativeEvent.stopImmediatePropagation();
+                }}
+                placeholder="@twitter (optional)"
+                maxLength={20}
+                className="twitter-input"
               />
               <div className="entry-buttons">
                 <button type="submit" className="btn" disabled={playerName.trim().length === 0 || submitting}>

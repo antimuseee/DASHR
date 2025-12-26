@@ -906,6 +906,48 @@ body {
   color: rgba(232, 229, 255, 0.4);
 }
 
+.twitter-input {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(29, 161, 242, 0.5);
+  border-radius: 8px;
+  color: #1da1f2;
+  letter-spacing: 1px;
+  margin: 8px 0;
+}
+
+.twitter-input:focus {
+  outline: none;
+  border-color: #1da1f2;
+  box-shadow: 0 0 15px rgba(29, 161, 242, 0.4);
+}
+
+.twitter-input::placeholder {
+  color: rgba(29, 161, 242, 0.5);
+}
+
+.twitter-link {
+  display: inline-block;
+  margin-left: 6px;
+  color: #1da1f2;
+  font-size: 10px;
+  font-weight: 600;
+  text-decoration: none;
+  opacity: 0.9;
+  transition: opacity 0.2s, transform 0.2s;
+  pointer-events: auto;
+}
+
+.twitter-link:hover {
+  opacity: 1;
+  text-decoration: underline;
+  transform: scale(1.05);
+}
+
 .entry-buttons {
   display: flex;
   gap: 10px;
