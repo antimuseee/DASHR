@@ -309,6 +309,7 @@ export const gameActions = {
   },
   
   // Activate a boost from inventory (returns true if successful)
+  // Uses requestAnimationFrame to defer state update and prevent blocking the game loop
   activateBoostFromInventory: (type: 'double' | 'shield' | 'magnet'): boolean => {
     const state = useGameStore.getState();
     if (state.boostInventory[type] <= 0) return false;
@@ -323,30 +324,31 @@ export const gameActions = {
     const newInventory = { ...state.boostInventory };
     newInventory[type] -= 1;
     
-    if (type === 'shield') {
-      useGameStore.setState({ 
-        boostInventory: newInventory, 
-        hasShield: true,
-        shieldTimer: SHIELD_DURATION,
-        boostsUsed: state.boostsUsed + 1,
-      });
-    } else if (type === 'double') {
-      useGameStore.setState({ 
-        boostInventory: newInventory, 
-        activeBoost: 'double', 
-        boostTimer: BOOST_DURATION,
-        boostsUsed: state.boostsUsed + 1,
-      });
-    } else if (type === 'magnet') {
-      // Magnet attracts nearby collectibles for duration
-      console.log('[MAGNET] Activated! Duration:', MAGNET_DURATION);
-      useGameStore.setState({ 
-        boostInventory: newInventory,
-        hasMagnet: true,
-        magnetTimer: MAGNET_DURATION,
-        boostsUsed: state.boostsUsed + 1,
-      });
-    }
+    // Defer state update to next frame to prevent blocking game loop
+    requestAnimationFrame(() => {
+      if (type === 'shield') {
+        useGameStore.setState({ 
+          boostInventory: newInventory, 
+          hasShield: true,
+          shieldTimer: SHIELD_DURATION,
+          boostsUsed: state.boostsUsed + 1,
+        });
+      } else if (type === 'double') {
+        useGameStore.setState({ 
+          boostInventory: newInventory, 
+          activeBoost: 'double', 
+          boostTimer: BOOST_DURATION,
+          boostsUsed: state.boostsUsed + 1,
+        });
+      } else if (type === 'magnet') {
+        useGameStore.setState({ 
+          boostInventory: newInventory,
+          hasMagnet: true,
+          magnetTimer: MAGNET_DURATION,
+          boostsUsed: state.boostsUsed + 1,
+        });
+      }
+    });
     return true;
   },
   
