@@ -974,6 +974,35 @@ body {
     padding-top: max(8px, env(safe-area-inset-top));
     padding-left: max(10px, env(safe-area-inset-left));
     padding-right: max(10px, env(safe-area-inset-right));
+    gap: 6px;
+  }
+  
+  /* Make holder badge more compact on mobile */
+  .holder-badge {
+    padding: 8px 10px !important;
+    font-size: 11px !important;
+    gap: 4px !important;
+    max-width: 180px;
+    flex-shrink: 0;
+  }
+  
+  .holder-badge .tier-emoji {
+    font-size: 16px !important;
+  }
+  
+  .holder-badge .tier-name {
+    font-size: 11px !important;
+  }
+  
+  .holder-badge .tier-balance {
+    font-size: 10px !important;
+  }
+  
+  /* Give wallet card more room on mobile */
+  .wallet-card {
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
   }
   
   /* Inventory already on right side, just adjust for safe area on mobile */
