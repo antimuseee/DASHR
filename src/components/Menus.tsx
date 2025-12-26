@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { useGameStore, checkHighscoreQualifiesAsync, addHighscoreAsync, getHighscoresAsync, HighScoreEntry, gameActions } from '../utils/store';
 import { getDevice } from '../utils/device';
 import { isLeaderboardConfigured } from '../utils/leaderboard';
@@ -365,6 +365,7 @@ function GameOver() {
   const [scores, setScores] = useState<HighScoreEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [qualifies, setQualifies] = useState(false);
+  const entryFormRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     setLoading(true);
@@ -388,6 +389,16 @@ function GameOver() {
       setLoading(false);
     });
   }, [score]);
+  
+  // Scroll to entry form when it appears (ensures form and buttons are visible)
+  useEffect(() => {
+    if (showNameEntry && entryFormRef.current) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        entryFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [showNameEntry]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -466,7 +477,7 @@ function GameOver() {
         
         {/* Highscore name entry */}
         {showNameEntry && !submitted && (
-          <div className="highscore-entry">
+          <div className="highscore-entry" ref={entryFormRef}>
             <div className="highscore-banner">🎉 NEW HIGH SCORE! 🎉</div>
             <p>You made it to the Top 100!</p>
             <form onSubmit={handleSubmit}>
