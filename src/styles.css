@@ -930,22 +930,25 @@ body {
   color: rgba(29, 161, 242, 0.5);
 }
 
-.twitter-link {
-  display: inline-block;
-  margin-left: 6px;
+.or-divider {
+  color: rgba(232, 229, 255, 0.5);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  margin: 4px 0;
+}
+
+.twitter-link-name {
   color: #1da1f2;
-  font-size: 10px;
   font-weight: 600;
   text-decoration: none;
-  opacity: 0.9;
-  transition: opacity 0.2s, transform 0.2s;
+  transition: opacity 0.2s;
   pointer-events: auto;
 }
 
-.twitter-link:hover {
-  opacity: 1;
+.twitter-link-name:hover {
+  opacity: 0.8;
   text-decoration: underline;
-  transform: scale(1.05);
 }
 
 .entry-buttons {

@@ -106,6 +106,9 @@ function Leaderboard({ scores, currentScore, loading }: { scores: HighScoreEntry
         {scores.map((entry, i) => {
           const tierInfo = entry.tier ? HOLDER_TIERS[entry.tier] : null;
           const tierClass = getTierClass(entry.tier);
+          // Check if the entry used twitter (name starts with @)
+          const isTwitterEntry = entry.twitter || entry.name.startsWith('@');
+          const twitterHandle = entry.twitter || (entry.name.startsWith('@') ? entry.name.slice(1) : null);
           
           return (
             <div 
@@ -116,23 +119,24 @@ function Leaderboard({ scores, currentScore, loading }: { scores: HighScoreEntry
                 {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
               </span>
               <span className="name">
-                {entry.name}
+                {isTwitterEntry && twitterHandle ? (
+                  <a 
+                    href={`https://twitter.com/${twitterHandle}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="twitter-link-name"
+                    onClick={(e) => e.stopPropagation()}
+                    title={`@${twitterHandle}`}
+                  >
+                    @{twitterHandle}
+                  </a>
+                ) : (
+                  entry.name
+                )}
                 {tierInfo && tierInfo.tier !== 'none' && (
                   <span className="leaderboard-tier" title={`${tierInfo.name} Holder`}>
                     {tierInfo.emoji}
                   </span>
-                )}
-                {entry.twitter && (
-                  <a 
-                    href={`https://twitter.com/${entry.twitter}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="twitter-link"
-                    onClick={(e) => e.stopPropagation()}
-                    title={`@${entry.twitter}`}
-                  >
-                    @{entry.twitter}
-                  </a>
                 )}
               </span>
               <span className="score">{Math.round(entry.score).toLocaleString()}</span>
@@ -387,14 +391,19 @@ function GameOver() {
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (playerName.trim().length > 0 && !submitting) {
+    const hasName = playerName.trim().length > 0;
+    const hasTwitter = twitterHandle.trim().length > 0;
+    
+    if ((hasName || hasTwitter) && !submitting) {
       setSubmitting(true);
       try {
         // Get current holder tier to save with the score
         const holderTier = gameActions.getHolderTier();
-        // Include twitter handle if provided (optional)
-        const twitter = twitterHandle.trim() || undefined;
-        const newScores = await addHighscoreAsync(playerName.trim(), score, distance, holderTier, twitter);
+        // Use name if provided, otherwise use twitter handle as display name
+        const displayName = hasName ? playerName.trim() : `@${twitterHandle.replace('@', '').trim()}`;
+        // Only include twitter if that's what was chosen (not name)
+        const twitter = hasTwitter ? twitterHandle.replace('@', '').trim() : undefined;
+        const newScores = await addHighscoreAsync(displayName, score, distance, holderTier, twitter);
         setScores(newScores);
         setShowNameEntry(false);
         setSubmitted(true);
@@ -464,7 +473,10 @@ function GameOver() {
               <input
                 type="text"
                 value={playerName}
-                onChange={(e) => setPlayerName(e.target.value.toUpperCase())}
+                onChange={(e) => {
+                  setPlayerName(e.target.value.toUpperCase());
+                  if (e.target.value.trim()) setTwitterHandle(''); // Clear twitter if name entered
+                }}
                 onKeyDown={(e) => {
                   e.stopPropagation();
                   e.nativeEvent.stopImmediatePropagation();
@@ -477,11 +489,16 @@ function GameOver() {
                 maxLength={10}
                 autoFocus
                 className="name-input"
+                disabled={twitterHandle.trim().length > 0}
               />
+              <div className="or-divider">— OR —</div>
               <input
                 type="text"
                 value={twitterHandle}
-                onChange={(e) => setTwitterHandle(e.target.value.replace(/\s/g, ''))}
+                onChange={(e) => {
+                  setTwitterHandle(e.target.value.replace(/\s/g, ''));
+                  if (e.target.value.trim()) setPlayerName(''); // Clear name if twitter entered
+                }}
                 onKeyDown={(e) => {
                   e.stopPropagation();
                   e.nativeEvent.stopImmediatePropagation();
@@ -490,12 +507,13 @@ function GameOver() {
                   e.stopPropagation();
                   e.nativeEvent.stopImmediatePropagation();
                 }}
-                placeholder="@twitter (optional)"
+                placeholder="@twitter"
                 maxLength={20}
                 className="twitter-input"
+                disabled={playerName.trim().length > 0}
               />
               <div className="entry-buttons">
-                <button type="submit" className="btn" disabled={playerName.trim().length === 0 || submitting}>
+                <button type="submit" className="btn" disabled={(playerName.trim().length === 0 && twitterHandle.trim().length === 0) || submitting}>
                   {submitting ? 'Saving...' : 'Submit'}
                 </button>
                 <button type="button" className="btn secondary" onClick={handleSkip} disabled={submitting}>
