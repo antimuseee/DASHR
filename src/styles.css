@@ -1171,6 +1171,13 @@ body {
     height: 55px;
   }
   
+  /* Ensure boost icons look the same as desktop (explicit sizing and rendering) */
+  .inventory-slot .boost-icon {
+    font-size: 18px !important; /* Match desktop exactly */
+    line-height: 1; /* Prevent line-height affecting emoji appearance */
+    display: inline-block; /* Ensure consistent rendering */
+  }
+  
   /* Keep stat pills smaller on mobile (same size as initial load) */
   .stat-pill {
     padding: 5px 8px;
