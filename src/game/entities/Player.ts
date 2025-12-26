@@ -128,13 +128,14 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
     
     // For rainbow, create separate emitters for each color
+    // Optimized: reduced lifespan from 800ms to 600ms for ~25% fewer active particles
     if (trailId === 'rainbow') {
       for (let i = 0; i < 6; i++) {
         const emitter = this.scene.add.particles(0, 0, `particle-rainbow-${i}`, {
           speed: { min: 30, max: 80 },
           scale: { start: 1.2, end: 0.1 },
           alpha: { start: 1, end: 0.2 },
-          lifespan: 800,
+          lifespan: 600,
           blendMode: Phaser.BlendModes.ADD,
           emitting: false,
         });
@@ -147,13 +148,14 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
     
     // For other trails, use pre-colored particle textures
+    // Optimized: reduced lifespan from 800ms to 600ms for ~25% fewer active particles
     const particleTexture = `particle-${trailId}`;
     
     const particleConfig: any = {
       speed: { min: 30, max: 80 },
       scale: { start: 1.2, end: 0.1 },
       alpha: { start: 1, end: 0.2 },
-      lifespan: 800,
+      lifespan: 600,
       frequency: 15,
       blendMode: Phaser.BlendModes.ADD,
       emitting: false,
@@ -241,10 +243,11 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
     
     // Update trail particles position and emit
+    // Optimized: emission interval increased from 16ms to 25ms (~36% fewer emissions)
     if (this.currentTrail === 'rainbow' && this.rainbowEmitters.length > 0) {
       // Rainbow trail: cycle through colored emitters
       this.trailTimer += delta;
-      if (this.trailTimer >= 16) {
+      if (this.trailTimer >= 25) {
         this.trailTimer = 0;
         // Emit from the current color emitter
         const emitter = this.rainbowEmitters[this.rainbowColorIndex % 6];
@@ -256,7 +259,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     } else if (this.trailParticles) {
       // Other trails: normal emission
       this.trailTimer += delta;
-      if (this.trailTimer >= 16) {
+      if (this.trailTimer >= 25) {
         this.trailTimer = 0;
         this.trailParticles.emitParticleAt(this.x - 5, this.y + 25, 2);
         this.trailParticles.emitParticleAt(this.x + 5, this.y + 25, 2);
