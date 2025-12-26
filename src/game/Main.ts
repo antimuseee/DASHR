@@ -1459,8 +1459,11 @@ export default class MainScene extends Phaser.Scene {
           return;
         }
         
-        // Spawn effect at player's head position, not coin position
-        this.collectItem(key.replace('item-', ''), this.player.x, this.player.y - 30);
+        // On mobile, spawn effect above player's head. On desktop, use coin position.
+        const device = getDevice();
+        const effectX = device.isMobile ? this.player.x : sprite.x;
+        const effectY = device.isMobile ? this.player.y - 55 : sprite.y;
+        this.collectItem(key.replace('item-', ''), effectX, effectY);
         sprite.destroy();
         return;
       }
@@ -1468,8 +1471,11 @@ export default class MainScene extends Phaser.Scene {
       if (key.startsWith('boost-')) {
         // Boosts: trigger when close
         if (z > 60) return;
-        // Spawn effect at player's head position, not boost position
-        this.collectBoost(key.replace('boost-', ''), this.player.x, this.player.y - 30);
+        // On mobile, spawn effect above player's head. On desktop, use boost position.
+        const device = getDevice();
+        const effectX = device.isMobile ? this.player.x : sprite.x;
+        const effectY = device.isMobile ? this.player.y - 55 : sprite.y;
+        this.collectBoost(key.replace('boost-', ''), effectX, effectY);
         sprite.destroy();
         return;
       }
