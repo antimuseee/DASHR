@@ -35,7 +35,7 @@ export default function GameCanvas() {
       }
       
       const game = new Phaser.Game({
-      // Use CANVAS for WebViews (more consistent performance), AUTO for others
+      // Use CANVAS for WebViews (more consistent, avoids WebGL issues)
       type: isLowPerf ? Phaser.CANVAS : Phaser.AUTO,
       parent: containerRef.current,
       width: window.innerWidth,
@@ -46,8 +46,6 @@ export default function GameCanvas() {
         arcade: { 
           gravity: { x: 0, y: 1400 }, 
           debug: false,
-          // Reduce physics precision for WebViews
-          fps: isLowPerf ? 30 : 60,
         },
       },
       scale: {
@@ -56,15 +54,9 @@ export default function GameCanvas() {
       },
       render: { 
         pixelArt: true,
-        // Disable anti-aliasing for WebViews (faster)
+        // Disable anti-aliasing for WebViews (slight perf boost)
         antialias: !isLowPerf,
-        // Reduce resolution for WebViews
-        resolution: isLowPerf ? 0.75 : 1,
-        // Disable transparency for slight perf boost
-        transparent: false,
       },
-      // Lower FPS cap for WebViews to ensure consistent gameplay
-      fps: isLowPerf ? { target: 30, forceSetTimeOut: true } : undefined,
       scene: [Boot, Preload, MainScene],
       input: {
         keyboard: {

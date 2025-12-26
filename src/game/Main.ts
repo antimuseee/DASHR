@@ -427,20 +427,12 @@ export default class MainScene extends Phaser.Scene {
   update(_: number, delta: number) {
     if (!this.runActive) return;
 
-    const device = getDevice();
-    
-    // CRITICAL: Cap delta time to prevent physics appearing sluggish in WebViews
-    // When FPS drops, delta becomes large which makes objects move in big jumps
-    // By capping it, we ensure smooth consistent movement even at low FPS
-    // This means game runs at "game time" not "real time" in low-perf scenarios
-    const maxDelta = device.isLowPerformance ? 50 : 33; // 20 FPS min for WebView, 30 FPS min for normal
-    const cappedDelta = Math.min(delta, maxDelta);
-    
-    const dt = cappedDelta / 1000;
+    const dt = delta / 1000;
     const distanceDelta = (this.speed * dt);
     this.distance += distanceDelta;
     
-    // Speed ramp-up: even slower in WebViews for playability
+    // Speed ramp-up: slower on mobile/WebViews for playability
+    const device = getDevice();
     const speedIncrease = device.isLowPerformance ? 1.0 : device.isMobile ? 1.5 : 3;
     this.speed += speedIncrease * dt;
 
@@ -483,8 +475,7 @@ export default class MainScene extends Phaser.Scene {
     // Magnet effect - attract coins
     this.updateMagnetEffect(dt);
 
-    // Use capped delta for spawner too (consistent movement speed)
-    this.spawner.updatePerspective(this.speed, cappedDelta, {
+    this.spawner.updatePerspective(this.speed, delta, {
       centerX: this.centerX,
       laneWidth: this.laneWidth,
       horizonY: this.horizonY,
