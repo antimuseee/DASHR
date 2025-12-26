@@ -361,6 +361,8 @@ function GameOver() {
   const [playerName, setPlayerName] = useState('');
   const [twitterHandle, setTwitterHandle] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [submittedWithTwitter, setSubmittedWithTwitter] = useState(false);
+  const [submittedTwitterHandle, setSubmittedTwitterHandle] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [scores, setScores] = useState<HighScoreEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -370,6 +372,8 @@ function GameOver() {
   useEffect(() => {
     setLoading(true);
     setSubmitted(false);
+    setSubmittedWithTwitter(false);
+    setSubmittedTwitterHandle('');
     setPlayerName('');
     setTwitterHandle('');
     
@@ -418,6 +422,11 @@ function GameOver() {
         setScores(newScores);
         setShowNameEntry(false);
         setSubmitted(true);
+        // Track if submitted with Twitter for share option
+        if (hasTwitter && !hasName) {
+          setSubmittedWithTwitter(true);
+          setSubmittedTwitterHandle(twitterHandle.replace('@', '').trim());
+        }
       } catch (err) {
         console.error('Failed to submit score:', err);
       } finally {
@@ -538,7 +547,20 @@ function GameOver() {
         {/* Show message after submission */}
         {submitted && (
           <div className="submitted-message">
-            ✅ Score saved to leaderboard!
+            <div>✅ Score saved to leaderboard!</div>
+            {submittedWithTwitter && (
+              <button 
+                className="btn share-x-btn"
+                onClick={() => {
+                  const tweetText = `🏆 I just scored ${Math.round(score).toLocaleString()} points in Trench Runner and made the Top 100 leaderboard! 🎮\n\nCan you beat my score? 👀\n\n🎯 Play now:`;
+                  const gameUrl = window.location.origin;
+                  const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(gameUrl)}`;
+                  window.open(shareUrl, '_blank', 'width=550,height=420');
+                }}
+              >
+                <span className="x-logo">𝕏</span> Share to X
+              </button>
+            )}
           </div>
         )}
         

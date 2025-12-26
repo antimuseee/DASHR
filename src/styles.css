@@ -995,6 +995,36 @@ body {
   color: var(--accent-2);
   font-weight: 600;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.share-x-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #000000 !important;
+  border: 2px solid #ffffff !important;
+  color: #ffffff !important;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.share-x-btn:hover {
+  background: #1a1a1a !important;
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+.share-x-btn .x-logo {
+  font-size: 18px;
+  font-weight: 900;
 }
 
 .gameover-buttons {
