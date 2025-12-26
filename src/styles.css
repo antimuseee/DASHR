@@ -52,6 +52,14 @@ body {
   box-shadow: 0 0 10px rgba(79, 9, 173, 0.5);
 }
 
+.stat-label {
+  opacity: 0.8;
+}
+
+.stat-value {
+  font-weight: 700;
+}
+
 .menus {
   pointer-events: auto;
   display: flex;
@@ -1215,8 +1223,53 @@ body {
     display: inline-block !important;
   }
   
-  /* Keep stat pills smaller on mobile (same size as initial load) */
-  .stat-pill {
+  /* Fixed-width stat pills on mobile - never grow/shrink */
+  /* Excludes combo-pill which has its own dimensions */
+  .stat-pill:not(.combo-pill) {
+    padding: 5px 4px;
+    font-size: 11px;
+    width: 70px;
+    min-width: 70px;
+    max-width: 70px;
+    height: 38px;
+    min-height: 38px;
+    max-height: 38px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  
+  /* Label on its own line, value below */
+  .stat-pill:not(.combo-pill) .stat-label {
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    opacity: 0.7;
+    line-height: 1;
+    margin-bottom: 1px;
+    display: block;
+  }
+  
+  .stat-pill:not(.combo-pill) .stat-value {
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.1;
+    white-space: nowrap;
+    display: block;
+  }
+  
+  /* When only value is shown (label hidden), it can be slightly bigger */
+  .stat-pill:not(.combo-pill) .stat-value:only-child {
+    font-size: 12px;
+  }
+  
+  /* Combo pill smaller on mobile */
+  .stat-pill.combo-pill {
+    min-width: 60px;
     padding: 5px 8px;
     font-size: 11px;
   }
@@ -1526,9 +1579,32 @@ body {
     height: 48px;
   }
   
-  .stat-pill {
-    padding: 5px 8px;
+  /* Slightly smaller fixed pills on extra small phones */
+  .stat-pill:not(.combo-pill) {
+    width: 62px;
+    min-width: 62px;
+    max-width: 62px;
+    height: 36px;
+    min-height: 36px;
+    max-height: 36px;
+    padding: 4px 3px;
+  }
+  
+  .stat-pill:not(.combo-pill) .stat-label {
+    font-size: 7px;
+  }
+  
+  .stat-pill:not(.combo-pill) .stat-value {
+    font-size: 10px;
+  }
+  
+  .stat-pill:not(.combo-pill) .stat-value:only-child {
     font-size: 11px;
+  }
+  
+  .stat-pill.combo-pill {
+    min-width: 55px;
+    font-size: 10px;
   }
   
   .score-row {

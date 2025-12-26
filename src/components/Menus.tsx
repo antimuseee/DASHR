@@ -580,10 +580,22 @@ function GameOver() {
 
 import { SHIELD_DURATION, MAGNET_DURATION, CHARGES_NEEDED, COMBO_CHARGES_NEEDED } from '../utils/store';
 
+// Helper to check if a number is long enough to need label hidden (mobile only)
+function shouldHideLabel(value: number): boolean {
+  const formatted = Math.round(value).toLocaleString();
+  return formatted.length >= 7; // Hide label for numbers like "1,234,567" or longer
+}
+
 export default function Menus({ phase, onShowTutorial }: { phase: string; onShowTutorial?: () => void }) {
   const { score, distance, multiplier, tokens, activeBoost, boostTimer, hasShield, shieldTimer, hasMagnet, magnetTimer, comboCount, comboProgress, comboTimer, boostInventory, magnetCharges, doubleCharges, shieldCharges } = useGameStore();
   const [showCosmetics, setShowCosmetics] = useState(false);
   const device = getDevice();
+  
+  // On mobile, dynamically hide labels when numbers get too long
+  const isMobile = !device.isDesktop;
+  const hideScoreLabel = isMobile && shouldHideLabel(score);
+  const hideDistLabel = isMobile && shouldHideLabel(distance);
+  const hideCoinsLabel = isMobile && shouldHideLabel(tokens);
   
   // Show cosmetics menu overlay if open (check this first, before other menus)
   if (showCosmetics) {
@@ -636,9 +648,18 @@ export default function Menus({ phase, onShowTutorial }: { phase: string; onShow
       )}
       
       <div className="topbar" style={{ pointerEvents: 'none' }}>
-        <div className="stat-pill">Score: {Math.round(score).toLocaleString()}</div>
-        <div className="stat-pill">Dist: {Math.round(distance).toLocaleString()}m</div>
-        <div className="stat-pill">Coins: {Math.round(tokens).toLocaleString()}</div>
+        <div className="stat-pill">
+          {!hideScoreLabel && <span className="stat-label">Score</span>}
+          <span className="stat-value">{Math.round(score).toLocaleString()}</span>
+        </div>
+        <div className="stat-pill">
+          {!hideDistLabel && <span className="stat-label">Dist</span>}
+          <span className="stat-value">{Math.round(distance).toLocaleString()}m</span>
+        </div>
+        <div className="stat-pill">
+          {!hideCoinsLabel && <span className="stat-label">Coins</span>}
+          <span className="stat-value">{Math.round(tokens).toLocaleString()}</span>
+        </div>
         <div className={`stat-pill combo-pill ${comboCount > 0 || comboProgress > 0 ? 'active' : 'inactive'} ${activeBoost === 'double' ? 'energized' : ''}`}>
           <div 
             className="combo-fill combo-timer-fill" 
