@@ -151,6 +151,7 @@ export default function WalletUI() {
           {/* Small refresh button positioned at upper right corner */}
           {!TEST_MODE && connected && publicKey && (
             <button
+              className="refresh-balance-btn"
               onClick={handleRefreshBalance}
               disabled={isLoadingBalance}
               style={{ 
