@@ -6,6 +6,7 @@ import { useGameStore, gameActions } from '../utils/store';
 import { TOKEN_SYMBOL, HOLDER_TIERS, formatTokenBalance, isHolder, TEST_MODE, MOCK_BALANCE, getTierFromBalance } from '../utils/token';
 import { autoEquipForTier } from '../utils/cosmetics';
 import { getDevice } from '../utils/device';
+import { shouldUseMobileDeepLink, connectPhantomMobile, isReturningFromPhantom, processPhantomRedirect } from '../utils/phantomMobile';
 
 // Use Helius RPC for wallet connection (reliable)
 // Get API key from environment variable (set in Vercel)
@@ -77,10 +78,39 @@ function clearCachedTier() {
 }
 
 export default function WalletUI() {
-  const { publicKey, connected, connecting, disconnecting, wallet } = useWallet();
+  const { publicKey, connected, connecting, disconnecting, wallet, connect, disconnect } = useWallet();
   const [solBalance, setSolBalance] = useState<number | null>(null);
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const { holderTier, tokenBalance } = useGameStore();
+  const [useMobileFlow, setUseMobileFlow] = useState(false);
+  
+  // Check if we should use mobile deep link flow
+  useEffect(() => {
+    const shouldUseMobile = shouldUseMobileDeepLink();
+    setUseMobileFlow(shouldUseMobile);
+    if (shouldUseMobile) {
+      console.log('[WalletUI] Using mobile deep link flow for wallet connection');
+    }
+  }, []);
+  
+  // Handle return from Phantom mobile redirect
+  useEffect(() => {
+    if (useMobileFlow && isReturningFromPhantom()) {
+      console.log('[WalletUI] Processing return from Phantom mobile...');
+      const redirectData = processPhantomRedirect();
+      
+      if (redirectData) {
+        // Trigger wallet connection after redirect
+        console.log('[WalletUI] Redirect processed, triggering wallet connect...');
+        // The wallet adapter should pick up the connection from the redirect
+        if (!connected && wallet) {
+          connect().catch(err => {
+            console.error('[WalletUI] Error connecting after redirect:', err);
+          });
+        }
+      }
+    }
+  }, [useMobileFlow, connected, wallet, connect]);
   
   // Debug wallet connection state
   useEffect(() => {
@@ -89,11 +119,18 @@ export default function WalletUI() {
       connecting, 
       disconnecting,
       wallet: wallet?.adapter?.name,
-      publicKey: publicKey?.toBase58()?.slice(0, 8) 
+      publicKey: publicKey?.toBase58()?.slice(0, 8),
+      useMobileFlow 
     });
-  }, [connected, connecting, disconnecting, publicKey, wallet]);
+  }, [connected, connecting, disconnecting, publicKey, wallet, useMobileFlow]);
   
   const [statusMessage, setStatusMessage] = useState<string>('');
+  
+  // Custom mobile wallet connect handler
+  const handleMobileConnect = () => {
+    console.log('[WalletUI] Mobile connect clicked - opening Phantom...');
+    connectPhantomMobile();
+  };
   
   const handleRefreshBalance = async () => {
     console.log('[WalletUI] Refresh button clicked!');
@@ -344,7 +381,66 @@ export default function WalletUI() {
       )}
       
       <div className="wallet-card">
-        {!TEST_MODE && <WalletMultiButton className="btn secondary" />}
+        {!TEST_MODE && !useMobileFlow && <WalletMultiButton className="btn secondary" />}
+        {!TEST_MODE && useMobileFlow && (
+          <>
+            {!connected && !connecting && (
+              <button
+                className="btn secondary"
+                onClick={handleMobileConnect}
+                style={{
+                  background: 'linear-gradient(135deg, #9b5cff, #4ef0c5)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 20px',
+                  color: '#0a0517',
+                  fontWeight: 700,
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                }}
+              >
+                Connect Phantom
+              </button>
+            )}
+            {connecting && (
+              <button
+                className="btn secondary"
+                disabled
+                style={{
+                  background: 'rgba(155, 92, 255, 0.5)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 20px',
+                  color: '#fff',
+                  fontWeight: 700,
+                  fontSize: '14px',
+                  cursor: 'not-allowed',
+                  opacity: 0.6,
+                }}
+              >
+                Connecting...
+              </button>
+            )}
+            {connected && publicKey && (
+              <button
+                className="btn secondary"
+                onClick={() => disconnect()}
+                style={{
+                  background: 'linear-gradient(135deg, #4ef0c5, #9b5cff)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 20px',
+                  color: '#0a0517',
+                  fontWeight: 700,
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                }}
+              >
+                {shortAddr}
+              </button>
+            )}
+          </>
+        )}
         {TEST_MODE && !publicKey && (
           <span className="badge" style={{ background: 'rgba(255,215,0,0.2)', color: '#ffd700' }}>
             Testing with {formatTokenBalance(MOCK_BALANCE)} {TOKEN_SYMBOL}
