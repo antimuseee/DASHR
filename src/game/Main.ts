@@ -255,9 +255,11 @@ export default class MainScene extends Phaser.Scene {
       this.handleResize({ width: this.scale.width, height: this.scale.height } as Phaser.Structs.Size);
     });
     
-    // Initialize spark emitter pool to prevent lag when activating boosts
-    // This creates reusable emitters for all boost colors at scene start
-    initSparkEmitters(this);
+    // Initialize spark emitter pool on mobile only to prevent lag when activating boosts
+    // Desktop uses the old create/destroy approach to keep behavior unchanged
+    if (device.isMobile) {
+      initSparkEmitters(this);
+    }
     
     // Create trading chart graphics
     this.chartGraphics = this.add.graphics();
@@ -268,7 +270,9 @@ export default class MainScene extends Phaser.Scene {
     
     this.events.once('shutdown', () => {
       document.removeEventListener('keydown', this.keyHandler);
-      destroySparkEmitters(this);
+      if (device.isMobile) {
+        destroySparkEmitters(this);
+      }
     });
     
     console.log('[Main Scene] create() completed successfully');
