@@ -255,9 +255,9 @@ export default class MainScene extends Phaser.Scene {
       this.handleResize({ width: this.scale.width, height: this.scale.height } as Phaser.Structs.Size);
     });
     
-    // Pre-warm text rendering on mobile to prevent lag on first boost activation
-    // Creates and immediately destroys text with emojis to cache the rendering
+    // Pre-warm rendering on mobile to prevent lag on first boost activation
     if (device.isMobile) {
+      // Pre-warm text rendering - creates and destroys text with emojis to cache font rendering
       const warmupTexts = [
         '⚡ COMBOS DOUBLED!',
         '🛡️ SHIELD ON!',
@@ -271,7 +271,31 @@ export default class MainScene extends Phaser.Scene {
           stroke: '#000000',
           strokeThickness: 4,
         });
-        this.time.delayedCall(50, () => warmup.destroy());
+        this.time.delayedCall(100, () => warmup.destroy());
+      });
+      
+      // Pre-warm particle system with EXACT same config as spawnSpark uses
+      // This forces WebGL shader compilation and texture uploads before first use
+      const warmupColors = [0xffd700, 0x00ffff, 0xff00ff]; // gold, cyan, magenta
+      warmupColors.forEach((tint, i) => {
+        this.time.delayedCall(i * 20, () => {
+          const warmupEmitter = this.add.particles(-1000, -1000, 'particle', {
+            lifespan: 400,
+            speed: { min: 80, max: 160 },
+            scale: { start: 1, end: 0 },
+            tint,
+            quantity: 6,
+          });
+          this.time.delayedCall(500, () => warmupEmitter.destroy());
+        });
+      });
+      
+      // Pre-warm tweens by running a quick invisible tween
+      const tweenTarget = { alpha: 1 };
+      this.tweens.add({
+        targets: tweenTarget,
+        alpha: 0,
+        duration: 50,
       });
     }
     
