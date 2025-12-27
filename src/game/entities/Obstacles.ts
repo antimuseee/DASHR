@@ -200,7 +200,7 @@ export default class Spawner {
       const sprite = child as Phaser.Physics.Arcade.Sprite;
       if (!sprite.active) return;
       
-
+      // Cache sprite properties once (eliminates repeated getData() calls)
       const z0 = (sprite.getData('z') as number) ?? cfg.zFar;
       const z = z0 - speed * dt;
       sprite.setData('z', z);
@@ -213,9 +213,11 @@ export default class Spawner {
         return;
       }
 
+      // Cache all getData() calls once
       const lane = (sprite.getData('lane') as number) ?? 1;
       const baseScale = (sprite.getData('baseScale') as number) ?? 1;
       const pulseAlpha = (sprite.getData('pulseAlpha') as number) ?? 1;
+      const key = sprite.texture.key; // Cache texture key
 
       const p = project(lane, z, cfg);
 
@@ -224,7 +226,7 @@ export default class Spawner {
       const s = baseScale * p.scaleMul;
 
       // Make pits look like narrow vertical holes in the ground
-      if (sprite.texture.key === 'obstacle-block') {
+      if (key === 'obstacle-block') {
         sprite.setScale(s * 0.9, s * 0.7);
         
         sprite.setAlpha(Math.min(0.95, p.alpha * pulseAlpha));
@@ -235,7 +237,7 @@ export default class Spawner {
 
       // Pits always render below player (depth 10) regardless of z position
       // Use z-based depth sorting within the below-player range (1-8) for proper 3D effect
-      if (sprite.texture.key === 'obstacle-block') {
+      if (key === 'obstacle-block') {
         // Closer objects (lower z) get higher depth, but always below player
         // z from -30 to 500, map to depth 1-8
         const normalizedZ = Phaser.Math.Clamp((z + 30) / 530, 0, 1);
@@ -249,6 +251,7 @@ export default class Spawner {
         }
       }
 
+      // Cache label once
       const label = sprite.getData('label') as Phaser.GameObjects.Text;
       if (label) {
         label.x = p.x;

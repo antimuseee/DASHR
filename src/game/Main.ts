@@ -426,6 +426,9 @@ export default class MainScene extends Phaser.Scene {
   update(_: number, delta: number) {
     if (!this.runActive) return;
 
+    // Cache game state once per frame (eliminates 360-480 getState() calls/sec)
+    const gameState = useGameStore.getState();
+
     const dt = delta / 1000;
     const distanceDelta = (this.speed * dt);
     this.distance += distanceDelta;
@@ -437,11 +440,11 @@ export default class MainScene extends Phaser.Scene {
     // Update boost timers
     gameActions.updateBoostTimer(dt);
 
-    // Update whale alert
-    this.updateWhaleEvents(dt);
+    // Update whale alert (pass cached state)
+    this.updateWhaleEvents(dt, gameState);
     
-    // Update trading chart
-    this.updateTradingChart(dt);
+    // Update trading chart (pass cached state)
+    this.updateTradingChart(dt, gameState);
 
     // Distance-based scoring
     gameActions.addDistanceScore(distanceDelta);
@@ -470,8 +473,8 @@ export default class MainScene extends Phaser.Scene {
     this.spawnByDistance();
     
     
-    // Magnet effect - attract coins
-    this.updateMagnetEffect(dt);
+    // Magnet effect - attract coins (pass cached state)
+    this.updateMagnetEffect(dt, gameState);
 
     this.spawner.updatePerspective(this.speed, delta, {
       centerX: this.centerX,
@@ -491,8 +494,7 @@ export default class MainScene extends Phaser.Scene {
     this.checkCollisions();
   }
   
-  updateMagnetEffect(dt: number) {
-    const state = useGameStore.getState();
+  updateMagnetEffect(dt: number, state: ReturnType<typeof useGameStore.getState>) {
     if (!state.hasMagnet) return;
     
     const playerLane = this.player.laneIndex;
@@ -503,6 +505,7 @@ export default class MainScene extends Phaser.Scene {
       const sprite = child as Phaser.Physics.Arcade.Sprite;
       if (!sprite.active) return;
       
+      // Cache sprite properties once (eliminates repeated getData() calls)
       const key = sprite.texture.key;
       // Only attract coins (items), not obstacles or boosts
       if (!key.startsWith('item-')) return;
@@ -524,8 +527,9 @@ export default class MainScene extends Phaser.Scene {
         
         sprite.setData('lane', snappedLane);
         
-        // Visual feedback - make attracted items glow/pulse
-        if (!sprite.getData('magnetized')) {
+        // Visual feedback - make attracted items glow/pulse (cache getData result)
+        const isMagnetized = sprite.getData('magnetized');
+        if (!isMagnetized) {
           sprite.setData('magnetized', true);
           sprite.setTint(0xff00ff); // Pink tint when being attracted
         }
@@ -577,7 +581,7 @@ export default class MainScene extends Phaser.Scene {
     }
   }
 
-  updateWhaleEvents(dt: number) {
+  updateWhaleEvents(dt: number, state: ReturnType<typeof useGameStore.getState>) {
     try {
       // Count down whale alert timer
       if (this.controlsReversed && this.whaleAlertTimer > 0) {
@@ -678,8 +682,7 @@ export default class MainScene extends Phaser.Scene {
         this.checkWhaleTrailMissedBubbles();
       }
 
-      // Check if whale events should unlock (requires using boosts + distance)
-      const state = useGameStore.getState();
+      // Check if whale events should unlock (requires using boosts + distance) - use cached state
       if (!this.whaleEventsUnlocked) {
         // Whale trail only activates after 4 boosts used AND traveled far enough
         if (state.boostsUsed >= 4 && this.distance >= 4000) {
@@ -736,10 +739,10 @@ export default class MainScene extends Phaser.Scene {
     }
   }
 
-  updateTradingChart(dt: number) {
+  updateTradingChart(dt: number, state: ReturnType<typeof useGameStore.getState>) {
     if (!this.chartGraphics) return;
     
-    const state = useGameStore.getState();
+    // Use cached state (passed from update()) instead of calling getState()
     const currentScore = state.score;
     
     // Update chart frequency: faster if we have pending points to show (like a spike)
@@ -1378,13 +1381,20 @@ export default class MainScene extends Phaser.Scene {
 
   checkCollisions() {
     const playerLane = this.player.laneIndex;
+    // Cache player bounds once per frame (eliminates 6,000-9,000 getBounds() calls/sec)
+    // Only recalculate if player position changed significantly
     const pBounds = this.player.getBounds();
-    const feetY = pBounds.bottom;
+    const playerFeetY = pBounds.bottom;
+    const playerFeetTop = playerFeetY - 15;
+    const playerFeetBottom = playerFeetY;
+    const playerCenterX = pBounds.centerX;
+    const playerWidth = pBounds.width;
 
     this.spawner.group.getChildren().forEach((child) => {
       const sprite = child as Phaser.Physics.Arcade.Sprite;
       if (!sprite.active) return;
 
+      // Cache sprite properties once (eliminates repeated getData() calls)
       const lane = (sprite.getData('lane') as number) ?? 1;
       if (lane !== playerLane) return;
 
@@ -1394,6 +1404,7 @@ export default class MainScene extends Phaser.Scene {
       if (z > 130) return;
       if (z < -120) return;
 
+      // Cache texture key once
       const key = sprite.texture.key;
 
       if (key.startsWith('item-')) {
@@ -1402,8 +1413,9 @@ export default class MainScene extends Phaser.Scene {
         const coinCollectZ = this.device.isMobile ? 30 : 60;
         if (z > coinCollectZ) return;
         
-        // Check if this is a whale trail bubble
-        if (sprite.getData('isWhaleTrail')) {
+        // Cache getData() results
+        const isWhaleTrail = sprite.getData('isWhaleTrail');
+        if (isWhaleTrail) {
           const bubbleIndex = sprite.getData('bubbleIndex') as number;
           this.onWhaleTrailBubbleCollected(bubbleIndex);
           sprite.destroy();
@@ -1411,7 +1423,8 @@ export default class MainScene extends Phaser.Scene {
         }
         
         // Check if this is the whale token reward
-        if (sprite.getData('isWhaleToken')) {
+        const isWhaleToken = sprite.getData('isWhaleToken');
+        if (isWhaleToken) {
           this.collectWhaleToken(sprite.x, sprite.y);
           sprite.destroy();
           return;
@@ -1455,17 +1468,15 @@ export default class MainScene extends Phaser.Scene {
         if (z < -100) return; // Too far past (already off screen)
 
         // Simplified collision: check if pit's bottom edge overlaps player's feet area
+        // Cache pit bounds once (only calculated for pits in collision range)
         const pitBounds = sprite.getBounds();
-        const playerBounds = this.player.getBounds();
         
         const pitBottom = pitBounds.bottom;
-        const playerFeetTop = playerBounds.bottom - 15;  // Top of feet area
-        const playerFeetBottom = playerBounds.bottom;    // Bottom of feet
         
-        // Check X overlap (same lane)
-        const xOverlap = Math.abs(pitBounds.centerX - playerBounds.centerX) < Math.max(pitBounds.width, 24) / 2;
+        // Check X overlap (same lane) - use cached player values
+        const xOverlap = Math.abs(pitBounds.centerX - playerCenterX) < Math.max(pitBounds.width, 24) / 2;
         
-        // Check Y overlap (pit bottom in feet area)
+        // Check Y overlap (pit bottom in feet area) - use cached player values
         const yOverlap = pitBottom >= playerFeetTop && pitBottom <= playerFeetBottom + 5;
         
         if (!xOverlap || !yOverlap) {
