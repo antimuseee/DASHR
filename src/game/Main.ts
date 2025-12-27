@@ -6,6 +6,15 @@ import { spawnSpark } from '../utils/particles';
 import { getDevice } from '../utils/device';
 import { getEquippedSkin, getEquippedTrail } from '../utils/cosmetics';
 
+// Dev-only logging helper (eliminates console overhead in production)
+const isDev = import.meta.env.DEV;
+const devLog = (...args: any[]) => {
+  if (isDev) console.log(...args);
+};
+const devError = (...args: any[]) => {
+  if (isDev) console.error(...args);
+};
+
 interface ChunkConfig {
   weight: number;
   obstacles: Array<{ type: 'pit' | 'block'; lanes: number[] }>;
@@ -101,33 +110,33 @@ export default class MainScene extends Phaser.Scene {
   }
 
   create() {
-    console.log('[Main Scene] create() called');
+    devLog('[Main Scene] create() called');
     try {
       this.centerX = this.scale.width / 2;
       this.groundY = this.scale.height - 120;
       this.horizonY = Math.floor(this.scale.height * 0.28);
       this.nearY = this.groundY - 30;
 
-      console.log('[Main Scene] Creating background...');
+      devLog('[Main Scene] Creating background...');
       // CYBERPUNK BACKGROUND
       this.createBackground();
 
-      console.log('[Main Scene] Creating ground...');
+      devLog('[Main Scene] Creating ground...');
       // NEON GROUND with stronger perspective grid
       this.createGround();
 
-      console.log('[Main Scene] Creating player...');
+      devLog('[Main Scene] Creating player...');
       // Player
       this.player = new Player(this, this.centerX, this.groundY - 35, this.laneWidth);
-      console.log('[Main Scene] Player created');
+      devLog('[Main Scene] Player created');
       
       // Force-apply currently equipped cosmetics (from holder tier)
       // Use force=true to ensure they're applied even if constructor already set defaults
       const equippedSkin = getEquippedSkin();
       const equippedTrail = getEquippedTrail();
-      console.log(`[Game] Loading cosmetics from localStorage: Skin=${equippedSkin}, Trail=${equippedTrail}`);
+        devLog(`[Game] Loading cosmetics from localStorage: Skin=${equippedSkin}, Trail=${equippedTrail}`);
       this.player.updateCosmetics(equippedSkin, equippedTrail, true);
-      console.log(`[Game] Player cosmetics applied: Skin=${equippedSkin}, Trail=${equippedTrail}`);
+        devLog(`[Game] Player cosmetics applied: Skin=${equippedSkin}, Trail=${equippedTrail}`);
 
     // Spawner
     this.spawner = new Spawner(this, this.centerX, this.laneWidth);
@@ -270,9 +279,9 @@ export default class MainScene extends Phaser.Scene {
       document.removeEventListener('keydown', this.keyHandler);
     });
     
-    console.log('[Main Scene] create() completed successfully');
+    devLog('[Main Scene] create() completed successfully');
     } catch (error) {
-      console.error('[Main Scene] Error in create():', error);
+      devError('[Main Scene] Error in create():', error);
       throw error; // Re-throw to see the full error
     }
   }
@@ -336,7 +345,7 @@ export default class MainScene extends Phaser.Scene {
     fog.fillStyle(0xff00ff, 0.1);
     fog.fillRect(0, h * 0.3, w, h * 0.15);
     fog.setScrollFactor(0).setDepth(-85);
-    console.log('[Main Scene] Background created');
+    devLog('[Main Scene] Background created');
   }
 
   createGround() {
@@ -396,7 +405,7 @@ export default class MainScene extends Phaser.Scene {
     rails.lineBetween(leftBottom, this.groundY + 60, leftTop, this.horizonY);
     rails.lineBetween(rightBottom, this.groundY + 60, rightTop, this.horizonY);
     rails.setScrollFactor(0).setDepth(-8);
-    console.log('[Main Scene] Ground created');
+    devLog('[Main Scene] Ground created');
   }
 
   handleResize(gameSize: Phaser.Structs.Size) {
@@ -589,7 +598,7 @@ export default class MainScene extends Phaser.Scene {
         
         // Check if whale alert should end
         if (this.whaleAlertTimer <= 0) {
-          console.log('[WhaleManipulation] Timer expired, ending manipulation');
+          devLog('[WhaleManipulation] Timer expired, ending manipulation');
           this.controlsReversed = false;
           isControlsReversed = false; // Update module-level variable for swipe handlers
           this.whaleAlertTimer = 0;
@@ -655,7 +664,7 @@ export default class MainScene extends Phaser.Scene {
         
         // IMPORTANT: Return here to prevent immediately triggering another whale event
         // in the same frame (since controlsReversed is now false)
-        console.log('[WhaleManipulation] Cleanup complete, returning to prevent re-trigger');
+        devLog('[WhaleManipulation] Cleanup complete, returning to prevent re-trigger');
         return;
         }
       }
@@ -718,14 +727,14 @@ export default class MainScene extends Phaser.Scene {
         const canTriggerManipulation = state.boostsUsed >= this.whaleManipulationBoostThreshold && this.lastWhaleEventWasTrail;
         
         if (canTriggerTrail) {
-          console.log(`[WhaleTrail] Boost threshold met (${state.boostsUsed} >= ${this.whaleTrailBoostThreshold})`);
+          devLog(`[WhaleTrail] Boost threshold met (${state.boostsUsed} >= ${this.whaleTrailBoostThreshold})`);
           this.triggerWhaleTrail();
           this.lastWhaleEventWasTrail = true;
           // Increase threshold for next trail (need to use more boosts each time)
           this.whaleTrailBoostThreshold += 6;
           // Distance will be set in completeWhaleTrail/failWhaleTrail AFTER trail ends
         } else if (canTriggerManipulation) {
-          console.log(`[WhaleManipulation] Boost threshold met (${state.boostsUsed} >= ${this.whaleManipulationBoostThreshold})`);
+          devLog(`[WhaleManipulation] Boost threshold met (${state.boostsUsed} >= ${this.whaleManipulationBoostThreshold})`);
           this.triggerWhaleAlert();
           this.lastWhaleEventWasTrail = false;
           // Increase threshold for next manipulation (need 6 more boosts each time)
@@ -735,7 +744,7 @@ export default class MainScene extends Phaser.Scene {
         }
       }
     } catch (e) {
-      console.error('[WhaleEvents] Error in update:', e);
+      devError('[WhaleEvents] Error in update:', e);
     }
   }
 
@@ -973,7 +982,7 @@ export default class MainScene extends Phaser.Scene {
 
   triggerWhaleAlert() {
     try {
-      console.log('[WhaleManipulation] Triggering whale manipulation');
+      devLog('[WhaleManipulation] Triggering whale manipulation');
       this.controlsReversed = true;
       isControlsReversed = true; // Update module-level variable for swipe handlers
       this.whaleAlertTimer = 4; // 4 seconds of reversed controls (countdown in seconds)
@@ -1041,7 +1050,7 @@ export default class MainScene extends Phaser.Scene {
         onComplete: () => overlay.destroy(),
       });
     } catch (e) {
-      console.error('[WhaleAlert] Error:', e);
+      devError('[WhaleAlert] Error:', e);
       this.controlsReversed = false;
       isControlsReversed = false;
     }
@@ -1092,7 +1101,7 @@ export default class MainScene extends Phaser.Scene {
         onComplete: () => trailText.destroy(),
       });
     } catch (e) {
-      console.error('[WhaleTrail] Error:', e);
+      devError('[WhaleTrail] Error:', e);
       this.whaleTrailActive = false;
     }
   }
@@ -1176,24 +1185,25 @@ export default class MainScene extends Phaser.Scene {
   isPitAtPosition(lane: number, z: number): boolean {
     // Check if there's a pit obstacle at the given lane and z position
     const zTolerance = 120; // Check within this z range
-    let foundPit = false;
     
-    this.spawner.group.getChildren().forEach((child) => {
+    // Use for...of with early exit instead of forEach (can't break forEach)
+    const children = this.spawner.group.getChildren();
+    for (const child of children) {
       const sprite = child as Phaser.Physics.Arcade.Sprite;
-      if (!sprite.active) return;
+      if (!sprite.active) continue;
       
       const key = sprite.texture.key;
-      if (key !== 'obstacle-block') return; // Only check pits
+      if (key !== 'obstacle-block') continue; // Only check pits
       
       const spriteLane = sprite.getData('lane') as number;
       const spriteZ = sprite.getData('z') as number;
       
       if (spriteLane === lane && Math.abs(spriteZ - z) < zTolerance) {
-        foundPit = true;
+        return true; // Early exit when found
       }
-    });
+    }
     
-    return foundPit;
+    return false;
   }
   
   clearTrackForWhaleTrail() {
@@ -1458,7 +1468,7 @@ export default class MainScene extends Phaser.Scene {
         
         // Skip if player is invincible (recently saved by shield)
         if (this.time.now < this.invincibleUntil) {
-          console.log('[INVINCIBLE] Skipping pit collision');
+          devLog('[INVINCIBLE] Skipping pit collision');
           return;
         }
 
@@ -1483,7 +1493,7 @@ export default class MainScene extends Phaser.Scene {
           return;
         }
         
-        console.log('[PIT COLLISION] Triggering game over check...');
+        devLog('[PIT COLLISION] Triggering game over check...');
 
         this.triggerGameOver();
         return;
@@ -1637,7 +1647,7 @@ export default class MainScene extends Phaser.Scene {
     
     // Check for shield first
     if (gameActions.useShield()) {
-      console.log('[SHIELD] Shield saved the player!');
+      devLog('[SHIELD] Shield saved the player!');
       
       // Add chart dip for shield save
       this.addChartDip('shield');
@@ -1648,7 +1658,7 @@ export default class MainScene extends Phaser.Scene {
       
       // Grant 1 second of invincibility so the same pit doesn't kill us
       this.invincibleUntil = this.time.now + 1000;
-      console.log('[SHIELD] Invincible until:', this.invincibleUntil);
+      devLog('[SHIELD] Invincible until:', this.invincibleUntil);
       
       // Brief invincibility flash effect
       this.tweens.add({
@@ -1663,7 +1673,7 @@ export default class MainScene extends Phaser.Scene {
     
     // Check for extra life from surviving whale manipulation
     if (this.hasExtraLife) {
-      console.log('[EXTRA LIFE] Extra life saved the player!');
+      devLog('[EXTRA LIFE] Extra life saved the player!');
       this.hasExtraLife = false; // Use up the extra life
       
       // Add chart dip for extra life usage
@@ -1705,7 +1715,7 @@ export default class MainScene extends Phaser.Scene {
       return;
     }
     
-    console.log('[GAME OVER] No shield or extra life - player died');
+    devLog('[GAME OVER] No shield or extra life - player died');
     
     // Crash the trading chart to flat red line
     this.addChartCrash();

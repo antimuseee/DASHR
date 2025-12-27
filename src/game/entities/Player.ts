@@ -1,6 +1,12 @@
 ﻿import Phaser from 'phaser';
 import { SkinId, TrailId, SKINS, TRAILS, getEquippedSkin, getEquippedTrail } from '../../utils/cosmetics';
 
+// Dev-only logging helper
+const isDev = import.meta.env.DEV;
+const devLog = (...args: any[]) => {
+  if (isDev) console.log(...args);
+};
+
 export default class Player extends Phaser.Physics.Arcade.Sprite {
   laneIndex = 1;
   laneWidth: number;
@@ -83,14 +89,14 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         const currentFrame = this.frame?.name || 'player-run-0';
         const frameNum = currentFrame.replace('player-run-', '').replace(/-\w+$/g, '');
         this.setTexture(`player-run-${frameNum}`);
-        console.log(`[Cosmetics] Applied skin: ${skin.name} (default)`);
+        devLog(`[Cosmetics] Applied skin: ${skin.name} (default)`);
       } else {
         // Use pre-generated textures for all non-default skins
         const suffix = `-${skinId}`;
         const currentFrame = this.frame?.name || 'player-run-0';
         const frameNum = currentFrame.replace('player-run-', '').replace(/-\w+$/g, '');
         this.setTexture(`player-run-${frameNum}${suffix}`);
-        console.log(`[Cosmetics] Applied skin: ${skin.name} (${skinId} texture)`);
+        devLog(`[Cosmetics] Applied skin: ${skin.name} (${skinId} texture)`);
       }
       
       // Restart animation with new textures
@@ -123,7 +129,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     const trail = TRAILS[trailId];
     
     if (!trail || trail.colors.length === 0) {
-      console.log('[Cosmetics] Trail disabled');
+      devLog('[Cosmetics] Trail disabled');
       return;
     }
     
@@ -142,7 +148,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.rainbowEmitters.push(emitter);
       }
       this.rainbowColorIndex = 0;
-      console.log(`[Cosmetics] Rainbow trail created with 6 color emitters`);
+      devLog(`[Cosmetics] Rainbow trail created with 6 color emitters`);
       return;
     }
     
@@ -162,11 +168,11 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     
     const particles = this.scene.add.particles(0, 0, particleTexture, particleConfig);
     
-    console.log(`[Cosmetics] Trail particles created: ${particleTexture}`);
+    devLog(`[Cosmetics] Trail particles created: ${particleTexture}`);
     particles.setDepth(9); // Behind player
     
     this.trailParticles = particles;
-    console.log(`[Cosmetics] Applied trail: ${trail.name}`);
+    devLog(`[Cosmetics] Applied trail: ${trail.name}`);
   }
   
   // Update cosmetics (call from main scene when tier changes)
