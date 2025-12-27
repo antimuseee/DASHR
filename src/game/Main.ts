@@ -60,6 +60,9 @@ export default class MainScene extends Phaser.Scene {
   // Extra life from surviving whale manipulation
   private hasExtraLife = false;
 
+  // Cached device info (set once, used throughout - avoids repeated getDevice() calls)
+  private device = getDevice();
+
   // Trading chart (portfolio tracker)
   private chartGraphics: Phaser.GameObjects.Graphics | null = null;
   private chartData: number[] = []; // Score history for chart
@@ -208,9 +211,8 @@ export default class MainScene extends Phaser.Scene {
     this.speed = 250;
     this.distance = 0;
     
-    // Mobile: first obstacles spawn further away for easier start
-    const device = getDevice();
-    this.nextSpawnDistance = device.isMobile ? 250 : 100;
+    // Same initial spawn distance on all platforms for competitive fairness
+    this.nextSpawnDistance = 100;
     this.nextBoostDistance = 600 + Math.random() * 400; // First boost after 600-1000m
     this.runActive = true;
     this.scorePopups = [];
@@ -429,8 +431,7 @@ export default class MainScene extends Phaser.Scene {
     this.distance += distanceDelta;
     
     // Speed ramp-up: slower on mobile for more forgiving early game
-    const device = getDevice();
-    const speedIncrease = device.isMobile ? 1.5 : 3; // Mobile ramps up 50% slower
+    const speedIncrease = this.device.isMobile ? 1.5 : 3; // Mobile ramps up 50% slower
     this.speed += speedIncrease * dt;
 
     // Update boost timers
@@ -542,36 +543,18 @@ export default class MainScene extends Phaser.Scene {
       return;
     }
     
-    const device = getDevice();
-    
     while (this.distance >= this.nextSpawnDistance) {
       const chunk = pickChunk();
 
       // Spawn very close to the horizon so they immediately start moving toward the player.
       const zBase = this.zFar * Phaser.Math.FloatBetween(0.94, 0.99);
 
-      // Mobile early-game adjustment: skip some pit spawns to reduce density
-      // Higher skip chance early, gradually decreases as player progresses
-      let skipChance = 0;
-      if (device.isMobile) {
-        if (this.distance < 500) {
-          skipChance = 0.5; // 50% skip in first 500m
-        } else if (this.distance < 1500) {
-          skipChance = 0.35; // 35% skip from 500-1500m
-        } else if (this.distance < 3000) {
-          skipChance = 0.2; // 20% skip from 1500-3000m
-        }
-      }
-      const shouldSkipPit = skipChance > 0 && Math.random() < skipChance;
-
-      // Spawn obstacles (pits)
-      if (!shouldSkipPit) {
-        chunk.obstacles.forEach((o) => {
-          o.lanes.forEach((lane) => {
-            this.spawner.spawn(o.type, lane, zBase);
-          });
+      // Spawn obstacles (pits) - same on all platforms for competitive fairness
+      chunk.obstacles.forEach((o) => {
+        o.lanes.forEach((lane) => {
+          this.spawner.spawn(o.type, lane, zBase);
         });
-      }
+      });
 
       // Spawn coins
       for (let i = 0; i < chunk.collectibles; i++) {
@@ -579,21 +562,8 @@ export default class MainScene extends Phaser.Scene {
         this.spawner.spawn('collectible', lane, zBase + 120 + i * 140);
       }
 
-      // Mobile: larger gaps between spawns early game for more reaction time
-      let minGap = 200;
-      let maxGap = 300;
-      if (device.isMobile) {
-        if (this.distance < 1000) {
-          // Very early game on mobile: 320-450m gaps
-          minGap = 320;
-          maxGap = 450;
-        } else if (this.distance < 2500) {
-          // Mid-early game: 260-380m gaps
-          minGap = 260;
-          maxGap = 380;
-        }
-      }
-      this.nextSpawnDistance += Phaser.Math.Between(minGap, maxGap);
+      // Same spawn gaps on all platforms for competitive fairness
+      this.nextSpawnDistance += Phaser.Math.Between(200, 300);
     }
 
     // Spawn boosts occasionally
@@ -807,9 +777,8 @@ export default class MainScene extends Phaser.Scene {
     
     // Chart dimensions and position (left side, below wallet and background text)
     // Smaller on mobile to avoid overlapping game lanes
-    const device = getDevice();
-    const chartWidth = device.isMobile ? 120 : 160;
-    const chartHeight = device.isMobile ? 55 : 70;
+    const chartWidth = this.device.isMobile ? 120 : 160;
+    const chartHeight = this.device.isMobile ? 55 : 70;
     const chartX = 10;
     const chartY = 180; // Below wallet box and PUMP text
     const padding = 6;
@@ -944,11 +913,10 @@ export default class MainScene extends Phaser.Scene {
 
   flashChartText() {
     // Flash green text over the chart when whale is caught
-    const device = getDevice();
     const chartX = 10;
     const chartY = 180;
-    const chartWidth = device.isMobile ? 120 : 160;
-    const chartHeight = device.isMobile ? 55 : 70;
+    const chartWidth = this.device.isMobile ? 120 : 160;
+    const chartHeight = this.device.isMobile ? 55 : 70;
     
     const flashText = this.add.text(chartX + chartWidth / 2, chartY + chartHeight / 2, '🚀 MOON!', {
       fontSize: '20px',
@@ -1008,10 +976,9 @@ export default class MainScene extends Phaser.Scene {
       this.whaleAlertTimer = 4; // 4 seconds of reversed controls (countdown in seconds)
       
       // Show warning text with blinking red exclamation marks (slightly smaller on mobile)
-      const device = getDevice();
-      const fontSize = device.isMobile ? '24px' : '28px'; // Just a tiny bit smaller on mobile
-      const exclaimSize = device.isMobile ? '28px' : '32px';
-      const exclaimOffset = device.isMobile ? 140 : 155;
+      const fontSize = this.device.isMobile ? '24px' : '28px'; // Just a tiny bit smaller on mobile
+      const exclaimSize = this.device.isMobile ? '28px' : '32px';
+      const exclaimOffset = this.device.isMobile ? 140 : 155;
       
       this.whaleAlertText = this.add.text(this.centerX, this.scale.height / 2 - 50, '🐋 WHALE MANIPULATION 🐋\nCONTROLS REVERSED!', {
         fontSize: fontSize,
@@ -1105,9 +1072,8 @@ export default class MainScene extends Phaser.Scene {
       this.whaleLeader.setScale(0.15); // Very small (far away)
       
       // Show chase message (longer on mobile for more reaction time)
-      const device = getDevice();
       const trailText = this.add.text(this.centerX, this.scale.height / 2 - 50, '🐋 FOLLOW THE TRAIL! 🐋\nCATCH THE WHALE!', {
-        fontSize: device.isMobile ? '20px' : '24px',
+        fontSize: this.device.isMobile ? '20px' : '24px',
         fontFamily: 'Arial Black',
         color: '#88ffff',
         stroke: '#003333',
@@ -1119,7 +1085,7 @@ export default class MainScene extends Phaser.Scene {
         targets: trailText,
         alpha: 0,
         y: trailText.y - 50,
-        duration: device.isMobile ? 2500 : 1500, // Longer on mobile
+        duration: this.device.isMobile ? 2500 : 1500, // Longer on mobile
         onComplete: () => trailText.destroy(),
       });
     } catch (e) {
@@ -1135,8 +1101,7 @@ export default class MainScene extends Phaser.Scene {
     const numBubbles = 10;
     
     // On mobile, start bubbles further away to give player more time to see and react
-    const device = getDevice();
-    const startZ = device.isMobile ? 350 : 150; // Mobile: further away for more reaction time
+    const startZ = this.device.isMobile ? 350 : 150; // Mobile: further away for more reaction time
     const endZ = this.zFar * 0.85; // End far away
     const zStep = (endZ - startZ) / (numBubbles - 1);
     
@@ -1434,8 +1399,7 @@ export default class MainScene extends Phaser.Scene {
       if (key.startsWith('item-')) {
         // Coins: trigger burst when closer to the player (lower z = closer)
         // On mobile, wait until coin is closer (z <= 30) to match effect position above head
-        const deviceForCoin = getDevice();
-        const coinCollectZ = deviceForCoin.isMobile ? 30 : 60;
+        const coinCollectZ = this.device.isMobile ? 30 : 60;
         if (z > coinCollectZ) return;
         
         // Check if this is a whale trail bubble
@@ -1454,9 +1418,8 @@ export default class MainScene extends Phaser.Scene {
         }
         
         // On mobile, spawn effect above player's head. On desktop, use coin position.
-        const device = getDevice();
-        const effectX = device.isMobile ? this.player.x : sprite.x;
-        const effectY = device.isMobile ? this.player.y - 55 : sprite.y;
+        const effectX = this.device.isMobile ? this.player.x : sprite.x;
+        const effectY = this.device.isMobile ? this.player.y - 55 : sprite.y;
         this.collectItem(key.replace('item-', ''), effectX, effectY);
         sprite.destroy();
         return;
@@ -1465,13 +1428,11 @@ export default class MainScene extends Phaser.Scene {
       if (key.startsWith('boost-')) {
         // Boosts: trigger when close
         // On mobile, wait until boost is closer to match effect position above head
-        const deviceForBoost = getDevice();
-        const boostCollectZ = deviceForBoost.isMobile ? 30 : 60;
+        const boostCollectZ = this.device.isMobile ? 30 : 60;
         if (z > boostCollectZ) return;
         // On mobile, spawn effect above player's head. On desktop, use boost position.
-        const device = deviceForBoost;
-        const effectX = device.isMobile ? this.player.x : sprite.x;
-        const effectY = device.isMobile ? this.player.y - 55 : sprite.y;
+        const effectX = this.device.isMobile ? this.player.x : sprite.x;
+        const effectY = this.device.isMobile ? this.player.y - 55 : sprite.y;
         this.collectBoost(key.replace('boost-', ''), effectX, effectY);
         sprite.destroy();
         return;
